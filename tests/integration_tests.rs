@@ -238,6 +238,7 @@ fn test_iterative_loop_single_iteration() {
         "0.1",
         "--session-file",
         session_file,
+        "--quiet",
     ];
     let output = get_cli_output(&args);
 
@@ -287,6 +288,7 @@ fn test_iterative_loop_logs_iteration_record() {
         "0.1",
         "--session-file",
         session_file,
+        "--quiet",
     ];
     let output = get_cli_output(&args);
 
@@ -343,6 +345,7 @@ fn test_iteration_keeps_improvement() {
         "0.1",
         "--session-file",
         session_file,
+        "--quiet",
     ];
     let output = get_cli_output(&args);
 
@@ -382,6 +385,7 @@ fn test_session_file_path_configurable() {
         "0.1",
         "--session-file",
         custom_session_file,
+        "--quiet",
     ];
     let output = get_cli_output(&args);
 
