@@ -79,6 +79,31 @@ struct Cli {
     /// Quiet mode - only show final result
     #[arg(long)]
     quiet: bool,
+
+    /// Path to config file (defaults to ~/.config/pi-autoresearch/config.json)
+    #[arg(long)]
+    config: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+struct Config {
+    question: Option<String>,
+    auto_approve: Option<bool>,
+    metric: Option<String>,
+    measure: Option<String>,
+    baseline: Option<f64>,
+    target_improvement: Option<f64>,
+    max_iterations: Option<usize>,
+    iteration_timeout_minutes: Option<usize>,
+    total_timeout_minutes: Option<usize>,
+    stall_limit: Option<usize>,
+    convergence_threshold: Option<f64>,
+    convergence_window: Option<usize>,
+    verify_baseline: Option<bool>,
+    session_file: Option<String>,
+    max_variance: Option<f64>,
+    verbose: Option<bool>,
+    quiet: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -164,6 +189,71 @@ impl std::fmt::Display for BaselineError {
 }
 
 impl std::error::Error for BaselineError {}
+
+fn load_config(config_path: Option<&str>) -> Result<Option<Config>> {
+    let path = if let Some(p) = config_path {
+        std::path::PathBuf::from(p)
+    } else {
+        let default_path = std::env::var("HOME")
+            .map(|home| format!("{}/.config/pi-autoresearch/config.json", home))
+            .or_else(|_| {
+                std::env::current_dir()
+                    .map(|cwd| format!("{}/.config/pi-autoresearch/config.json", cwd.to_string_lossy()))
+            })
+            .unwrap_or("~/.config/pi-autoresearch/config.json".to_string());
+        
+        if default_path.starts_with("~/") {
+            if let Ok(home) = std::env::var("HOME") {
+                std::path::PathBuf::from(default_path.replace("~", &home))
+            } else {
+                std::path::PathBuf::from(&default_path)
+            }
+        } else {
+            std::path::PathBuf::from(default_path)
+        }
+    };
+
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let content = std::fs::read_to_string(&path)?;
+    let config: Config = serde_json::from_str(&content)?;
+    Ok(Some(config))
+}
+
+fn merge_config(cli: &Cli, config: Option<Config>) -> Cli {
+    let cfg = config.unwrap_or_default();
+
+    Cli {
+        question: cli.question.clone().or(cfg.question),
+        auto_approve: cli.auto_approve || cfg.auto_approve.unwrap_or(false),
+        metric: cli.metric.clone().or(cfg.metric),
+        measure: cli.measure.clone().or(cfg.measure),
+        baseline: cli.baseline.or(cfg.baseline),
+        target_improvement: cli.target_improvement.or(cfg.target_improvement),
+        max_iterations: cli.max_iterations.or(cfg.max_iterations),
+        iteration_timeout_minutes: cli.iteration_timeout_minutes.or(cfg.iteration_timeout_minutes),
+        total_timeout_minutes: cli.total_timeout_minutes.or(cfg.total_timeout_minutes),
+        stall_limit: cli.stall_limit.or(cfg.stall_limit),
+        convergence_threshold: cli.convergence_threshold.or(cfg.convergence_threshold),
+        convergence_window: cli.convergence_window.or(cfg.convergence_window),
+        verify_baseline: cli.verify_baseline || cfg.verify_baseline.unwrap_or(false),
+        session_file: if cli.session_file == "autoresearch.jsonl" {
+            cfg.session_file.unwrap_or_else(|| "autoresearch.jsonl".to_string())
+        } else {
+            cli.session_file.clone()
+        },
+        max_variance: if cli.max_variance == 0.05 {
+            cfg.max_variance.unwrap_or(0.05)
+        } else {
+            cli.max_variance
+        },
+        verbose: cli.verbose || cfg.verbose.unwrap_or(false),
+        quiet: cli.quiet || cfg.quiet.unwrap_or(false),
+        config: cli.config.clone(),
+    }
+}
 
 fn generate_design(question: &str) -> ExperimentDesign {
     let lower_question = question.to_lowercase();
@@ -899,7 +989,13 @@ struct FinalizationResult {
 }
 
 async fn run() -> Result<()> {
-    let cli = Cli::parse();
+    let raw_cli = Cli::parse();
+    
+    // Load config file if specified or use default path
+    let config = load_config(raw_cli.config.as_deref())?;
+    
+    // Merge config with CLI args (CLI takes precedence)
+    let cli = merge_config(&raw_cli, config);
 
     if cli.verify_baseline {
         let metric = cli.metric.clone().ok_or_else(|| {
