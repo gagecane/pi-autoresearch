@@ -3,10 +3,10 @@
   "sessionId": "9245a351-de66-4cb6-998e-0cd2a459fc96",
   "status": "running",
   "startedAt": "2026-03-31T16:06:19.937Z",
-  "updatedAt": "2026-03-31T16:06:22.396Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-03-31T16:12:45.736Z",
+  "currentIteration": 1,
   "maxIterations": 10,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "opencode",
   "trackerState": {
@@ -47,8 +47,8 @@
       {
         "id": "pi-autoresearch-z1z.6",
         "title": "US-3.1: Auto-Generate Merge PR",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "pi-autoresearch-z1z.7",
@@ -88,11 +88,22 @@
       }
     ]
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "pi-autoresearch-z1z.6",
+      "taskTitle": "US-3.1: Auto-Generate Merge PR",
+      "taskCompleted": true,
+      "durationMs": 381434,
+      "startedAt": "2026-03-31T16:06:21.920Z",
+      "endedAt": "2026-03-31T16:12:43.354Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/sikashep/pi-autoresearch",
   "activeTaskIds": [
-    "pi-autoresearch-z1z.6"
+    "pi-autoresearch-z1z.7"
   ],
   "subagentPanelVisible": false
 }
