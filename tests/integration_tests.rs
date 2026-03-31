@@ -388,3 +388,154 @@ fn test_session_file_path_configurable() {
     assert!(output.status.success());
     assert!(std::path::Path::new(custom_session_file).exists());
 }
+
+#[test]
+fn test_failed_experiment_reporting_exit_code() {
+    let session_file = "/tmp/test_failed_exit.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--max-iterations",
+        "3",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 500.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--session-file",
+        session_file,
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(!output.status.success());
+    assert_eq!(output.status.code().unwrap(), 1);
+}
+
+#[test]
+fn test_failed_experiment_reporting_shows_best_improvement() {
+    let session_file = "/tmp/test_failed_report.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--max-iterations",
+        "2",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 500.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--session-file",
+        session_file,
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(!output.status.success());
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Target improvement not met"));
+    assert!(stderr.contains("Failed Experiment Report"));
+    assert!(stderr.contains("Best improvement achieved"));
+}
+
+#[test]
+fn test_failed_experiment_reporting_shows_stuck_reason() {
+    let session_file = "/tmp/test_failed_stuck.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--max-iterations",
+        "2",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 500.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--session-file",
+        session_file,
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(!output.status.success());
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Stuck reason:"));
+}
+
+#[test]
+fn test_failed_experiment_reporting_shows_recommendations() {
+    let session_file = "/tmp/test_failed_recs.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--max-iterations",
+        "2",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 500.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--session-file",
+        session_file,
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(!output.status.success());
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Recommendations for retry:"));
+}
+
+#[test]
+fn test_failed_experiment_reporting_no_changes_applied() {
+    let session_file = "/tmp/test_failed_no_changes.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--max-iterations",
+        "2",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 500.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--session-file",
+        session_file,
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(!output.status.success());
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Changes NOT applied"));
+}
