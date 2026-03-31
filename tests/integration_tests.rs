@@ -241,6 +241,10 @@ fn test_iterative_loop_single_iteration() {
     ];
     let output = get_cli_output(&args);
 
+    if !output.status.success() {
+        eprintln!("STDOUT: {}", String::from_utf8_lossy(&output.stdout));
+        eprintln!("STDERR: {}", String::from_utf8_lossy(&output.stderr));
+    }
     assert!(output.status.success());
 
     assert!(std::path::Path::new(session_file).exists());
