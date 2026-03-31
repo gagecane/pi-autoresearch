@@ -75,3 +75,32 @@ after each iteration and it's included in prompts for context.
   - Gotcha: Using `cli.quiet` directly instead of scoped variable to avoid closure capture issues
 ---
 
+## [2026-03-31] - pi-autoresearch-z1z.8
+- US-4.1: CLI Arguments already implemented
+- Files: `src/main.rs` (lines 11-82, Cli struct)
+- All CLI arguments verified against PRD:
+  - `--question` - Research question to explore
+  - `--metric` - Metric name for measurement
+  - `--measure` - Measurement command
+  - `--baseline` - Baseline value
+  - `--target-improvement` - Target improvement ratio (e.g., 0.30 for 30%)
+  - `--max-iterations` - Maximum iterations (default: 20)
+  - `--iteration-timeout-minutes` - Iteration timeout in minutes (default: 10)
+  - `--total-timeout-minutes` - Total timeout in minutes (default: 120)
+  - `--stall-limit` - Stall limit before backing off (default: 5)
+  - `--convergence-threshold` - Convergence threshold (default: 0.01)
+  - `--convergence-window` - Convergence window size (default: 3)
+  - `--auto-approve` - Auto-approve design without confirmation
+  - `--verbose` - Verbose output with per-iteration details
+- Additional useful options:
+  - `--quiet` - Quiet mode (only show final result)
+  - `--verify-baseline` - Verify baseline measurement
+  - `--session-file` - Session file path (default: autoresearch.jsonl)
+  - `--max-variance` - Maximum variance between baseline measurements (default: 0.05)
+- **Learnings:**
+  - Pattern: All CLI arguments were already implemented in previous US (US-2.1, US-2.2, US-2.3)
+  - Pattern: clap's derive macro simplifies CLI argument definition
+  - Gotcha: Tests are flaky in parallel mode due to shared /tmp files, pass with --test-threads=1
+- Quality checks: cargo check passes, cargo test passes (19/19 with serial execution)
+---
+

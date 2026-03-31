@@ -3,10 +3,10 @@
   "sessionId": "10c77528-eabc-4d9a-aa54-a6e11266144e",
   "status": "running",
   "startedAt": "2026-03-31T03:30:53.439Z",
-  "updatedAt": "2026-03-31T03:43:59.957Z",
-  "currentIteration": 3,
+  "updatedAt": "2026-03-31T10:17:26.442Z",
+  "currentIteration": 6,
   "maxIterations": 10,
-  "tasksCompleted": 3,
+  "tasksCompleted": 4,
   "isPaused": false,
   "agentPlugin": "opencode",
   "trackerState": {
@@ -59,8 +59,8 @@
       {
         "id": "pi-autoresearch-z1z.8",
         "title": "US-4.1: CLI Arguments",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "pi-autoresearch-z1z.9",
@@ -118,12 +118,44 @@
       "durationMs": 399449,
       "startedAt": "2026-03-31T03:37:18.048Z",
       "endedAt": "2026-03-31T03:43:57.497Z"
+    },
+    {
+      "iteration": 4,
+      "status": "completed",
+      "taskId": "pi-autoresearch-z1z.6",
+      "taskTitle": "US-3.1: Auto-Generate Merge PR",
+      "taskCompleted": false,
+      "durationMs": 2757702,
+      "startedAt": "2026-03-31T03:43:59.536Z",
+      "endedAt": "2026-03-31T04:29:57.238Z"
+    },
+    {
+      "iteration": 5,
+      "status": "completed",
+      "taskId": "pi-autoresearch-z1z.7",
+      "taskTitle": "US-3.2: Failed Experiment Reporting",
+      "taskCompleted": false,
+      "durationMs": 3276780,
+      "startedAt": "2026-03-31T04:29:58.660Z",
+      "endedAt": "2026-03-31T05:24:35.440Z"
+    },
+    {
+      "iteration": 6,
+      "status": "completed",
+      "taskId": "pi-autoresearch-z1z.8",
+      "taskTitle": "US-4.1: CLI Arguments",
+      "taskCompleted": true,
+      "durationMs": 204944,
+      "startedAt": "2026-03-31T10:13:59.166Z",
+      "endedAt": "2026-03-31T10:17:24.110Z"
     }
   ],
   "skippedTaskIds": [],
   "cwd": "/Users/sikashep/pi-autoresearch",
   "activeTaskIds": [
-    "pi-autoresearch-z1z.6"
+    "pi-autoresearch-z1z.6",
+    "pi-autoresearch-z1z.7",
+    "pi-autoresearch-z1z.9"
   ],
   "subagentPanelVisible": false
 }
