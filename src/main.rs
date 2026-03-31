@@ -853,7 +853,7 @@ fn finalize_experiment(
     
     let commit_msg = commit_message.as_str();
     let commit_output = Command::new("git")
-        .args(["commit", "-m", commit_msg])
+        .args(["commit", "--allow-empty", "-m", commit_msg])
         .output();
     
     if let Ok(output) = commit_output {
