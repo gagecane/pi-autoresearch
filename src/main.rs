@@ -770,6 +770,20 @@ fn finalize_experiment(
         best_value
     );
     
+    let current_branch_output = Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output();
+    
+    let current_branch = if let Ok(output) = current_branch_output {
+        if output.status.success() {
+            String::from_utf8_lossy(&output.stdout).trim().to_string()
+        } else {
+            "main".to_string()
+        }
+    } else {
+        "main".to_string()
+    };
+    
     let mut result = FinalizationResult {
         success: true,
         final_improvement,
@@ -780,14 +794,29 @@ fn finalize_experiment(
         error_message: None,
     };
     
-    let create_branch_output = Command::new("git")
-        .args(["checkout", "-b", &branch_name])
+    let branch_exists_output = Command::new("git")
+        .args(["show-ref", "--verify", "refs/heads/", &branch_name])
         .output();
+    
+    let branch_exists = branch_exists_output.as_ref()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+    
+    let create_branch_output = if branch_exists {
+        Command::new("git")
+            .args(["checkout", &branch_name])
+            .output()
+    } else {
+        Command::new("git")
+            .args(["checkout", "-b", &branch_name])
+            .output()
+    };
     
     if create_branch_output.is_err() {
         result.error_message = Some("Failed to create git branch".to_string());
         result.success = false;
         result.branch_name = None;
+        let _ = Command::new("git").args(["checkout", &current_branch]).output();
         return Ok(result);
     }
     
@@ -797,6 +826,7 @@ fn finalize_experiment(
             result.error_message = Some(format!("Failed to create branch: {}", stderr));
             result.success = false;
             result.branch_name = None;
+            let _ = Command::new("git").args(["checkout", &current_branch]).output();
             return Ok(result);
         }
     }
@@ -816,6 +846,7 @@ fn finalize_experiment(
             let stderr = String::from_utf8_lossy(&output.stderr);
             result.error_message = Some(format!("Failed to stage changes: {}", stderr));
             result.success = false;
+            let _ = Command::new("git").args(["checkout", &current_branch]).output();
             return Ok(result);
         }
     }
@@ -828,11 +859,10 @@ fn finalize_experiment(
     if let Ok(output) = commit_output {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            if !stderr.contains("no changes") {
-                result.error_message = Some(format!("Failed to commit: {}", stderr));
-                result.success = false;
-                return Ok(result);
-            }
+            result.error_message = Some(format!("Failed to commit: {}", stderr));
+            result.success = false;
+            let _ = Command::new("git").args(["checkout", &current_branch]).output();
+            return Ok(result);
         }
     }
     
@@ -846,10 +876,13 @@ fn finalize_experiment(
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 result.error_message = Some(format!("Failed to push branch: {}", stderr));
                 result.success = false;
+                let _ = Command::new("git").args(["checkout", &current_branch]).output();
                 return Ok(result);
             }
         }
     }
+    
+    let _ = Command::new("git").args(["checkout", &current_branch]).output();
     
     Ok(result)
 }
