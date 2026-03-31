@@ -87,6 +87,10 @@ struct Cli {
     /// List prior experiments from session file
     #[arg(long)]
     history: bool,
+
+    /// Enable beads (bd) integration for issue tracking
+    #[arg(long)]
+    beads_enabled: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -479,6 +483,7 @@ fn run_iterative_loop(
     design: &ExperimentDesign,
     baseline_record: &BaselineRecord,
     cli: &Cli,
+    beads: &mut Option<BeadsIntegration>,
 ) -> Result<(ExperimentSession, Option<StuckReason>)> {
     let max_iterations = cli.max_iterations.unwrap_or(20);
     let baseline_value = baseline_record.value;
@@ -592,14 +597,24 @@ fn run_iterative_loop(
                     }
                 }
                 
-                iterations.push(IterationRecord {
+                let iteration_record = IterationRecord {
                     iteration: state.current_iteration,
                     timestamp: Utc::now().to_rfc3339(),
                     agent_action,
                     metric_value,
                     improvement,
                     kept,
-                });
+                };
+                iterations.push(iteration_record.clone());
+                
+                if let Some(ref mut beads_integration) = beads {
+                    let _ = beads_integration.update_bead_progress(
+                        state.current_iteration,
+                        metric_value,
+                        improvement,
+                        kept,
+                    );
+                }
             }
             Err(e) => {
                 if !cli.quiet {
@@ -993,6 +1008,130 @@ fn finalize_experiment(
     Ok(result)
 }
 
+// Beads (bd) integration
+
+struct BeadsIntegration {
+    enabled: bool,
+    bead_id: Option<String>,
+}
+
+impl BeadsIntegration {
+    fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            bead_id: None,
+        }
+    }
+
+    fn create_experiment_bead(&mut self, question: &str, design: &ExperimentDesign) -> Result<()> {
+        if !self.enabled {
+            return Ok(());
+        }
+
+        let title = format!("[AutoResearch] {}", question);
+        let description = format!(
+            "Autonomous research experiment\n\n**Hypothesis**: {}\n\n**Metric**: {}\n**Measurement**: {}\n\n**Baseline**: {:.2}\n**Target Improvement**: {:.0}%",
+            design.hypothesis,
+            design.metric,
+            design.measurement,
+            design.baseline,
+            design.target_improvement * 100.0
+        );
+
+        let output = Command::new("bd")
+            .args([
+                "create",
+                "--title",
+                &title,
+                "--description",
+                &description,
+                "--type",
+                "task",
+                "--labels",
+                "autoresearch,experiment",
+            ])
+            .output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            eprintln!("Warning: Failed to create bead issue: {}", stderr);
+            self.enabled = false;
+            return Ok(());
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if let Some(id) = stdout.lines().next().and_then(|line| {
+            line.trim().strip_prefix("Created ").or_else(|| line.trim().strip_prefix("Created: "))
+        }) {
+            self.bead_id = Some(id.to_string());
+            eprintln!("Created bead issue: {}", id);
+        }
+
+        Ok(())
+    }
+
+    fn update_bead_progress(&self, iteration: usize, metric_value: f64, improvement: f64, kept: bool) -> Result<()> {
+        if !self.enabled || self.bead_id.is_none() {
+            return Ok(());
+        }
+
+        let bead_id = self.bead_id.as_ref().unwrap();
+        let status = if kept {
+            format!("✓ Kept - improvement: {:+.2}%", improvement * 100.0)
+        } else {
+            format!("✗ Reverted - degradation: {:-.2}%", improvement * 100.0)
+        };
+
+        let note = format!(
+            "Iteration {}: Metric: {:.2} - {}",
+            iteration, metric_value, status
+        );
+
+        let output = Command::new("bd")
+            .args(["note", bead_id, &note])
+            .output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            eprintln!("Warning: Failed to update bead {}: {}", bead_id, stderr);
+        }
+
+        Ok(())
+    }
+
+    fn close_bead(&self, success: bool, final_improvement: f64, iterations: usize) -> Result<()> {
+        if !self.enabled || self.bead_id.is_none() {
+            return Ok(());
+        }
+
+        let bead_id = self.bead_id.as_ref().unwrap();
+        let reason = if success {
+            format!(
+                "Experiment successful - achieved {:+.2}% improvement in {} iterations",
+                final_improvement * 100.0, iterations
+            )
+        } else {
+            format!(
+                "Experiment did not meet target - achieved {:+.2}% improvement in {} iterations",
+                final_improvement * 100.0, iterations
+            )
+        };
+
+        let output = Command::new("bd")
+            .args(["close", bead_id, "--reason", &reason])
+            .output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            eprintln!("Warning: Failed to close bead {}: {}", bead_id, stderr);
+        } else {
+            eprintln!("Closed bead issue: {}", bead_id);
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct FinalizationResult {
     success: bool,
@@ -1221,11 +1360,13 @@ async fn run() -> Result<()> {
             let baseline_record = session.baseline_record.clone();
             save_to_session_file(&cli.session_file, &baseline_record)?;
 
+            let mut beads_resume = if cli.beads_enabled { Some(BeadsIntegration::new(true)) } else { None };
             let (new_session, stuck_reason) = run_iterative_loop(
                 &session.question,
                 &design_to_use,
                 &baseline_record,
                 &cli,
+                &mut beads_resume,
             )?;
 
             // Merge the new iterations with the old session
@@ -1334,10 +1475,16 @@ async fn run() -> Result<()> {
         None => read_question_from_stdin()?,
     };
 
+    let mut beads = BeadsIntegration::new(cli.beads_enabled);
+
     let design = generate_design(&question);
     
     let json_output = serde_json::to_string_pretty(&design)?;
     println!("{}", json_output);
+
+    if cli.beads_enabled {
+        beads.create_experiment_bead(&question, &design)?;
+    }
 
     if !cli.auto_approve {
         print!("\nApprove this design? [y/N]: ");
@@ -1395,7 +1542,9 @@ async fn run() -> Result<()> {
         design_to_use.measurement = measure_to_use;
         design_to_use.baseline = baseline_to_use;
         
-        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli)?;
+        let mut beads_opt = Some(beads);
+        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &mut beads_opt)?;
+        let mut beads = beads_opt;
         
         let best_kept_value: Option<f64> = session.iterations
             .iter()
@@ -1439,6 +1588,14 @@ async fn run() -> Result<()> {
         let target_improvement = cli.target_improvement.unwrap_or(design.target_improvement);
         
         let finalization_result = finalize_experiment(&session, target_improvement, stuck_reason.as_ref())?;
+        
+        if let Some(ref mut beads_integration) = beads {
+            let _ = beads_integration.close_bead(
+                finalization_result.success,
+                finalization_result.final_improvement,
+                session.iterations.len(),
+            );
+        }
         
         if !cli.quiet {
             eprintln!("\n=== Finalization ===");

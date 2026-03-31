@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "sessionId": "9245a351-de66-4cb6-998e-0cd2a459fc96",
+  "sessionId": "ccf6cfd7-12e0-4f0e-a037-81afd42280bc",
   "status": "running",
-  "startedAt": "2026-03-31T16:06:19.937Z",
-  "updatedAt": "2026-03-31T17:12:13.769Z",
+  "startedAt": "2026-03-31T17:46:40.001Z",
+  "updatedAt": "2026-03-31T17:51:37.874Z",
   "currentIteration": 2,
   "maxIterations": 10,
-  "tasksCompleted": 1,
+  "tasksCompleted": 2,
   "isPaused": false,
   "agentPlugin": "opencode",
   "trackerState": {
@@ -48,13 +48,13 @@
         "id": "pi-autoresearch-z1z.6",
         "title": "US-3.1: Auto-Generate Merge PR",
         "status": "completed",
-        "completedInSession": true
+        "completedInSession": false
       },
       {
         "id": "pi-autoresearch-z1z.7",
         "title": "US-3.2: Failed Experiment Reporting",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "pi-autoresearch-z1z.8",
@@ -71,8 +71,8 @@
       {
         "id": "pi-autoresearch-z1z.10",
         "title": "US-5.1: Session Logging",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "pi-autoresearch-z1z.11",
@@ -92,29 +92,28 @@
     {
       "iteration": 1,
       "status": "completed",
-      "taskId": "pi-autoresearch-z1z.6",
-      "taskTitle": "US-3.1: Auto-Generate Merge PR",
+      "taskId": "pi-autoresearch-z1z.7",
+      "taskTitle": "US-3.2: Failed Experiment Reporting",
       "taskCompleted": true,
-      "durationMs": 381434,
-      "startedAt": "2026-03-31T16:06:21.920Z",
-      "endedAt": "2026-03-31T16:12:43.354Z"
+      "durationMs": 109509,
+      "startedAt": "2026-03-31T17:46:42.477Z",
+      "endedAt": "2026-03-31T17:48:31.986Z"
     },
     {
       "iteration": 2,
       "status": "completed",
-      "taskId": "pi-autoresearch-z1z.7",
-      "taskTitle": "US-3.2: Failed Experiment Reporting",
-      "taskCompleted": false,
-      "durationMs": 3551607,
-      "startedAt": "2026-03-31T16:12:45.303Z",
-      "endedAt": "2026-03-31T17:11:56.910Z"
+      "taskId": "pi-autoresearch-z1z.10",
+      "taskTitle": "US-5.1: Session Logging",
+      "taskCompleted": true,
+      "durationMs": 181600,
+      "startedAt": "2026-03-31T17:48:33.912Z",
+      "endedAt": "2026-03-31T17:51:35.512Z"
     }
   ],
   "skippedTaskIds": [],
   "cwd": "/Users/sikashep/pi-autoresearch",
   "activeTaskIds": [
-    "pi-autoresearch-z1z.7",
-    "pi-autoresearch-z1z.10"
+    "pi-autoresearch-z1z.11"
   ],
   "subagentPanelVisible": false
 }
