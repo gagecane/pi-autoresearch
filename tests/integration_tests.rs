@@ -1,6 +1,14 @@
 use assert_cmd::Command;
 use serde_json::Value;
 use std::process::Output;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static TEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+fn get_unique_session_file(prefix: &str) -> String {
+    let counter = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+    format!("/tmp/{}_{}.jsonl", prefix, counter)
+}
 
 fn get_cli_output(args: &[&str]) -> Output {
     let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
@@ -218,9 +226,10 @@ fn test_baseline_verification_exceeds_variance() {
 }
 
 #[test]
+#[serial_test::serial]
 fn test_iterative_loop_single_iteration() {
-    let session_file = "/tmp/test_iter_single.jsonl";
-    std::fs::remove_file(session_file).ok();
+    let session_file = get_unique_session_file("test_iter_single");
+    std::fs::remove_file(&session_file).ok();
 
     let args = vec![
         "--question",
@@ -237,16 +246,16 @@ fn test_iterative_loop_single_iteration() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        session_file,
+        &session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
 
-    assert!(std::path::Path::new(session_file).exists());
+    assert!(std::path::Path::new(&session_file).exists());
 
-    let contents = std::fs::read_to_string(session_file).unwrap();
+    let contents = std::fs::read_to_string(&session_file).unwrap();
     let lines: Vec<&str> = contents.lines().collect();
     assert!(lines.len() >= 1);
 }
@@ -268,9 +277,10 @@ fn test_baseline_verification_missing_measure() {
 }
 
 #[test]
+#[serial_test::serial]
 fn test_iterative_loop_logs_iteration_record() {
-    let session_file = "/tmp/test_iter_log.jsonl";
-    std::fs::remove_file(session_file).ok();
+    let session_file = get_unique_session_file("test_iter_log");
+    std::fs::remove_file(&session_file).ok();
 
     let args = vec![
         "--question",
@@ -287,14 +297,14 @@ fn test_iterative_loop_logs_iteration_record() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        session_file,
+        &session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
 
-    let contents = std::fs::read_to_string(session_file).unwrap();
+    let contents = std::fs::read_to_string(&session_file).unwrap();
     let lines: Vec<&str> = contents.lines().collect();
 
     let mut found_iteration = false;
@@ -325,9 +335,10 @@ fn test_max_iterations_default_is_20() {
 }
 
 #[test]
+#[serial_test::serial]
 fn test_iteration_keeps_improvement() {
-    let session_file = "/tmp/test_iter_keep.jsonl";
-    std::fs::remove_file(session_file).ok();
+    let session_file = get_unique_session_file("test_iter_keep");
+    std::fs::remove_file(&session_file).ok();
 
     let args = vec![
         "--question",
@@ -344,14 +355,14 @@ fn test_iteration_keeps_improvement() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        session_file,
+        &session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
 
-    let contents = std::fs::read_to_string(session_file).unwrap();
+    let contents = std::fs::read_to_string(&session_file).unwrap();
     let lines: Vec<&str> = contents.lines().collect();
 
     for line in &lines {
@@ -365,9 +376,10 @@ fn test_iteration_keeps_improvement() {
 }
 
 #[test]
+#[serial_test::serial]
 fn test_session_file_path_configurable() {
-    let custom_session_file = "/tmp/test_custom_session.jsonl";
-    std::fs::remove_file(custom_session_file).ok();
+    let custom_session_file = get_unique_session_file("test_custom_session");
+    std::fs::remove_file(&custom_session_file).ok();
 
     let args = vec![
         "--question",
@@ -384,11 +396,11 @@ fn test_session_file_path_configurable() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        custom_session_file,
+        &custom_session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
-    assert!(std::path::Path::new(custom_session_file).exists());
+    assert!(std::path::Path::new(&custom_session_file).exists());
 }
