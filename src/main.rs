@@ -1059,14 +1059,23 @@ async fn run() -> Result<()> {
                     eprintln!("\nCommit message:\n{}", msg);
                 }
             } else {
-                eprintln!("✗ Target improvement not met");
-                eprintln!("  Target: {:.2}%, Achieved: {:+.2}%", target_improvement * 100.0, finalization_result.final_improvement * 100.0);
+                eprintln!("\n=== Failed Experiment Report ===");
+                eprintln!("Status: failed");
+                eprintln!("Target improvement: {:.2}%", target_improvement * 100.0);
+                eprintln!("Best improvement achieved: {:+.2}%", finalization_result.final_improvement * 100.0);
+                eprintln!("Baseline value: {:.2}", session.baseline_record.value);
                 if let Some(best) = finalization_result.best_value {
-                    eprintln!("  Best value: {:.2} (baseline: {:.2})", best, session.baseline_record.value);
+                    eprintln!("Best value: {:.2}", best);
                 }
-                if let Some(ref err) = finalization_result.error_message {
-                    eprintln!("  Error: {}", err);
+                eprintln!("Iterations completed: {}", session.iterations.len());
+                if let Some(reason) = &stuck_reason {
+                    eprintln!("Stuck reason: {:?}", reason);
                 }
+                eprintln!("\nRecommendations for retry:");
+                eprintln!("  - Adjust target improvement to a more achievable value");
+                eprintln!("  - Increase max-iterations for more exploration");
+                eprintln!("  - Review session log for detailed iteration history");
+                eprintln!("\nChanges NOT applied - target not met.");
             }
         }
         

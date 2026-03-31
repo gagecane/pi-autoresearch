@@ -388,3 +388,118 @@ fn test_session_file_path_configurable() {
     assert!(output.status.success());
     assert!(std::path::Path::new(custom_session_file).exists());
 }
+
+#[test]
+fn test_failed_experiment_reporting_exit_code() {
+    let args = vec![
+        "--question",
+        "Reduce peak_memory_mb",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 512.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--max-iterations",
+        "1",
+        "--auto-approve",
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(!output.status.success());
+    assert_eq!(output.status.code(), Some(1));
+}
+
+#[test]
+fn test_failed_experiment_reporting_shows_best_improvement() {
+    let args = vec![
+        "--question",
+        "Reduce peak_memory_mb",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 512.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--max-iterations",
+        "1",
+        "--auto-approve",
+    ];
+    let output = get_cli_output(&args);
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Best improvement achieved:"));
+}
+
+#[test]
+fn test_failed_experiment_reporting_shows_stuck_reason() {
+    let args = vec![
+        "--question",
+        "Reduce peak_memory_mb",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 512.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--max-iterations",
+        "1",
+        "--auto-approve",
+    ];
+    let output = get_cli_output(&args);
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Stuck reason:"));
+}
+
+#[test]
+fn test_failed_experiment_reporting_shows_recommendations() {
+    let args = vec![
+        "--question",
+        "Reduce peak_memory_mb",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 512.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--max-iterations",
+        "1",
+        "--auto-approve",
+    ];
+    let output = get_cli_output(&args);
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Recommendations for retry:"));
+}
+
+#[test]
+fn test_failed_experiment_reporting_no_changes_applied() {
+    let args = vec![
+        "--question",
+        "Reduce peak_memory_mb",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 512.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.50",
+        "--max-iterations",
+        "1",
+        "--auto-approve",
+    ];
+    let output = get_cli_output(&args);
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Changes NOT applied"));
+}
