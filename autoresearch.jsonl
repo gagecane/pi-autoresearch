@@ -1,0 +1,98 @@
+{"timestamp":"2026-03-31T03:43:02.364137+00:00","git_commit":"c7c430eb6733a87931c9f2b94172181a8fa8a847","metric":"metric_value","measurement_command":"echo 95","value":100.0,"verification_runs":[100.0,100.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-03-31T03:43:02.366817+00:00","agent_action":"Proposed change for 'test': Based on current state 'Iteration 1, best metric: 100.00' and metric feedback 'Baseline: 100.00, current best: 100.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":95.0,"improvement":0.05,"kept":true}
+{"iteration":2,"timestamp":"2026-03-31T03:43:02.368696+00:00","agent_action":"Proposed change for 'test': Based on current state 'Iteration 2, best metric: 95.00' and metric feedback 'Baseline: 100.00, current best: 95.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":95.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "b60f7929e221e978",
+  "question": "test",
+  "design": {
+    "hypothesis": "Optimizing based on: test",
+    "metric": "metric_value",
+    "measurement": "echo 95",
+    "baseline": 100.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-03-31T03:43:02.364137+00:00",
+    "git_commit": "c7c430eb6733a87931c9f2b94172181a8fa8a847",
+    "metric": "metric_value",
+    "measurement_command": "echo 95",
+    "value": 100.0,
+    "verification_runs": [
+      100.0,
+      100.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-03-31T03:43:02.366890+00:00",
+      "agent_action": "Proposed change for 'test': Based on current state 'Iteration 1, best metric: 100.00' and metric feedback 'Baseline: 100.00, current best: 100.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 95.0,
+      "improvement": 0.05,
+      "kept": true
+    },
+    {
+      "iteration": 2,
+      "timestamp": "2026-03-31T03:43:02.368772+00:00",
+      "agent_action": "Proposed change for 'test': Based on current state 'Iteration 2, best metric: 95.00' and metric feedback 'Baseline: 100.00, current best: 95.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 95.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": 1,
+  "start_time": "2026-03-31T03:43:02.368778+00:00",
+  "end_time": "2026-03-31T03:43:02.368778+00:00",
+  "status": "completed"
+}
+{"timestamp":"2026-03-31T03:43:07.961552+00:00","git_commit":"c7c430eb6733a87931c9f2b94172181a8fa8a847","metric":"metric_value","measurement_command":"echo 95","value":100.0,"verification_runs":[100.0,100.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-03-31T03:43:07.964160+00:00","agent_action":"Proposed change for 'test': Based on current state 'Iteration 1, best metric: 100.00' and metric feedback 'Baseline: 100.00, current best: 100.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":95.0,"improvement":0.05,"kept":true}
+{"iteration":2,"timestamp":"2026-03-31T03:43:07.966586+00:00","agent_action":"Proposed change for 'test': Based on current state 'Iteration 2, best metric: 95.00' and metric feedback 'Baseline: 100.00, current best: 95.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":95.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "4bb6f5a68000a314",
+  "question": "test",
+  "design": {
+    "hypothesis": "Optimizing based on: test",
+    "metric": "metric_value",
+    "measurement": "echo 95",
+    "baseline": 100.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-03-31T03:43:07.961552+00:00",
+    "git_commit": "c7c430eb6733a87931c9f2b94172181a8fa8a847",
+    "metric": "metric_value",
+    "measurement_command": "echo 95",
+    "value": 100.0,
+    "verification_runs": [
+      100.0,
+      100.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-03-31T03:43:07.964269+00:00",
+      "agent_action": "Proposed change for 'test': Based on current state 'Iteration 1, best metric: 100.00' and metric feedback 'Baseline: 100.00, current best: 100.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 95.0,
+      "improvement": 0.05,
+      "kept": true
+    },
+    {
+      "iteration": 2,
+      "timestamp": "2026-03-31T03:43:07.966678+00:00",
+      "agent_action": "Proposed change for 'test': Based on current state 'Iteration 2, best metric: 95.00' and metric feedback 'Baseline: 100.00, current best: 95.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 95.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": 1,
+  "start_time": "2026-03-31T03:43:07.966685+00:00",
+  "end_time": "2026-03-31T03:43:07.966686+00:00",
+  "status": "completed"
+}
