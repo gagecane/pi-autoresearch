@@ -75,3 +75,28 @@ after each iteration and it's included in prompts for context.
   - Gotcha: Using `cli.quiet` directly instead of scoped variable to avoid closure capture issues
 ---
 
+## [2026-03-30] - pi-autoresearch-z1z.7
+- US-3.2: Failed Experiment Reporting implemented
+- Files: `src/main.rs` (modified finalization output), `tests/integration_tests.rs` (added 5 tests)
+- Features implemented:
+  - Detailed failure report when target not met
+  - Shows best improvement achieved, baseline value, best value
+  - Shows iterations completed and stuck reason
+  - Shows recommendations for retry
+  - "Changes NOT applied - target not met" message
+  - Exit code 1 (failure)
+- Changes:
+  - Modified finalization output in `else` branch (line 1061) to show detailed report
+  - Added 5 integration tests:
+    - `test_failed_experiment_reporting_exit_code` - verifies exit code 1
+    - `test_failed_experiment_reporting_shows_best_improvement` - verifies report content
+    - `test_failed_experiment_reporting_shows_stuck_reason` - verifies stuck reason displayed
+    - `test_failed_experiment_reporting_shows_recommendations` - verifies recommendations shown
+    - `test_failed_experiment_reporting_no_changes_applied` - verifies changes not applied message
+- **Learnings:**
+  - Pattern: Failure reports should be informative, not just error messages
+  - Pattern: Include actionable recommendations to guide user towards success
+  - Gotcha: All output goes to stderr (eprintln!) to keep stdout clean for JSON output
+- Tests: 24 total (19 original + 5 new), all passing
+---
+
