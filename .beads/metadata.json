@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "pi_autoresearch",
+  "project_id": "ab5d475b-dda7-4e91-900b-e8e7eafb78c0"
+}
