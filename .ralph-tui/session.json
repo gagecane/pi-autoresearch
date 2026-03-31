@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "sessionId": "9245a351-de66-4cb6-998e-0cd2a459fc96",
+  "sessionId": "ccf6cfd7-12e0-4f0e-a037-81afd42280bc",
   "status": "running",
-  "startedAt": "2026-03-31T16:06:19.937Z",
-  "updatedAt": "2026-03-31T17:12:13.769Z",
-  "currentIteration": 2,
+  "startedAt": "2026-03-31T17:46:40.001Z",
+  "updatedAt": "2026-03-31T17:46:42.927Z",
+  "currentIteration": 0,
   "maxIterations": 10,
-  "tasksCompleted": 1,
+  "tasksCompleted": 0,
   "isPaused": false,
   "agentPlugin": "opencode",
   "trackerState": {
@@ -48,7 +48,7 @@
         "id": "pi-autoresearch-z1z.6",
         "title": "US-3.1: Auto-Generate Merge PR",
         "status": "completed",
-        "completedInSession": true
+        "completedInSession": false
       },
       {
         "id": "pi-autoresearch-z1z.7",
@@ -88,33 +88,11 @@
       }
     ]
   },
-  "iterations": [
-    {
-      "iteration": 1,
-      "status": "completed",
-      "taskId": "pi-autoresearch-z1z.6",
-      "taskTitle": "US-3.1: Auto-Generate Merge PR",
-      "taskCompleted": true,
-      "durationMs": 381434,
-      "startedAt": "2026-03-31T16:06:21.920Z",
-      "endedAt": "2026-03-31T16:12:43.354Z"
-    },
-    {
-      "iteration": 2,
-      "status": "completed",
-      "taskId": "pi-autoresearch-z1z.7",
-      "taskTitle": "US-3.2: Failed Experiment Reporting",
-      "taskCompleted": false,
-      "durationMs": 3551607,
-      "startedAt": "2026-03-31T16:12:45.303Z",
-      "endedAt": "2026-03-31T17:11:56.910Z"
-    }
-  ],
+  "iterations": [],
   "skippedTaskIds": [],
   "cwd": "/Users/sikashep/pi-autoresearch",
   "activeTaskIds": [
-    "pi-autoresearch-z1z.7",
-    "pi-autoresearch-z1z.10"
+    "pi-autoresearch-z1z.7"
   ],
   "subagentPanelVisible": false
 }

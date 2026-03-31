@@ -1260,7 +1260,7 @@ async fn run() -> Result<()> {
                 }
             }
 
-            let session_json = serde_json::to_string_pretty(&merged_session)?;
+            let session_json = serde_json::to_string(&merged_session)?;
             let mut file = OpenOptions::new()
                 .create(true)
                 .append(true)
@@ -1429,7 +1429,7 @@ async fn run() -> Result<()> {
             eprintln!("Final improvement: {:+.2}%", final_improvement * 100.0);
         }
         
-        let session_json = serde_json::to_string_pretty(&session)?;
+        let session_json = serde_json::to_string(&session)?;
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
