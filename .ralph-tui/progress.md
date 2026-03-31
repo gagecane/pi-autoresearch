@@ -19,6 +19,8 @@ after each iteration and it's included in prompts for context.
 
 **State Tracking Pattern**: Use `IterationState` struct to track all mutable experiment state in one place, passed through iterations for clean separation of concerns.
 
+**Config File Pattern**: Load config from `~/.config/<app>/config.json` with `--config PATH` override. Use `Option<T>` fields in Config struct and merge with CLI args where CLI takes precedence (use `.or()` for Option types, `||` for bools).
+
 ---
 
 ## [2026-03-30] - pi-autoresearch-z1z.3
@@ -73,5 +75,25 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Pattern: Progress display was already implemented in US-2.1, only verbosity control needed
   - Gotcha: Using `cli.quiet` directly instead of scoped variable to avoid closure capture issues
+---
+
+## [2026-03-31] - pi-autoresearch-z1z.9
+- US-4.2: Config File Support implemented
+- Files: `src/main.rs` (added `Config` struct, `load_config()`, `merge_config()`, `--config` CLI flag)
+- Features implemented:
+  - Read defaults from `~/.config/pi-autoresearch/config.json`
+  - CLI args override config file values
+  - Support `--config PATH` for project-specific configs
+- Changes:
+  - Added `Config` struct with `Option<T>` fields matching CLI options
+  - Added `load_config()` function with tilde expansion for default path
+  - Added `merge_config()` function to merge CLI with config (CLI takes precedence)
+  - Added `--config` CLI flag
+  - Modified `run()` to load and merge config before processing
+- **Learnings:**
+  - Pattern: Use `Option<T>` in Config struct and `.or()` to merge with CLI values
+  - Pattern: For boolean flags, use `cli_flag || config_flag.unwrap_or(false)`
+  - Gotcha: Default values need special handling (e.g., `session_file == "autoresearch.jsonl"` check)
+- Quality checks: cargo check passes, cargo test passes (19/19)
 ---
 

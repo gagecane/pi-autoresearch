@@ -79,6 +79,14 @@ struct Cli {
     /// Quiet mode - only show final result
     #[arg(long)]
     quiet: bool,
+
+    /// Resume a previous experiment by session ID
+    #[arg(long)]
+    resume: Option<String>,
+
+    /// List prior experiments from session file
+    #[arg(long)]
+    history: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -109,7 +117,7 @@ struct BaselineVerificationResult {
     error_message: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct IterationRecord {
     iteration: usize,
     timestamp: String,
@@ -119,7 +127,7 @@ struct IterationRecord {
     kept: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct ExperimentSession {
     session_id: String,
     question: String,
@@ -898,8 +906,237 @@ struct FinalizationResult {
     error_message: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum SessionRecord {
+    Baseline(BaselineRecord),
+    Iteration(IterationRecord),
+    Experiment(ExperimentSession),
+}
+
+fn read_session_file(session_file: &str) -> Result<Vec<SessionRecord>> {
+    if !std::path::Path::new(session_file).exists() {
+        return Ok(Vec::new());
+    }
+
+    let contents = std::fs::read_to_string(session_file)?;
+    let mut records = Vec::new();
+
+    for line in contents.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        
+        let trimmed = line.trim();
+        
+        // Try to parse as ExperimentSession first (has session_id field)
+        if trimmed.contains("\"session_id\"") {
+            if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) {
+                records.push(SessionRecord::Experiment(session));
+                continue;
+            }
+        }
+        
+        // Try to parse as IterationRecord (has iteration field)
+        if trimmed.contains("\"iteration\"") && trimmed.contains("\"agent_action\"") {
+            if let Ok(iteration) = serde_json::from_str::<IterationRecord>(trimmed) {
+                records.push(SessionRecord::Iteration(iteration));
+                continue;
+            }
+        }
+        
+        // Try to parse as BaselineRecord (has verification_runs field)
+        if trimmed.contains("\"verification_runs\"") {
+            if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(trimmed) {
+                records.push(SessionRecord::Baseline(baseline));
+                continue;
+            }
+        }
+        
+        // Fallback: try each type
+        if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) {
+            records.push(SessionRecord::Experiment(session));
+        } else if let Ok(iteration) = serde_json::from_str::<IterationRecord>(trimmed) {
+            records.push(SessionRecord::Iteration(iteration));
+        } else if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(trimmed) {
+            records.push(SessionRecord::Baseline(baseline));
+        }
+    }
+
+    Ok(records)
+}
+
+fn list_history(session_file: &str) -> Result<()> {
+    let records = read_session_file(session_file)?;
+    
+    let mut experiments: Vec<&ExperimentSession> = Vec::new();
+    for record in &records {
+        if let SessionRecord::Experiment(ref session) = record {
+            experiments.push(session);
+        }
+    }
+
+    if experiments.is_empty() {
+        println!("No experiments found in {}", session_file);
+        return Ok(());
+    }
+
+    println!("\n=== Experiment History ===\n");
+    println!("Found {} experiment(s)\n", experiments.len());
+
+    for (i, session) in experiments.iter().enumerate() {
+        let improvement: f64 = session.iterations
+            .iter()
+            .filter(|it| it.kept)
+            .map(|it| it.improvement)
+            .fold(0.0, |a, b| a.max(b));
+
+        println!("[{}] Session: {}", i + 1, session.session_id);
+        println!("    Question: {}", session.question);
+        println!("    Metric: {}", session.design.metric);
+        println!("    Baseline: {:.2}", session.baseline_record.value);
+        println!("    Iterations: {}", session.iterations.len());
+        println!("    Best improvement: {:+.2}%", improvement * 100.0);
+        println!("    Status: {}", session.status);
+        println!("    Started: {}", session.start_time);
+        if let Some(ref end) = session.end_time {
+            println!("    Ended: {}", end);
+        }
+        println!();
+    }
+
+    println!("Use --resume <SESSION_ID> to continue a specific experiment");
+
+    Ok(())
+}
+
+fn find_session_by_id(session_file: &str, session_id: &str) -> Result<Option<ExperimentSession>> {
+    let records = read_session_file(session_file)?;
+
+    for record in &records {
+        if let SessionRecord::Experiment(ref session) = record {
+            if session.session_id == session_id {
+                return Ok(Some(session.clone()));
+            }
+        }
+    }
+
+    Ok(None)
+}
+
 async fn run() -> Result<()> {
     let cli = Cli::parse();
+
+    // Handle --history flag
+    if cli.history {
+        list_history(&cli.session_file)?;
+        return Ok(());
+    }
+
+    // Handle --resume flag
+    if let Some(ref session_id) = cli.resume {
+        if let Ok(Some(session)) = find_session_by_id(&cli.session_file, session_id) {
+            println!("Resuming session: {}", session_id);
+            println!("Question: {}", session.question);
+            println!("Current best iteration: {:?}", session.best_iteration);
+            println!("Iterations completed: {}", session.iterations.len());
+            println!();
+
+            // Resume from the best iteration's metric value
+            let resume_baseline = session.iterations
+                .iter()
+                .filter(|it| it.kept)
+                .map(|it| it.metric_value)
+                .fold(session.baseline_record.value, |min, val| min.min(val));
+
+            println!("Continuing from baseline: {:.2}", resume_baseline);
+            println!();
+
+            // Continue with the experiment using the resumed state
+            let mut design_to_use = session.design.clone();
+            design_to_use.baseline = resume_baseline;
+
+            let metric_to_use = cli.metric.clone().unwrap_or(design_to_use.metric.clone());
+            let measure_to_use = cli.measure.clone().unwrap_or(design_to_use.measurement.clone());
+            
+            design_to_use.metric = metric_to_use;
+            design_to_use.measurement = measure_to_use;
+
+            let baseline_record = session.baseline_record.clone();
+            save_to_session_file(&cli.session_file, &baseline_record)?;
+
+            let (new_session, stuck_reason) = run_iterative_loop(
+                &session.question,
+                &design_to_use,
+                &baseline_record,
+                &cli,
+            )?;
+
+            // Merge the new iterations with the old session
+            let mut merged_session = session.clone();
+            let max_old_iter = session.iterations.iter().map(|it| it.iteration).max().unwrap_or(0);
+            
+            for mut iter in new_session.iterations {
+                iter.iteration = max_old_iter + iter.iteration;
+                merged_session.iterations.push(iter);
+            }
+            
+            merged_session.end_time = Some(Utc::now().to_rfc3339());
+
+            let best_kept_value: Option<f64> = merged_session.iterations
+                .iter()
+                .filter(|i| i.kept)
+                .map(|i| i.metric_value)
+                .fold(None, |a: Option<f64>, b: f64| Some(a.map(|min| min.min(b)).unwrap_or(b)));
+
+            let final_improvement = match best_kept_value {
+                Some(val) => (merged_session.baseline_record.value - val) / merged_session.baseline_record.value,
+                None => 0.0,
+            };
+
+            if !cli.quiet {
+                eprintln!("\n=== Resumed Experiment Complete ===");
+                eprintln!("Total iterations: {}", merged_session.iterations.len());
+                eprintln!("Best improvement: {:+.2}%", final_improvement * 100.0);
+                eprintln!("Session ID: {}", session_id);
+                if let Some(reason) = &stuck_reason {
+                    eprintln!("Termination: {:?}", reason);
+                }
+            }
+
+            let session_json = serde_json::to_string_pretty(&merged_session)?;
+            let mut file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&cli.session_file)?;
+            writeln!(file, "{}", session_json)?;
+
+            let target_improvement = cli.target_improvement.unwrap_or(design_to_use.target_improvement);
+            let finalization_result = finalize_experiment(&merged_session, target_improvement)?;
+
+            if !cli.quiet {
+                eprintln!("\n=== Finalization ===");
+                if finalization_result.success {
+                    eprintln!("✓ Target improvement achieved: {:+.2}%", finalization_result.final_improvement * 100.0);
+                    if let Some(ref branch) = finalization_result.branch_name {
+                        eprintln!("✓ Created branch: {}", branch);
+                    }
+                } else {
+                    eprintln!("✗ Target improvement not met");
+                    eprintln!("  Target: {:.2}%, Achieved: {:+.2}%", target_improvement * 100.0, finalization_result.final_improvement * 100.0);
+                }
+            }
+
+            if finalization_result.success {
+                return Ok(());
+            } else {
+                std::process::exit(1);
+            }
+        } else {
+            eprintln!("Session '{}' not found in {}", session_id, cli.session_file);
+            std::process::exit(1);
+        }
+    }
 
     if cli.verify_baseline {
         let metric = cli.metric.clone().ok_or_else(|| {
