@@ -91,6 +91,14 @@ struct Cli {
     /// Enable beads (bd) integration for issue tracking
     #[arg(long)]
     beads_enabled: bool,
+
+    /// Enable Ralph-TUI compatibility mode
+    #[arg(long)]
+    ralph_tui_enabled: bool,
+
+    /// Path to Ralph task file (tasks/*.md)
+    #[arg(long)]
+    ralph_task_file: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -484,6 +492,7 @@ fn run_iterative_loop(
     baseline_record: &BaselineRecord,
     cli: &Cli,
     beads: &mut Option<BeadsIntegration>,
+    ralph_tui: &mut Option<RalphTuiIntegration>,
 ) -> Result<(ExperimentSession, Option<StuckReason>)> {
     let max_iterations = cli.max_iterations.unwrap_or(20);
     let baseline_value = baseline_record.value;
@@ -533,6 +542,11 @@ fn run_iterative_loop(
                 iter, max_iterations, best, improvement_pct, stall, stall_limit, 
                 elapsed.as_secs(), total_timeout.as_secs()
             );
+            
+            // Ralph-TUI compatible output
+            if let Some(ref ralph) = ralph_tui {
+                ralph.output_ralph_status(iter, max_iterations, best, baseline_value, "in_progress");
+            }
         };
         
         if !cli.quiet {
@@ -1132,6 +1146,130 @@ impl BeadsIntegration {
     }
 }
 
+// Ralph-TUI integration
+
+struct RalphTuiIntegration {
+    enabled: bool,
+    task_file: Option<String>,
+    task_id: Option<String>,
+}
+
+impl RalphTuiIntegration {
+    fn new(enabled: bool, task_file: Option<String>) -> Self {
+        Self {
+            enabled,
+            task_file,
+            task_id: None,
+        }
+    }
+
+    fn read_task_from_file(&mut self) -> Result<Option<String>> {
+        if !self.enabled {
+            return Ok(None);
+        }
+
+        let task_path = self.task_file.clone().unwrap_or_else(|| "tasks/current.md".to_string());
+        
+        if !std::path::Path::new(&task_path).exists() {
+            eprintln!("Warning: Task file not found: {}", task_path);
+            self.enabled = false;
+            return Ok(None);
+        }
+
+        let contents = std::fs::read_to_string(&task_path)?;
+        
+        // Extract task ID from filename (e.g., tasks/prd-123.md -> 123)
+        if let Some(file_name) = std::path::Path::new(&task_path).file_stem() {
+            let name_str = file_name.to_string_lossy();
+            self.task_id = Some(name_str.to_string());
+        }
+
+        // Parse task description from markdown
+        let question = contents
+            .lines()
+            .find(|line| line.starts_with("## Title") || line.starts_with("# Title"))
+            .and_then(|line| line.split(':').nth(1).map(|s| s.trim().to_string()))
+            .or_else(|| {
+                // Fallback: use first non-empty line as question
+                contents.lines().find(|line| !line.is_empty() && !line.starts_with('#')).map(|s| s.to_string())
+            });
+
+        Ok(question)
+    }
+
+    fn output_ralph_status(&self, iteration: usize, max_iterations: usize, best_metric: f64, baseline: f64, status: &str) {
+        if !self.enabled {
+            return;
+        }
+
+        let improvement_pct = (baseline - best_metric) / baseline * 100.0;
+        
+        // Output format compatible with ralph-tui parsing
+        // Uses structured output that ralph-tui can parse for progress tracking
+        let output = format!(
+            "RALPH_STATUS|task_id={}|progress={}/{}|metric={:.2}|improvement={:+.2}%|status={}",
+            self.task_id.as_ref().unwrap_or(&"unknown".to_string()),
+            iteration,
+            max_iterations,
+            best_metric,
+            improvement_pct,
+            status
+        );
+        
+        eprintln!("{}", output);
+    }
+
+    fn update_task_status(&self, status: &str, message: &str) -> Result<()> {
+        if !self.enabled || self.task_file.is_none() {
+            return Ok(());
+        }
+
+        let task_path = self.task_file.as_ref().unwrap();
+        let status_dir = std::path::Path::new(task_path)
+            .parent()
+            .map(|p| p.join(".ralph-tui"))
+            .unwrap_or_else(|| std::path::PathBuf::from(".ralph-tui"));
+
+        std::fs::create_dir_all(&status_dir)?;
+
+        let status_file = status_dir.join("status.json");
+        let status_data = serde_json::json!({
+            "task_id": self.task_id.as_ref().unwrap_or(&"unknown".to_string()),
+            "status": status,
+            "message": message,
+            "timestamp": Utc::now().to_rfc3339()
+        });
+
+        std::fs::write(&status_file, serde_json::to_string_pretty(&status_data)?)?;
+
+        Ok(())
+    }
+
+    fn mark_task_complete(&self, success: bool, final_improvement: f64, iterations: usize) -> Result<()> {
+        if !self.enabled || self.task_file.is_none() {
+            return Ok(());
+        }
+
+        let status = if success { "completed" } else { "failed" };
+        let message = format!(
+            "Autoresearch experiment {} - {:+.2}% improvement in {} iterations",
+            if success { "successful" } else { "did not meet target" },
+            final_improvement * 100.0,
+            iterations
+        );
+
+        self.update_task_status(status, &message)?;
+
+        if success {
+            eprintln!("Ralph-TUI: Task marked as completed");
+        } else {
+            eprintln!("Ralph-TUI: Task marked as failed");
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct FinalizationResult {
     success: bool,
@@ -1361,12 +1499,16 @@ async fn run() -> Result<()> {
             save_to_session_file(&cli.session_file, &baseline_record)?;
 
             let mut beads_resume = if cli.beads_enabled { Some(BeadsIntegration::new(true)) } else { None };
+            let mut ralph_tui_resume = if cli.ralph_tui_enabled {
+                Some(RalphTuiIntegration::new(true, cli.ralph_task_file.clone()))
+            } else { None };
             let (new_session, stuck_reason) = run_iterative_loop(
                 &session.question,
                 &design_to_use,
                 &baseline_record,
                 &cli,
                 &mut beads_resume,
+                &mut ralph_tui_resume,
             )?;
 
             // Merge the new iterations with the old session
@@ -1410,6 +1552,14 @@ async fn run() -> Result<()> {
 
             let target_improvement = cli.target_improvement.unwrap_or(design_to_use.target_improvement);
             let finalization_result = finalize_experiment(&merged_session, target_improvement, stuck_reason.as_ref())?;
+
+            if let Some(ref ralph_integration) = ralph_tui_resume {
+                let _ = ralph_integration.mark_task_complete(
+                    finalization_result.success,
+                    finalization_result.final_improvement,
+                    merged_session.iterations.len(),
+                );
+            }
 
             if !cli.quiet {
                 eprintln!("\n=== Finalization ===");
@@ -1470,9 +1620,20 @@ async fn run() -> Result<()> {
         }
     }
 
+    let mut ralph_tui = RalphTuiIntegration::new(cli.ralph_tui_enabled, cli.ralph_task_file.clone());
+
+    // Try to read question from Ralph task file if enabled and no question provided
+    let question_from_ralph = ralph_tui.read_task_from_file().ok().flatten();
+    
     let question = match &cli.question {
         Some(q) => q.clone(),
-        None => read_question_from_stdin()?,
+        None => {
+            if let Some(q) = question_from_ralph {
+                q
+            } else {
+                read_question_from_stdin()?
+            }
+        }
     };
 
     let mut beads = BeadsIntegration::new(cli.beads_enabled);
@@ -1543,8 +1704,10 @@ async fn run() -> Result<()> {
         design_to_use.baseline = baseline_to_use;
         
         let mut beads_opt = Some(beads);
-        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &mut beads_opt)?;
+        let mut ralph_tui_opt = if cli.ralph_tui_enabled { Some(ralph_tui) } else { None };
+        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &mut beads_opt, &mut ralph_tui_opt)?;
         let mut beads = beads_opt;
+        let ralph_tui = ralph_tui_opt;
         
         let best_kept_value: Option<f64> = session.iterations
             .iter()
@@ -1591,6 +1754,14 @@ async fn run() -> Result<()> {
         
         if let Some(ref mut beads_integration) = beads {
             let _ = beads_integration.close_bead(
+                finalization_result.success,
+                finalization_result.final_improvement,
+                session.iterations.len(),
+            );
+        }
+
+        if let Some(ref ralph_integration) = ralph_tui {
+            let _ = ralph_integration.mark_task_complete(
                 finalization_result.success,
                 finalization_result.final_improvement,
                 session.iterations.len(),
