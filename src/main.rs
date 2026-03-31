@@ -898,6 +898,91 @@ struct FinalizationResult {
     error_message: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct FailedExperimentReport {
+    status: String,
+    target_improvement: f64,
+    best_improvement: f64,
+    best_value: Option<f64>,
+    baseline_value: f64,
+    iterations_completed: usize,
+    stuck_reason: Option<String>,
+    recommendations: Vec<String>,
+}
+
+fn generate_failed_experiment_report(
+    session: &ExperimentSession,
+    target_improvement: f64,
+    stuck_reason: Option<&StuckReason>,
+) -> FailedExperimentReport {
+    let baseline = session.baseline_record.value;
+    let best_kept_value: Option<f64> = session.iterations
+        .iter()
+        .filter(|i| i.kept)
+        .map(|i| i.metric_value)
+        .fold(None, |a, b| Some(a.map(|min| min.min(b)).unwrap_or(b)));
+    
+    let best_improvement = match best_kept_value {
+        Some(val) => (baseline - val) / baseline,
+        None => 0.0,
+    };
+    
+    let mut recommendations = Vec::new();
+    
+    let stuck_reason_str = stuck_reason.map(|r| format!("{:?}", r));
+    
+    match stuck_reason {
+        Some(StuckReason::StallLimitReached) => {
+            recommendations.push("Consider increasing --stall-limit to allow more recovery attempts".to_string());
+            recommendations.push("Try a different metric that may be more sensitive to changes".to_string());
+            recommendations.push("Relax --target-improvement to a more achievable threshold".to_string());
+        }
+        Some(StuckReason::IterationTimeout) => {
+            recommendations.push("Increase --iteration-timeout-minutes for slower experiments".to_string());
+            recommendations.push("Simplify the measurement command for faster feedback".to_string());
+        }
+        Some(StuckReason::TotalTimeout) => {
+            recommendations.push("Increase --total-timeout-minutes for longer experiments".to_string());
+            recommendations.push("Reduce --max-iterations to focus on quality over quantity".to_string());
+        }
+        Some(StuckReason::MaxIterationsReached) => {
+            recommendations.push("Increase --max-iterations to explore more solutions".to_string());
+            recommendations.push("Consider a different research question or approach".to_string());
+        }
+        Some(StuckReason::ConvergenceAchieved) => {
+            recommendations.push("The metric may have reached a local optimum".to_string());
+            recommendations.push("Try a different metric or reformulate the research question".to_string());
+        }
+        None => {
+            recommendations.push("Review iteration logs for patterns in failed attempts".to_string());
+        }
+    }
+    
+    if best_improvement > 0.0 && best_improvement < target_improvement {
+        let gap = target_improvement - best_improvement;
+        recommendations.push(format!(
+            "Best improvement ({:+.1}%) is within {:.1}% of target - consider adjusting target or extending runtime",
+            best_improvement * 100.0,
+            gap * 100.0
+        ));
+    }
+    
+    if session.iterations.is_empty() {
+        recommendations.push("No iterations completed - check measurement command and baseline".to_string());
+    }
+    
+    FailedExperimentReport {
+        status: "failed".to_string(),
+        target_improvement,
+        best_improvement,
+        best_value: best_kept_value,
+        baseline_value: baseline,
+        iterations_completed: session.iterations.len(),
+        stuck_reason: stuck_reason_str,
+        recommendations,
+    }
+}
+
 async fn run() -> Result<()> {
     let cli = Cli::parse();
 
@@ -1059,14 +1144,29 @@ async fn run() -> Result<()> {
                     eprintln!("\nCommit message:\n{}", msg);
                 }
             } else {
+                let failed_report = generate_failed_experiment_report(&session, target_improvement, stuck_reason.as_ref());
+                
                 eprintln!("✗ Target improvement not met");
-                eprintln!("  Target: {:.2}%, Achieved: {:+.2}%", target_improvement * 100.0, finalization_result.final_improvement * 100.0);
-                if let Some(best) = finalization_result.best_value {
-                    eprintln!("  Best value: {:.2} (baseline: {:.2})", best, session.baseline_record.value);
+                eprintln!();
+                eprintln!("=== Failed Experiment Report ===");
+                eprintln!("Status: {}", failed_report.status);
+                eprintln!("Target improvement: {:.1}%", target_improvement * 100.0);
+                eprintln!("Best improvement achieved: {:+.1}%", failed_report.best_improvement * 100.0);
+                eprintln!("Baseline value: {:.2}", failed_report.baseline_value);
+                if let Some(best) = failed_report.best_value {
+                    eprintln!("Best value: {:.2}", best);
                 }
-                if let Some(ref err) = finalization_result.error_message {
-                    eprintln!("  Error: {}", err);
+                eprintln!("Iterations completed: {}", failed_report.iterations_completed);
+                if let Some(ref reason) = failed_report.stuck_reason {
+                    eprintln!("Stuck reason: {}", reason);
                 }
+                eprintln!();
+                eprintln!("Recommendations for retry:");
+                for (i, rec) in failed_report.recommendations.iter().enumerate() {
+                    eprintln!("  {}. {}", i + 1, rec);
+                }
+                eprintln!();
+                eprintln!("Changes NOT applied - target not met.");
             }
         }
         
