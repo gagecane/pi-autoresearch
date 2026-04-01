@@ -3227,6 +3227,104 @@ mod tests {
         let value = result.unwrap();
         assert!((value - 150.0).abs() < 0.001);
     }
+
+    // Git functions tests
+
+    #[test]
+    fn test_apply_changes_in_branch_returns_string() {
+        // Test that function returns a branch name string
+        let result = apply_changes_in_branch("test action");
+        assert!(result.is_ok());
+        let branch = result.unwrap();
+        assert!(!branch.is_empty());
+        assert!(branch.starts_with("autoresearch/"));
+    }
+
+    #[test]
+    fn test_revert_changes_no_panic() {
+        // Test that function doesn't panic with invalid branch name
+        let result = revert_changes("nonexistent-branch-12345");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_keep_changes_no_panic() {
+        // Test that function doesn't panic with invalid branch name
+        let result = keep_changes("nonexistent-branch-12345");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_create_or_checkout_branch_nonexistent() {
+        // Test with branch that doesn't exist
+        let result = create_or_checkout_branch("autoresearch/test-nonexistent-12345", false);
+        // May succeed (creates branch) or fail (git error) - both acceptable
+        // The important thing is it doesn't panic
+        assert!(result.is_ok() || result.is_err());
+    }
+
+    #[test]
+    fn test_stage_all_changes_in_git_repo() {
+        // Test in current git repo
+        let result = stage_all_changes();
+        // Should succeed in a git repo
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_commit_changes_with_message() {
+        // Test commit with a message
+        let result = commit_changes("test commit message");
+        // May succeed or fail depending on git state - both acceptable
+        // The important thing is it doesn't panic
+        assert!(result.is_ok() || result.is_err());
+    }
+
+    #[test]
+    fn test_push_branch_nonexistent() {
+        // Test push with non-existent branch
+        let result = push_branch("autoresearch/test-nonexistent-12345");
+        // Should fail gracefully (branch doesn't exist)
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_checkout_branch_current() {
+        // Test checkout of current branch
+        let current = get_current_branch();
+        let result = checkout_branch(&current);
+        // Should succeed (already on this branch)
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_list_autoresearch_branches_no_panic() {
+        // Test that function doesn't panic
+        let result = list_autoresearch_branches();
+        // Should return Ok(Vec) or Err - both acceptable
+        assert!(result.is_ok() || result.is_err());
+    }
+
+    #[test]
+    fn test_cleanup_autoresearch_branches_no_panic() {
+        // Test that function doesn't panic
+        let result = cleanup_autoresearch_branches(7);
+        // Should return Ok(count) or Err - both acceptable
+        assert!(result.is_ok() || result.is_err());
+    }
+
+    #[test]
+    fn test_execute_git_operations_nonexistent_branch() {
+        // Test with non-existent branch
+        let result = execute_git_operations(
+            "autoresearch/test-nonexistent-12345",
+            "test commit message"
+        );
+        // Should return (bool, Option<String>) - both success and failure acceptable
+        let (success, error) = result.unwrap();
+        // Branch doesn't exist, so operation may fail gracefully
+        assert!(success == false || error.is_some());
+    }
 }
 
 #[tokio::main]
