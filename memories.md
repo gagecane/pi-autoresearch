@@ -509,3 +509,42 @@ Created 6 new actionable tasks:
 - Tables are effective for CLI option documentation
 - Cross-reference detailed documentation rather than duplicating content
 - Development section helps contributors understand the project
+
+---
+
+## Priority 23: TEST - Add Integration Test for Beads Flag
+
+### Date: 2026-04-01 09:10 UTC
+
+### Implementation
+- Added 2 new integration tests for `--beads-enabled` flag:
+  - `test_beads_enabled_flag_recognized`: Verifies flag is recognized by CLI
+  - `test_beads_enabled_with_auto_approve`: Verifies flag works with --auto-approve
+- Tests follow existing patterns from other flag tests (dry-run, list-branches, etc.)
+- Tests handle case where `bd` tool may not be installed (graceful degradation)
+
+### Test Design
+- **Flag Recognition Test**: Uses `--help` to verify flag is recognized without causing errors
+- **Functional Test**: Tests flag with `--auto-approve` to verify integration works
+- **Graceful Degradation**: Tests pass even if `bd` tool is not installed (integration handles missing tool gracefully)
+
+### Beads Integration Overview
+- **Purpose**: Optional issue tracking via `bd` (beads) command-line tool
+- **Enabled By**: `--beads-enabled` flag
+- **Functionality**:
+  - Creates experiment bead (issue) with title and description
+  - Updates bead progress during iterations
+  - Closes bead when experiment completes
+- **Graceful Handling**: If `bd` tool is not installed, integration is silently disabled
+
+### Test Statistics
+- **Before**: 31 integration tests + 60 unit tests = 91 total tests
+- **After**: 33 integration tests + 60 unit tests = 93 total tests
+- **All Tests Pass**: ✅ 33 integration tests, ✅ 60 unit tests
+
+### Learnings
+- Integration tests for flags should verify both recognition and functionality
+- External tool integrations should handle missing tools gracefully
+- Test patterns should be consistent across similar flags (--beads-enabled, --dry-run, --list-branches)
+- Using `--help` is a good way to test flag recognition without side effects
+- Integration tests should use `--auto-approve` and `--quiet` for predictable behavior

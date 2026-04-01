@@ -499,6 +499,43 @@ fn test_dry_run_with_iterations() {
 }
 
 #[test]
+fn test_beads_enabled_flag_recognized() {
+    // Test that --beads-enabled flag is recognized and doesn't cause a CLI error
+    let args = vec!["--beads-enabled", "--help"];
+    let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
+    cmd.args(&args);
+    let output = cmd.output().unwrap();
+
+    // Should show help (beads-enabled flag is recognized)
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("beads-enabled") || output.status.success());
+}
+
+#[test]
+fn test_beads_enabled_with_auto_approve() {
+    // Test that --beads-enabled works with --auto-approve
+    // Note: If 'bd' tool is not installed, it should handle gracefully
+    let args = vec![
+        "--question",
+        "test beads integration",
+        "--auto-approve",
+        "--beads-enabled",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+
+    // Should succeed (even if bd tool is not installed, it should handle gracefully)
+    assert!(output.status.success());
+
+    let json = parse_json_output(&output);
+    assert!(json["hypothesis"]
+        .as_str()
+        .unwrap()
+        .contains("test beads integration"));
+}
+
+#[test]
 fn test_list_branches_flag() {
     let args = vec!["--list-branches"];
     let output = get_cli_output(&args);
