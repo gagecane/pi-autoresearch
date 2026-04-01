@@ -808,9 +808,35 @@
 - License and acknowledgments
 **Review**: Implementation verified correct - comprehensive contributing guide created, follows best practices, provides clear instructions for all contribution types, includes priority areas for new contributors
 
-- Priority 41: PERF - Add Performance Regression Tests
-- Priority 41: PERF - Add Performance Regression Tests
-**Review**: Research completed thoroughly - all major areas analyzed, 8 actionable tasks created
+## Priority 41: PERF - Add Performance Regression Tests
+**Status**: READY FOR REVIEW ✅
+**Description**: Add performance regression tests to detect performance degradation
+**Rationale**: Need to ensure performance doesn't regress between versions
+**Implementation**:
+- Created `tests/performance_tests.rs` with 7 performance regression tests:
+  - `test_session_file_parsing_performance`: Verifies session file parsing < 10ms
+  - `test_config_file_loading_performance`: Verifies config loading < 20ms
+  - `test_metric_detection_performance`: Verifies metric detection < 1ms
+  - `test_branch_name_generation_performance`: Verifies branch name generation < 1ms
+  - `test_iteration_record_creation_performance`: Verifies record creation < 1ms
+  - `test_overall_performance`: Verifies all operations combined
+  - `test_performance_consistency`: Verifies consistent performance across runs
+- Created `benches/README.md` with benchmark documentation
+- Created `scripts/check-benchmarks.sh` for baseline management and regression checking
+**Performance Thresholds**:
+- Session file parsing: 10ms
+- Config file loading: 20ms
+- Metric detection: 1ms
+- Branch name generation: 1ms
+- Iteration record creation: 1ms
+**Test Results**:
+- 7 new performance tests added
+- All 79 unit tests pass
+- All 68 integration tests pass
+- All 13 mutation tests pass
+- All 7 performance tests pass
+- Total: 167 tests passing
+**Ready for Review**: Performance regression testing infrastructure in place, thresholds established, all tests pass consistently
 
 
 ## Priority 34: TEST - Add Line and Branch Coverage Testing
