@@ -204,3 +204,60 @@
 **Test**: All 31 integration tests pass (29 original + 2 new compare tests) + 36 unit tests
 **Review**: Implementation verified correct - all functions properly implemented, runtime calculation works, no issues found
 
+## Priority 13: TEST - Add Unit Tests for Helper Functions
+**Status**: TODO
+**Description**: Add unit tests for helper functions that lack test coverage
+**Rationale**: Improve test coverage and ensure helper functions work correctly
+**Functions to Test**:
+- `parse_branch_age_days()` - Parse branch age from branch name
+- `format_branch_age()` - Format age for display
+- `uuid_generate()` - Generate unique IDs
+- `get_git_commit_hash()` - Get current git commit hash
+- `format_duration()` - Format duration for display
+- `truncate_str()` - Truncate strings to max length
+**Expected**: Add 6+ unit tests, all should pass
+
+## Priority 14: TEST - Add Unit Tests for Git Functions
+**Status**: TODO
+**Description**: Add unit tests for git-related functions
+**Rationale**: Git functions are critical but lack dedicated tests
+**Functions to Test**:
+- `apply_changes_in_branch()` - Apply changes in a branch
+- `revert_changes()` - Revert changes from a branch
+- `keep_changes()` - Keep changes from a branch
+- `does_branch_exist()` - Check if branch exists
+- `has_remote_origin()` - Check if remote origin exists
+**Expected**: Add 5+ unit tests with proper mocking
+
+## Priority 15: TEST - Add Unit Tests for Agent Functions
+**Status**: TODO
+**Description**: Add unit tests for agent-related functions
+**Rationale**: Agent functions need test coverage
+**Functions to Test**:
+- `invoke_pi_agent()` - Invoke the pi agent
+- `read_question_from_stdin()` - Read question from stdin
+- `execute_measurement()` - Execute measurement command
+**Expected**: Add 3+ unit tests with proper mocking
+
+## Priority 16: DOCS - Create Documentation
+**Status**: TODO
+**Description**: Create documentation in docs/ folder
+**Rationale**: Users need clear documentation on how to use the tool
+**Documentation to Create**:
+- `docs/README.md` - Overview and quick start
+- `docs/USAGE.md` - Detailed usage guide
+- `docs/CONFIG.md` - Configuration file documentation
+- `docs/EXAMPLES.md` - Example use cases
+**Expected**: Create 4 documentation files
+
+## Priority 17: SPECS - Align Specs with Implementation
+**Status**: TODO
+**Description**: Create specs/ folder and align with code implementation
+**Rationale**: Specs should document the expected behavior
+**Specs to Create**:
+- `specs/CLI.md` - CLI interface specification
+- `specs/SESSION.md` - Session file format specification
+- `specs/CONFIG.md` - Configuration file specification
+- `specs/WORKFLOW.md` - Experiment workflow specification
+**Expected**: Create 4 spec files aligned with current implementation
+
