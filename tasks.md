@@ -456,7 +456,7 @@
 **Review**: Research completed thoroughly - all major areas analyzed, 8 actionable tasks created
 
 ## Priority 25: TEST - Add Unit Tests for stdin and Command Functions
-**Status**: READY FOR REVIEW 👀
+**Status**: REVISE 🔧
 **Description**: Add unit tests for `read_question_from_stdin()` and `execute_measurement()` functions
 **Rationale**: These functions are critical but lack unit test coverage
 **Tests Added**:
