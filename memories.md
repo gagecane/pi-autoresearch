@@ -1066,3 +1066,24 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 
 **Task Status**: Priority 29 marked as READY FOR REVIEW in tasks.md
 
+
+## Review Session: 2026-04-01 13:00 UTC
+
+### Performance Benchmark Review Learnings
+
+**Key Insight**: When benchmarking file parsing operations, ensure you're actually benchmarking the real operation, not a simplified simulation.
+
+**Issue Discovered**: The `benchmark_session_file_parsing` function was only counting lines in the session file instead of actually parsing JSON. This gave a false impression of performance (~190 ns vs actual ~5.3 µs).
+
+**Lesson Learned**:
+- Benchmarks should measure the actual operations used in production code
+- Simulating logic can lead to misleading performance data
+- JSON parsing is significantly more expensive than line counting (~28x slower in this case)
+- Always verify that benchmarks reflect real-world usage patterns
+
+**Fix Applied**: Updated benchmark to use `serde_json::from_str()` on each line, which accurately reflects the performance cost of the actual `read_session_file()` function.
+
+**Impact**: 
+- More accurate performance baseline for session file parsing
+- Better understanding of where optimization efforts should be focused
+- Realistic expectations for file I/O performance

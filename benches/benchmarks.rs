@@ -18,7 +18,7 @@ fn benchmark_session_file_parsing(c: &mut Criterion) {
     
     // Write multiple iteration records
     for i in 1..=10 {
-        writeln!(file, r#"{{"iteration":{},"timestamp":"2024-01-15T10:0{}:00Z","value":{},"improvement":{},"agent_action":"test action","kept":{}}}"#, 
+        writeln!(file, r#"{{"iteration":{},"timestamp":"2024-01-15T10:0{}:00Z","value":{},"improvement":{},"agent_action":"test action","kept":{}}}"#,
                  i, i, 100.0 - (i as f64 * 0.5), (i as f64 * 0.005), i % 2 == 0).unwrap();
     }
     
@@ -32,14 +32,15 @@ fn benchmark_session_file_parsing(c: &mut Criterion) {
     
     c.bench_function("session_file_parsing", |b| {
         b.iter(|| {
-            // Simulate parsing by iterating through lines
-            let mut count = 0;
+            // Actually parse JSON from each line to benchmark real parsing performance
+            let mut parsed_count = 0;
             for line in content.lines() {
                 if !line.trim().is_empty() {
-                    count += 1;
+                    let _parsed: serde_json::Value = serde_json::from_str(line).expect("Failed to parse JSON");
+                    parsed_count += 1;
                 }
             }
-            black_box(count);
+            black_box(parsed_count);
         })
     });
 }
@@ -48,7 +49,7 @@ fn benchmark_session_file_parsing(c: &mut Criterion) {
 fn benchmark_config_file_loading(c: &mut Criterion) {
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let config_file = temp_dir.path().join("config.json");
-    
+
     // Create a sample config file
     let config_content = r#"{
         "max_iterations": 20,
@@ -60,9 +61,9 @@ fn benchmark_config_file_loading(c: &mut Criterion) {
         "target_improvement": 0.20,
         "session_file": "autoresearch.jsonl"
     }"#;
-    
+
     fs::write(&config_file, config_content).expect("Failed to write config file");
-    
+
     c.bench_function("config_file_loading", |b| {
         b.iter(|| {
             let content = fs::read_to_string(&config_file).expect("Failed to read config");
@@ -82,7 +83,7 @@ fn benchmark_metric_detection(c: &mut Criterion) {
         "What is the best way to optimize performance?",
         "How to reduce peak memory consumption?",
     ];
-    
+
     c.bench_function("metric_detection", |b| {
         b.iter(|| {
             for question in &test_cases {
@@ -106,7 +107,7 @@ fn benchmark_metric_detection(c: &mut Criterion) {
 // Function to benchmark git branch name generation
 fn benchmark_git_branch_name_generation(c: &mut Criterion) {
     use chrono::Utc;
-    
+
     c.bench_function("git_branch_name_generation", |b| {
         b.iter(|| {
             let now = Utc::now();
