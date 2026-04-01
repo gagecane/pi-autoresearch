@@ -3066,16 +3066,7 @@ mod tests {
         assert!(response.len() > 50); // Should contain the long inputs
     }
 
-    // Tests for stdin and command functions
-
-    #[test]
-    fn test_read_question_from_stdin_non_empty() {
-        // This test verifies the function exists and has correct signature
-        // Actual stdin testing requires integration tests or mocking
-        // We verify the error case by checking the function handles empty input
-        // Note: Full testing of stdin requires external test setup
-        assert!(true); // Function exists and compiles
-    }
+    // Tests for command execution functions
 
     #[test]
     fn test_execute_measurement_valid_command() {

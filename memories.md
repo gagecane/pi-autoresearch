@@ -702,3 +702,24 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - All 33 integration tests pass
 - Total: 102 tests passing
 - Task marked as READY FOR REVIEW
+
+## Revision: Priority 25 - Remove Placeholder Test
+
+### Date: 2026-04-01 13:00 UTC
+
+### Action
+- Removed placeholder test `test_read_question_from_stdin_non_empty()` that only asserted `true`
+- Test provided no coverage or value
+- Renamed test section from "stdin and command functions" to "command execution functions"
+
+### Learnings
+- **Quality over Quantity**: Tests that don't provide coverage add no value and should be removed
+- **Placeholder Tests**: Avoid adding placeholder tests; better to add them later with real coverage or skip entirely
+- **Feedback Response**: Quick revision based on feedback improves code quality
+- **Test Count**: Reduced from 69 to 68 unit tests, but test quality improved
+
+### Testing
+- All 68 unit tests pass
+- All 33 integration tests pass
+- Total: 101 tests passing
+- Task marked as READY FOR REVIEW
