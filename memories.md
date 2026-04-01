@@ -1012,3 +1012,57 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 
 **Task Status**: Priority 28 marked as COMPLETE in tasks.md
 
+## 2026-04-01 18:30 UTC - Performance Benchmarks Implementation
+
+**Implementation**:
+- Added `criterion` crate (0.5) as dev dependency for benchmarking
+- Added `tempfile` (3.0) for creating temporary test files
+- Added `rand` (0.8) for generating random UUIDs in benchmarks
+- Created `benches/benchmarks.rs` with 5 benchmark functions
+- Configured `[[bench]]` section in Cargo.toml with `harness = false`
+
+**Benchmarks Created**:
+1. **session_file_parsing**: Benchmarks parsing JSONL session files with realistic data
+   - Creates temp session file with baseline, 10 iterations, and experiment session
+   - Measures time to parse and count records
+   - Baseline: 189-192 ns
+
+2. **config_file_loading**: Benchmarks loading and parsing config JSON
+   - Creates temp config file with all config options
+   - Measures time to read and parse JSON
+   - Baseline: 14.4-14.7 µs
+
+3. **metric_detection**: Benchmarks detecting metric from question keywords
+   - Tests 5 different question patterns
+   - Measures time to detect metric type
+   - Baseline: 553-562 ns
+
+4. **git_branch_name_generation**: Benchmarks generating unique branch names
+   - Generates timestamp + UUID based branch names
+   - Measures time to format branch name
+   - Baseline: 338-344 ns
+
+5. **iteration_record_creation**: Benchmarks creating JSON iteration records
+   - Creates JSON record with all fields
+   - Measures time to serialize to JSON
+   - Baseline: 357-363 ns
+
+**Testing**:
+- All benchmarks run successfully with `cargo bench`
+- All 68 unit tests pass
+- All 37 integration tests pass
+- Total: 105 tests passing
+
+**Learnings**:
+- Criterion provides excellent benchmark infrastructure with statistical analysis
+- Benchmarks should use realistic data (not synthetic minimal data)
+- Session file parsing is very fast (~190ns for 12 records)
+- Config file loading is the slowest operation (~14.5µs) due to JSON parsing
+- Metric detection is fast (~557ns) - string matching is efficient
+- Branch name generation is fast (~341ns) - string formatting + UUID
+- JSON serialization is fast (~360ns) for small records
+- Baseline performance is now recorded for future regression detection
+- Benchmarks can be run with `cargo bench` command
+
+**Task Status**: Priority 29 marked as READY FOR REVIEW in tasks.md
+
