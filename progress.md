@@ -21,7 +21,7 @@
   - No issues found during review
 
 ### Next Steps
-1. **REVIEW: Config File Support** (Priority 2) - Ready for review after fixes
+1. **REVISE: Config File Support** (Priority 2) - Feedback written to feedback.md
 2. Implement FEATURE: Branch Cleanup (Priority 3)
 3. Implement FEATURE: Dry Run Mode (Priority 4)
 
@@ -44,4 +44,13 @@
 - ✅ Updated tests to use temporary HOME directory for tests that require no config file
 - ✅ All 19 integration tests pass consistently across 10+ runs
 - ✅ Task marked as READY FOR REVIEW in tasks.md
+
+### Review Session: 2026-04-01 05:00 UTC
+- ✅ Reviewed Config File Support implementation
+- ✅ Verified all 19 integration tests pass
+- ❌ Found 2 bugs where config file values are bypassed:
+  - Line 1796: `target_improvement` not using helper function
+  - Line 1793: `session_file` not using helper function (in one code path)
+- ✅ Feedback written to feedback.md
+- ✅ Task marked as REVISE in tasks.md
 

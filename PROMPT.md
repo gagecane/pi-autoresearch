@@ -3,11 +3,11 @@ You are running in a task identification -> review -> feedback loop to build pi-
 - Read memories.md
 - Read tasks.md and choose the next highest priority task to do
 - REVIEW tasks take the highest priority. When doing a REVIEW task, carefully review the changes made for correctness. Do not make any code changes. If you have feedback, write it to feedback.md and mark the task as REVISE. If the task is completed without feedback, mark it as COMPLETE
-- REVISE tasks take the second highest priority. Read feedback.md and implement the task, then mark it ready for REVIEW again
+- REVISE tasks take the second highest priority. Read feedback.md and implement the task, then mark it ready for REVIEW again and erase the feedback from feedback.md
 - If the task is too abstract, decompose it to smaller tasks
 - If there are no more tasks to do, identify tasks that need done and add them to tasks.md
 - Record important learnings in memories.md
-- Update your progress in progress.md
-- Commit your changes
+- Update your progress in progress.md with a timestamp.
+- Commit your changes. Do not push them.
 - If you finished a task, mark it as ready for REVIEW
 - If there are absolutely no more tasks to do write <promise>COMPLETE</promise> to progress.md

@@ -12,11 +12,11 @@
 **Review**: Implementation verified correct - all git operations properly guarded, tests pass consistently
 
 ## Priority 2: FEATURE - Config File Support
-**Status**: READY FOR REVIEW  
+**Status**: REVISE  
 **Description**: Implement User Story 4.2 from PRD - read defaults from `~/.config/pi-autoresearch/config.json`
 **Acceptance Criteria**:
 - ✅ Read defaults from config file
-- ✅ CLI args override config file
+- ⚠️ CLI args override config file (PARTIAL - two code paths bypass config)
 - ✅ Support `--config PATH` for project-specific configs
 **Changes Made**:
 - Fixed default-value detection bugs in `get_max_variance()` and `get_session_file()` - CLI now always takes precedence
@@ -26,6 +26,9 @@
 - Fixed inconsistent use of helper functions in `verify_baseline` section
 - Updated tests to use temporary HOME directory for tests that require no config file
 - All 19 integration tests pass consistently across 10+ runs
+**Review Feedback**:
+- Line 1796: `target_improvement` not using helper function (bypasses config)
+- Line 1793: `session_file` not using helper function (bypasses config)
 
 ## Priority 3: FEATURE - Branch Cleanup
 **Status**: TODO
