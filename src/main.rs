@@ -1790,10 +1790,10 @@ async fn run() -> Result<()> {
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
-            .open(&cli.session_file)?;
+            .open(&get_session_file(&cli, &config))?;
         writeln!(file, "{}", session_json)?;
         
-        let target_improvement = cli.target_improvement.unwrap_or(design.target_improvement);
+        let target_improvement = get_target_improvement(&cli, &config, design.target_improvement);
         
         let finalization_result = finalize_experiment(&session, target_improvement, stuck_reason.as_ref(), cli.skip_git)?;
         

@@ -54,3 +54,11 @@
 - ✅ Feedback written to feedback.md
 - ✅ Task marked as REVISE in tasks.md
 
+### Revise Session: 2026-04-01 05:05 UTC
+- ✅ Fixed line 1796: `target_improvement` now uses `get_target_improvement(&cli, &config, design.target_improvement)`
+- ✅ Fixed line 1793: `session_file` now uses `get_session_file(&cli, &config)` in finalization code path
+- ✅ Verified code compiles with `cargo check`
+- ✅ All 19 integration tests pass
+- ✅ Task marked as READY FOR REVIEW in tasks.md
+- ✅ Feedback cleared from feedback.md
+
