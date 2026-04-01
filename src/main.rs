@@ -2884,6 +2884,102 @@ mod tests {
         // Test with a path that's clearly invalid
         assert!(!is_valid_session_path("/nonexistent/directory/path/test.jsonl"));
     }
+
+    // Tests for helper functions
+
+    #[test]
+    fn test_parse_branch_age_days_nonexistent() {
+        // Test with a branch that doesn't exist (should return -1)
+        let age = parse_branch_age_days("nonexistent-branch-12345");
+        assert_eq!(age, -1);
+    }
+
+    #[test]
+    fn test_parse_branch_age_days_invalid_format() {
+        // Test with invalid branch name format (should return -1)
+        let age = parse_branch_age_days("invalid-branch-name");
+        assert_eq!(age, -1);
+    }
+
+    #[test]
+    fn test_format_branch_age_today() {
+        assert_eq!(format_branch_age(0), "0 days old");
+    }
+
+    #[test]
+    fn test_format_branch_age_yesterday() {
+        assert_eq!(format_branch_age(1), "1 days old");
+    }
+
+    #[test]
+    fn test_format_branch_age_days() {
+        assert_eq!(format_branch_age(5), "5 days old");
+        assert_eq!(format_branch_age(10), "10 days old");
+    }
+
+    #[test]
+    fn test_format_branch_age_negative() {
+        assert_eq!(format_branch_age(-1), "unknown age");
+    }
+
+    #[test]
+    fn test_uuid_generate_unique() {
+        // Test that UUIDs are unique
+        let uuid1 = uuid_generate();
+        let uuid2 = uuid_generate();
+        assert_ne!(uuid1, uuid2);
+        // Test that UUIDs are not empty
+        assert!(!uuid1.is_empty());
+        assert!(!uuid2.is_empty());
+    }
+
+    #[test]
+    fn test_uuid_generate_format() {
+        // Test that UUIDs have reasonable format (alphanumeric)
+        let uuid = uuid_generate();
+        assert!(uuid.chars().all(|c| c.is_alphanumeric() || c == '-'));
+    }
+
+    #[test]
+    fn test_format_duration_seconds() {
+        assert_eq!(format_duration(0.0), "N/A");
+        assert_eq!(format_duration(30.0), "30s");
+        assert_eq!(format_duration(59.0), "59s");
+    }
+
+    #[test]
+    fn test_format_duration_minutes() {
+        assert_eq!(format_duration(60.0), "1.0m");
+        assert_eq!(format_duration(90.0), "1.5m");
+        assert_eq!(format_duration(3599.0), "60.0m");
+    }
+
+    #[test]
+    fn test_format_duration_hours() {
+        assert_eq!(format_duration(3600.0), "1.0h");
+        assert_eq!(format_duration(7200.0), "2.0h");
+    }
+
+    #[test]
+    fn test_truncate_str_short() {
+        assert_eq!(truncate_str("short", 10), "short");
+    }
+
+    #[test]
+    fn test_truncate_str_exact() {
+        assert_eq!(truncate_str("exact10", 10), "exact10");
+    }
+
+    #[test]
+    fn test_truncate_str_long() {
+        // max_len=10 means 7 chars + "..." = 10 chars total
+        assert_eq!(truncate_str("this is a very long string", 10), "this is...");
+    }
+
+    #[test]
+    fn test_truncate_str_empty() {
+        assert_eq!(truncate_str("", 10), "");
+    }
 }
 
 #[tokio::main]
