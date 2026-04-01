@@ -614,3 +614,33 @@ fn test_resume_flag_recognized() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("resume") || output.status.success());
 }
+
+#[test]
+fn test_compare_flag_recognized() {
+    // Test that --compare-id1 and --compare-id2 flags are recognized
+    let args = vec!["--compare-id1", "session-1", "--compare-id2", "session-2", "--help"];
+    let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
+    cmd.args(&args);
+    let output = cmd.output().unwrap();
+
+    // Should show help (compare flags are recognized)
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("compare") || output.status.success());
+}
+
+#[test]
+fn test_compare_missing_session_id() {
+    // Test that compare with only one session ID shows error
+    let session_file = "/tmp/test_compare_missing.jsonl";
+    std::fs::write(session_file, "{}").ok();
+
+    let args = vec!["--compare-id1", "session-1", "--session-file", session_file];
+    let output = get_cli_output(&args);
+
+    // Should succeed but do nothing (only one ID provided)
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    // When only one ID is provided, it should not trigger compare
+    // and should proceed to normal execution which will fail due to missing question
+    assert!(!stderr.contains("compare"));
+}

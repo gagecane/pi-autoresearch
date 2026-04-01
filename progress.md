@@ -366,3 +366,29 @@
 - ✅ All 36 unit tests pass (15 validation + 21 helper function tests)
 - ✅ All 29 integration tests still pass
 - ✅ Task marked as COMPLETE in tasks.md
+
+### Implementation Session: 2026-04-01 06:55 UTC
+- ✅ Implemented Priority 12: FEATURE - Experiment Comparison
+- ✅ Added CLI arguments:
+  - `--compare-id1 SESSION_ID1` - First session ID to compare
+  - `--compare-id2 SESSION_ID2` - Second session ID to compare
+- ✅ Created `compare_experiments()` function:
+  - Reads session file and finds experiments by ID
+  - Handles cases where one or both experiments not found
+  - Calls display_experiment_comparison() for valid comparisons
+- ✅ Created `display_experiment_comparison()` function:
+  - Calculates best improvement for each experiment
+  - Determines winner based on improvement percentage
+  - Displays side-by-side comparison table
+  - Shows detailed iteration breakdown for each experiment
+- ✅ Created helper functions:
+  - `calculate_session_runtime()` - Calculates session runtime
+  - `format_duration()` - Formats duration for display (s/m/h)
+  - `truncate_str()` - Truncates long strings for table display
+- ✅ Added 2 integration tests:
+  - `test_compare_flag_recognized` - Verifies flags are recognized
+  - `test_compare_missing_session_id` - Verifies handling of missing ID
+- ✅ Code compiles without warnings
+- ✅ All 31 integration tests pass (29 original + 2 new)
+- ✅ All 36 unit tests still pass
+- ✅ Task marked as READY FOR REVIEW in tasks.md

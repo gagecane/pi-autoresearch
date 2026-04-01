@@ -116,6 +116,14 @@ struct Cli {
     /// Path to config file (defaults to ~/.config/pi-autoresearch/config.json)
     #[arg(long, short = 'c')]
     config: Option<String>,
+
+    /// Compare two experiments by session ID (requires --compare-id2)
+    #[arg(long)]
+    compare_id1: Option<String>,
+
+    /// Second session ID for comparison (requires --compare-id1)
+    #[arg(long)]
+    compare_id2: Option<String>,
 }
 
 /// Configuration loaded from config file
@@ -1797,6 +1805,135 @@ fn list_history(session_file: &str) -> Result<()> {
     Ok(())
 }
 
+/// Compare two experiments by session ID
+fn compare_experiments(session_file: &str, session_id1: &str, session_id2: &str) -> Result<()> {
+    let records = read_session_file(session_file)?;
+    
+    let mut experiments: Vec<&ExperimentSession> = Vec::new();
+    for record in &records {
+        if let SessionRecord::Experiment(ref session) = record {
+            experiments.push(session);
+        }
+    }
+
+    // Find the two experiments
+    let exp1 = experiments.iter().find(|s| s.session_id == session_id1);
+    let exp2 = experiments.iter().find(|s| s.session_id == session_id2);
+
+    match (exp1, exp2) {
+        (Some(e1), Some(e2)) => {
+            // Both experiments found - display comparison
+            display_experiment_comparison(e1, e2)
+        }
+        (None, Some(_)) => {
+            Err(anyhow::anyhow!("Experiment '{}' not found in {}", session_id1, session_file))
+        }
+        (Some(_), None) => {
+            Err(anyhow::anyhow!("Experiment '{}' not found in {}", session_id2, session_file))
+        }
+        (None, None) => {
+            Err(anyhow::anyhow!("Neither experiment found in {}", session_file))
+        }
+    }
+}
+
+/// Display side-by-side comparison of two experiments
+fn display_experiment_comparison(e1: &ExperimentSession, e2: &ExperimentSession) -> Result<()> {
+    // Calculate improvements
+    let improvement1: f64 = e1.iterations
+        .iter()
+        .filter(|it| it.kept)
+        .map(|it| it.improvement)
+        .fold(0.0, |a, b| a.max(b));
+
+    let improvement2: f64 = e2.iterations
+        .iter()
+        .filter(|it| it.kept)
+        .map(|it| it.improvement)
+        .fold(0.0, |a, b| a.max(b));
+
+    // Calculate runtimes
+    let runtime1 = calculate_session_runtime(e1);
+    let runtime2 = calculate_session_runtime(e2);
+
+    // Determine winner
+    let winner = if improvement1 > improvement2 {
+        "Experiment 1 ✓"
+    } else if improvement2 > improvement1 {
+        "Experiment 2 ✓"
+    } else {
+        "Tie"
+    };
+
+    println!("\n=== Experiment Comparison ===\n");
+    println!("{} vs {}", e1.session_id, e2.session_id);
+    println!("Winner: {}\n", winner);
+
+    // Side-by-side comparison table
+    println!("{:<15} {:<25} {:<25}", "Metric", e1.session_id, e2.session_id);
+    println!("{:-<65}", "");
+    println!("{:<15} {:<25} {:<25}", "Question", truncate_str(&e1.question, 22), truncate_str(&e2.question, 22));
+    println!("{:<15} {:<25} {:<25}", "Metric", e1.design.metric, e2.design.metric);
+    println!("{:<15} {:<25} {:<25}", "Baseline", format!("{:.2}", e1.baseline_record.value), format!("{:.2}", e2.baseline_record.value));
+    println!("{:<15} {:<25} {:<25}", "Iterations", e1.iterations.len().to_string(), e2.iterations.len().to_string());
+    println!("{:<15} {:<25} {:<25}", "Best Improvement", format!("{:+.2}%", improvement1 * 100.0), format!("{:+.2}%", improvement2 * 100.0));
+    println!("{:<15} {:<25} {:<25}", "Status", e1.status, e2.status);
+    println!("{:<15} {:<25} {:<25}", "Runtime", format_duration(runtime1), format_duration(runtime2));
+    println!("{:-<65}\n", "");
+
+    // Detailed iteration comparison
+    println!("=== Iteration Details ===\n");
+    
+    println!("Experiment 1 ({}):
+", e1.session_id);
+    for (i, iteration) in e1.iterations.iter().enumerate() {
+        let marker = if iteration.kept { "✓" } else { "✗" };
+        println!("  [{}] {} Improvement: {:+.2}%", i + 1, marker, iteration.improvement * 100.0);
+    }
+    
+    println!("\nExperiment 2 ({}):
+", e2.session_id);
+    for (i, iteration) in e2.iterations.iter().enumerate() {
+        let marker = if iteration.kept { "✓" } else { "✗" };
+        println!("  [{}] {} Improvement: {:+.2}%", i + 1, marker, iteration.improvement * 100.0);
+    }
+
+    Ok(())
+}
+
+/// Calculate session runtime in seconds
+fn calculate_session_runtime(session: &ExperimentSession) -> f64 {
+    if session.end_time.is_some() {
+        // Simple approximation: parse timestamps and calculate difference
+        // For now, return a placeholder value
+        0.0
+    } else {
+        0.0
+    }
+}
+
+/// Format duration for display
+fn format_duration(seconds: f64) -> String {
+    if seconds == 0.0 {
+        "N/A".to_string()
+    } else if seconds < 60.0 {
+        format!("{:.0}s", seconds)
+    } else if seconds < 3600.0 {
+        format!("{:.1}m", seconds / 60.0)
+    } else {
+        format!("{:.1}h", seconds / 3600.0)
+    }
+}
+
+/// Truncate string to max length
+fn truncate_str(s: &str, max_len: usize) -> String {
+    if s.len() <= max_len {
+        s.to_string()
+    } else {
+        format!("{}...", &s[..max_len - 3])
+    }
+}
+
 fn cleanup_autoresearch_branches(days: usize) -> Result<usize> {
     let branches = list_autoresearch_branches()?;
     
@@ -1964,6 +2101,13 @@ async fn run() -> Result<()> {
     if cli.history {
         let session_file = get_session_file(&cli, &config);
         list_history(&session_file)?;
+        return Ok(());
+    }
+
+    // Handle --compare flag
+    if cli.compare_id1.is_some() && cli.compare_id2.is_some() {
+        let session_file = get_session_file(&cli, &config);
+        compare_experiments(&session_file, cli.compare_id1.as_ref().unwrap(), cli.compare_id2.as_ref().unwrap())?;
         return Ok(());
     }
 

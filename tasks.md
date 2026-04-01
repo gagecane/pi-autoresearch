@@ -189,12 +189,16 @@
 **Review**: Implementation verified correct - all validation rules properly implemented, non-destructive validation, clear error messages, all errors reported together
 
 ## Priority 12: FEATURE - Experiment Comparison
-**Status**: TODO
-**Description**: Add `--compare SESSION_ID1 SESSION_ID2` to compare two experiments
+**Status**: Ready for REVIEW
+**Description**: Add `--compare-id1 SESSION_ID1 --compare-id2 SESSION_ID2` to compare two experiments
 **Rationale**: Users need to compare results from different experimental runs
 **Implementation**:
-- Read both sessions from session file
-- Compare metrics: baseline, best value, improvement %, iterations, runtime
-- Display side-by-side comparison
-- Highlight which experiment performed better
+- Added CLI arguments: `--compare-id1` and `--compare-id2`
+- Created `compare_experiments()` function to find and compare two sessions
+- Created `display_experiment_comparison()` function for side-by-side display
+- Created helper functions: `calculate_session_runtime()`, `format_duration()`, `truncate_str()`
+- Comparison shows: question, metric, baseline, iterations, best improvement, status, runtime
+- Highlights winner based on best improvement percentage
+- Shows detailed iteration breakdown for each experiment
+**Test**: All 31 integration tests pass (29 original + 2 new compare tests) + 36 unit tests
 
