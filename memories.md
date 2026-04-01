@@ -917,3 +917,22 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - Always grep for remaining println!/eprint!/eprint! calls after refactoring to tracing
 - Check that flush() calls are removed when converting from eprint! to tracing macros
 - Verify that interactive prompts (print! for user input) are preserved
+
+## 2026-04-01 16:30 UTC - Structured Logging Revision
+
+**Learnings**:
+- Code reviews catch edge cases that initial implementation may miss
+- Progress indicators (eprint! with flush) should use tracing macros for consistency
+- When using tracing macros, flush() calls are unnecessary as tracing handles output automatically
+- Debug-level logging is appropriate for progress indicators during verification runs
+- Small inconsistencies can undermine the benefits of structured logging
+
+**Fix Applied**:
+- Changed `eprint!("  Run {}/2... ", i);` to `debug!("  Run {}/2... ", i);`
+- Removed associated `io::stdout().flush()?;` call
+- Maintains consistency with structured logging approach throughout codebase
+
+**Testing**:
+- All 105 tests pass (68 unit + 37 integration)
+- No clippy warnings
+- Code compiles cleanly

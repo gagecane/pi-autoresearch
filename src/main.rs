@@ -703,8 +703,7 @@ fn verify_baseline(
     let mut runs: Vec<f64> = Vec::new();
 
     for i in 1..=2 {
-        eprint!("  Run {}/2... ", i);
-        io::stdout().flush()?;
+        debug!("  Run {}/2... ", i);
 
         match execute_measurement(measurement_command) {
             Ok(value) => {
