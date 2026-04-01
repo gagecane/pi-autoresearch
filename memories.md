@@ -1392,3 +1392,89 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - ✅ Test doesn't rely on specific exit codes
 - ✅ Test name clearly describes the error scenario
 - ✅ Test follows existing patterns in the test suite
+
+## 2026-04-01 21:00 UTC - Research: Next Improvement Opportunities
+
+### Research Summary
+**Task**: Priority 33 - RESEARCH - Discover Next Improvement Opportunities
+**Status**: COMPLETE ✅
+
+### Codebase Analysis
+- **Source Code**: 3235 lines in src/main.rs
+- **Functions**: 62 total functions
+- **Unit Tests**: 68 tests in src/main.rs
+- **Integration Tests**: 60 tests in tests/integration_tests.rs
+- **Mutation Tests**: 13 tests in tests/mutation_tests.rs
+- **Total Tests**: 141 tests (all passing)
+- **Code Quality**: No clippy warnings, no compiler warnings
+
+### Documentation Status
+- **README.md**: 197 lines with comprehensive overview
+- **docs/ folder**: 4 files (14.5KB total)
+  - README.md: Overview and quick start
+  - USAGE.md: Detailed usage guide
+  - CONFIG.md: Configuration documentation
+  - EXAMPLES.md: 12 example use cases
+- **specs/ folder**: 4 files (28.1KB total)
+  - CLI.md: CLI interface specification
+  - SESSION.md: Session file format specification
+  - CONFIG.md: Configuration specification
+  - WORKFLOW.md: Experiment workflow specification
+
+### Improvement Opportunities Identified
+
+**Testing Enhancements**:
+1. Add line and branch coverage testing (cargo-tarpaulin or cargo-coverage)
+2. Add integration test for `--auto-approve` flag
+3. Add unit tests for functions without dedicated tests:
+   - `apply_changes_in_branch()` - requires agent mocking
+   - `checkout_branch()`, `commit_changes()`, `push_branch()` - require git repo
+   - `run_iteration()`, `run_iterative_loop()` - integration-level
+   - `print_failure_report()` - UI function, hard to test
+4. Add integration test for `--list-branches` with actual branches
+5. Add integration test for `--cleanup-branches` with actual branches
+6. Add performance regression tests
+7. Add fuzzing tests for session file parsing
+8. Add integration test for beads workflow end-to-end
+
+**Documentation Enhancements**:
+9. Add more examples to docs/EXAMPLES.md
+10. Add troubleshooting guide to docs/
+11. Add migration guide for config file changes
+12. Add API documentation for library users
+13. Add CHANGELOG.md for version history
+14. Add CONTRIBUTING.md for developer guidelines
+
+**Performance Enhancements**:
+15. Add performance regression tests to catch regressions early
+
+### Task Decomposition
+Created 8 new actionable tasks:
+- **Priority 34**: TEST - Add Line and Branch Coverage Testing
+- **Priority 35**: TEST - Add Integration Test for Auto-Approve Flag
+- **Priority 36**: TEST - Add Unit Tests for Git Functions
+- **Priority 37**: TEST - Add Integration Tests for Branch Management
+- **Priority 38**: DOCS - Add Troubleshooting Guide
+- **Priority 39**: DOCS - Add CHANGELOG.md
+- **Priority 40**: DOCS - Add CONTRIBUTING.md
+- **Priority 41**: PERF - Add Performance Regression Tests
+
+### Research Methodology
+1. Verified all existing tests pass (141/141)
+2. Checked for clippy and compiler warnings (none)
+3. Analyzed function coverage (62 functions, 141 tests)
+4. Reviewed documentation completeness (docs/ and specs/ folders)
+5. Identified gaps in test coverage
+6. Identified gaps in documentation
+7. Prioritized improvements by category (testing, docs, performance)
+8. Decomposed into specific, actionable tasks
+
+### Learnings
+- Code quality is excellent after 32 tasks of improvements
+- Test coverage is high with 141 tests covering 62 functions
+- Documentation is comprehensive and well-organized
+- Continuous improvement mindset leads to better code
+- Research tasks should be decomposed into specific, actionable items
+- Balance between adding features and maintaining code quality
+- Testing enhancements should focus on coverage gaps and edge cases
+- Documentation should support users at all levels (quick start to API reference)
