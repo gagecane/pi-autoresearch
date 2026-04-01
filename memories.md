@@ -45,9 +45,22 @@ Important learnings and context about the pi-autoresearch project.
   - Utility functions (15 functions)
 
 ### Total Test Coverage
-- 101 total tests (68 unit + 33 integration)
+- 112 total tests (68 unit + 44 integration)
 - All tests pass consistently
 - 37 functions lack dedicated unit tests (integration-level functions)
+
+### Contract Tests
+- 7 contract tests for session file format validation:
+  - Schema validation for BaselineRecord, IterationRecord, ExperimentSession
+  - Roundtrip serialization/deserialization
+  - Backward compatibility with compact JSONL format
+  - Forward compatibility with pretty-printed JSON
+  - Graceful handling of malformed JSON
+- Contract tests verify that session file format conforms to specification
+- Schema validation tests ensure all required fields are present with correct types
+- Roundtrip tests verify data can be serialized and deserialized without loss
+- Compatibility tests ensure both compact JSONL and pretty-printed JSON formats work
+- Validation tests verify the tool handles malformed JSON gracefully without crashing
 
 ### Test Quality Learnings
 - `execute_measurement()` is testable with simple shell commands like `echo`
