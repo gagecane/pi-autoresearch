@@ -1,0 +1,16 @@
+{
+  "metric": "peak_memory_mb",
+  "measure": "echo 400",
+  "baseline": 500.0,
+  "target_improvement": 0.25,
+  "max_iterations": 10,
+  "iteration_timeout_minutes": 5,
+  "total_timeout_minutes": 60,
+  "stall_limit": 3,
+  "convergence_threshold": 0.02,
+  "convergence_window": 3,
+  "session_file": "autoresearch.jsonl",
+  "max_variance": 0.05,
+  "verbose": false,
+  "quiet": false
+}
