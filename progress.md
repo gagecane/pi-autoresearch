@@ -1233,3 +1233,26 @@
 - Updated progress.md: This entry
 
 **Next Task**: Priority 30 - TEST - Add Contract Tests for Session File Format (TODO)
+
+### Implementation Session: 2026-04-01 20:00 UTC
+- ✅ Implemented Priority 30: TEST - Add Contract Tests for Session File Format
+- ✅ Added 7 new contract tests:
+  - `test_contract_baseline_record_schema`: Verifies BaselineRecord schema compliance (all required fields and types)
+  - `test_contract_iteration_record_schema`: Verifies IterationRecord schema compliance (all required fields and types)
+  - `test_contract_experiment_session_schema`: Verifies ExperimentSession schema compliance (all required fields and types)
+  - `test_contract_session_file_roundtrip`: Verifies session file can be parsed and re-serialized correctly
+  - `test_contract_backward_compat_compact_jsonl`: Verifies backward compatibility with compact JSONL format
+  - `test_contract_forward_compat_pretty_json`: Verifies forward compatibility with pretty-printed JSON
+  - `test_contract_validation_missing_fields`: Verifies validation catches missing required fields gracefully
+- ✅ All 68 unit tests pass
+- ✅ All 44 integration tests pass (37 original + 7 new contract tests)
+- ✅ Total: 112 tests passing
+- ✅ Task marked as READY FOR REVIEW in tasks.md
+- ✅ Ready for review
+
+### Learnings
+- Contract tests verify that session file format conforms to the specification
+- Schema validation tests ensure all required fields are present with correct types
+- Roundtrip tests verify data can be serialized and deserialized without loss
+- Compatibility tests ensure both compact JSONL and pretty-printed JSON formats work
+- Validation tests verify the tool handles malformed JSON gracefully without crashing

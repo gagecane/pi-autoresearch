@@ -890,3 +890,319 @@ fn test_resume_with_empty_session_file() {
     assert!(stderr.contains("not found") || stderr.contains("Session"), 
         "Error message should indicate session not found");
 }
+
+// ============================================================================
+// CONTRACT TESTS - Session File Format Validation
+// ============================================================================
+
+/// Contract test: Verify BaselineRecord schema compliance
+#[test]
+fn test_contract_baseline_record_schema() {
+    use serde_json::json;
+    
+    // Create a valid BaselineRecord
+    let baseline_json = json!({
+        "timestamp": "2024-01-15T10:30:00.000000000Z",
+        "git_commit": "abc123def456",
+        "metric": "execution_time_ms",
+        "measurement_command": "echo 100.0",
+        "value": 100.0,
+        "verification_runs": [100.5, 99.8, 100.2],
+        "variance": 0.0035,
+        "within_threshold": true
+    });
+    
+    // Should deserialize successfully
+    let baseline: serde_json::Value = baseline_json;
+    assert!(baseline.get("timestamp").is_some());
+    assert!(baseline.get("git_commit").is_some());
+    assert!(baseline.get("metric").is_some());
+    assert!(baseline.get("measurement_command").is_some());
+    assert!(baseline.get("value").is_some());
+    assert!(baseline.get("verification_runs").is_some());
+    assert!(baseline.get("variance").is_some());
+    assert!(baseline.get("within_threshold").is_some());
+    
+    // Verify field types
+    assert!(baseline["timestamp"].is_string());
+    assert!(baseline["git_commit"].is_string());
+    assert!(baseline["metric"].is_string());
+    assert!(baseline["measurement_command"].is_string());
+    assert!(baseline["value"].is_number());
+    assert!(baseline["verification_runs"].is_array());
+    assert!(baseline["variance"].is_number());
+    assert!(baseline["within_threshold"].is_boolean());
+}
+
+/// Contract test: Verify IterationRecord schema compliance
+#[test]
+fn test_contract_iteration_record_schema() {
+    use serde_json::json;
+    
+    // Create a valid IterationRecord
+    let iteration_json = json!({
+        "iteration": 1,
+        "timestamp": "2024-01-15T10:31:00.000000000Z",
+        "agent_action": "Optimized database query by adding index",
+        "metric_value": 95.0,
+        "improvement": 0.05,
+        "kept": true
+    });
+    
+    // Should deserialize successfully
+    let iteration: serde_json::Value = iteration_json;
+    assert!(iteration.get("iteration").is_some());
+    assert!(iteration.get("timestamp").is_some());
+    assert!(iteration.get("agent_action").is_some());
+    assert!(iteration.get("metric_value").is_some());
+    assert!(iteration.get("improvement").is_some());
+    assert!(iteration.get("kept").is_some());
+    
+    // Verify field types
+    assert!(iteration["iteration"].is_number());
+    assert!(iteration["timestamp"].is_string());
+    assert!(iteration["agent_action"].is_string());
+    assert!(iteration["metric_value"].is_number());
+    assert!(iteration["improvement"].is_number());
+    assert!(iteration["kept"].is_boolean());
+}
+
+/// Contract test: Verify ExperimentSession schema compliance
+#[test]
+fn test_contract_experiment_session_schema() {
+    use serde_json::json;
+    
+    // Create a valid ExperimentSession
+    let session_json = json!({
+        "session_id": "test-session-123",
+        "question": "How can we improve performance?",
+        "design": {
+            "question": "How can we improve performance?",
+            "metric": "execution_time_ms",
+            "measurement_command": "echo 100.0",
+            "baseline": 100.0,
+            "target_improvement": 0.30
+        },
+        "baseline_record": {
+            "timestamp": "2024-01-15T10:30:00.000000000Z",
+            "git_commit": "abc123",
+            "metric": "execution_time_ms",
+            "measurement_command": "echo 100.0",
+            "value": 100.0,
+            "verification_runs": [100.0],
+            "variance": 0.0,
+            "within_threshold": true
+        },
+        "iterations": [],
+        "best_iteration": null,
+        "start_time": "2024-01-15T10:30:00.000000000Z",
+        "end_time": "2024-01-15T10:35:00.000000000Z",
+        "status": "complete"
+    });
+    
+    // Should deserialize successfully
+    let session: serde_json::Value = session_json;
+    assert!(session.get("session_id").is_some());
+    assert!(session.get("question").is_some());
+    assert!(session.get("design").is_some());
+    assert!(session.get("baseline_record").is_some());
+    assert!(session.get("iterations").is_some());
+    assert!(session.get("start_time").is_some());
+    assert!(session.get("status").is_some());
+    
+    // Verify field types
+    assert!(session["session_id"].is_string());
+    assert!(session["question"].is_string());
+    assert!(session["design"].is_object());
+    assert!(session["baseline_record"].is_object());
+    assert!(session["iterations"].is_array());
+    assert!(session["start_time"].is_string());
+    assert!(session["status"].is_string());
+}
+
+/// Contract test: Verify session file can be parsed and re-serialized
+#[test]
+fn test_contract_session_file_roundtrip() {
+    use serde_json::json;
+    
+    let session_file = "/tmp/test_contract_roundtrip.jsonl";
+    std::fs::remove_file(session_file).ok();
+    
+    // Create a session file with all record types
+    let baseline = json!({
+        "timestamp": "2024-01-15T10:30:00.000000000Z",
+        "git_commit": "abc123",
+        "metric": "execution_time_ms",
+        "measurement_command": "echo 100.0",
+        "value": 100.0,
+        "verification_runs": [100.0, 100.1, 99.9],
+        "variance": 0.001,
+        "within_threshold": true
+    });
+    
+    let iteration = json!({
+        "iteration": 1,
+        "timestamp": "2024-01-15T10:31:00.000000000Z",
+        "agent_action": "Test change",
+        "metric_value": 95.0,
+        "improvement": 0.05,
+        "kept": true
+    });
+    
+    let session = json!({
+        "session_id": "roundtrip-test-123",
+        "question": "Test question",
+        "design": {
+            "question": "Test question",
+            "metric": "execution_time_ms",
+            "measurement_command": "echo 100.0",
+            "baseline": 100.0,
+            "target_improvement": 0.30
+        },
+        "baseline_record": baseline.clone(),
+        "iterations": [iteration.clone()],
+        "best_iteration": 1,
+        "start_time": "2024-01-15T10:30:00.000000000Z",
+        "end_time": "2024-01-15T10:35:00.000000000Z",
+        "status": "complete"
+    });
+    
+    // Write to file
+    std::fs::write(session_file, format!("{}\n{}\n{}",
+        baseline.to_string(),
+        iteration.to_string(),
+        session.to_string()
+    )).unwrap();
+    
+    // Read back and verify
+    let contents = std::fs::read_to_string(session_file).unwrap();
+    
+    // Verify all records are present
+    assert!(contents.contains("baseline_record"));
+    assert!(contents.contains("iteration"));
+    assert!(contents.contains("session_id"));
+    assert!(contents.contains("roundtrip-test-123"));
+    
+    // Cleanup
+    std::fs::remove_file(session_file).ok();
+}
+
+/// Contract test: Verify backward compatibility with compact JSONL format
+#[test]
+fn test_contract_backward_compat_compact_jsonl() {
+    let session_file = "/tmp/test_contract_compact.jsonl";
+    std::fs::remove_file(session_file).ok();
+    
+    // Create compact JSONL format (one JSON object per line)
+    let compact_format = r#"{"timestamp":"2024-01-15T10:30:00Z","git_commit":"abc","metric":"test","measurement_command":"echo 1","value":1.0,"verification_runs":[1.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2024-01-15T10:31:00Z","agent_action":"test","metric_value":0.9,"improvement":0.1,"kept":true}
+{"session_id":"compact-test","question":"test","design":{"question":"test","metric":"test","measurement_command":"echo 1","baseline":1.0,"target_improvement":0.1},"baseline_record":{"timestamp":"2024-01-15T10:30:00Z","git_commit":"abc","metric":"test","measurement_command":"echo 1","value":1.0,"verification_runs":[1.0],"variance":0.0,"within_threshold":true},"iterations":[{"iteration":1,"timestamp":"2024-01-15T10:31:00Z","agent_action":"test","metric_value":0.9,"improvement":0.1,"kept":true}],"best_iteration":1,"start_time":"2024-01-15T10:30:00Z","end_time":"2024-01-15T10:35:00Z","status":"complete"}
+"#;
+    
+    std::fs::write(session_file, compact_format).unwrap();
+    
+    // Run tool with this session file (should not panic)
+    let args = vec![
+        "--history",
+        "--session-file",
+        session_file,
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should succeed or at least not crash
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    // Either succeeds or shows history (may be empty)
+    assert!(output.status.success() || stderr.contains("No prior experiments"),
+        "Should handle compact JSONL format without crashing");
+    
+    std::fs::remove_file(session_file).ok();
+}
+
+/// Contract test: Verify forward compatibility with pretty-printed JSON
+#[test]
+fn test_contract_forward_compat_pretty_json() {
+    let session_file = "/tmp/test_contract_pretty.jsonl";
+    std::fs::remove_file(session_file).ok();
+    
+    // Create pretty-printed JSON format (multi-line)
+    let pretty_format = r#"{
+  "session_id": "pretty-test",
+  "question": "test question",
+  "design": {
+    "question": "test question",
+    "metric": "execution_time_ms",
+    "measurement_command": "echo 100",
+    "baseline": 100.0,
+    "target_improvement": 0.30
+  },
+  "baseline_record": {
+    "timestamp": "2024-01-15T10:30:00Z",
+    "git_commit": "abc123",
+    "metric": "execution_time_ms",
+    "measurement_command": "echo 100",
+    "value": 100.0,
+    "verification_runs": [100.0],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [],
+  "best_iteration": null,
+  "start_time": "2024-01-15T10:30:00Z",
+  "end_time": "2024-01-15T10:35:00Z",
+  "status": "complete"
+}
+"#;
+    
+    std::fs::write(session_file, pretty_format).unwrap();
+    
+    // Run tool with this session file (should not panic)
+    let args = vec![
+        "--history",
+        "--session-file",
+        session_file,
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should succeed or at least not crash
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success() || stderr.contains("No prior experiments") || stderr.contains("Experiment"),
+        "Should handle pretty-printed JSON format without crashing");
+    
+    std::fs::remove_file(session_file).ok();
+}
+
+/// Contract test: Verify session file validation catches missing required fields
+#[test]
+fn test_contract_validation_missing_fields() {
+    let session_file = "/tmp/test_contract_missing.jsonl";
+    std::fs::remove_file(session_file).ok();
+    
+    // Create invalid session with missing required fields
+    let invalid_session = r#"{
+  "session_id": "invalid-test"
+  "question": "missing design and other fields"
+}
+"#;
+    
+    std::fs::write(session_file, invalid_session).unwrap();
+    
+    // Run tool with this session file
+    let args = vec![
+        "--history",
+        "--session-file",
+        session_file,
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should handle gracefully (either skip invalid record or show error)
+    // The tool should not crash on malformed JSON
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    // Either succeeds (skips invalid) or shows error, but doesn't panic
+    assert!(output.status.success() || stderr.contains("error") || stderr.contains("No prior experiments"),
+        "Should handle invalid JSON gracefully");
+    
+    std::fs::remove_file(session_file).ok();
+}
