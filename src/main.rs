@@ -797,7 +797,8 @@ fn finalize_experiment(
     }
     
     let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
-    let branch_name = format!("autoresearch/{}", timestamp);
+    let unique_id = uuid_generate();
+    let branch_name = format!("autoresearch/{}-{}", timestamp, unique_id);
     
     let runtime_secs = session.start_time
         .parse::<chrono::DateTime<Utc>>()
