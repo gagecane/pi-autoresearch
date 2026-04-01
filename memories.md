@@ -45,9 +45,17 @@ Important learnings and context about the pi-autoresearch project.
   - Utility functions (15 functions)
 
 ### Total Test Coverage
-- 93 total tests (60 unit + 33 integration)
+- 101 total tests (68 unit + 33 integration)
 - All tests pass consistently
 - 37 functions lack dedicated unit tests (integration-level functions)
+
+### Test Quality Learnings
+- `execute_measurement()` is testable with simple shell commands like `echo`
+- `read_question_from_stdin()` requires stdin mocking which is better suited for integration tests
+- Unit tests can verify function signatures and basic behavior even for I/O functions
+- Error handling tests are important for command execution functions
+- Scientific notation parsing works correctly with f64::parse()
+- Placeholder tests that only assert `true` should be removed - better to have fewer quality tests than many no-op tests
 
 ## Research Findings (2026-04-01)
 
