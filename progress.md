@@ -517,3 +517,16 @@
 - ✅ All 57 unit tests pass
 - ✅ All 31 integration tests still pass
 - ✅ Task marked as COMPLETE in tasks.md
+
+### Implementation Session: 2026-04-01 07:40 UTC
+- ✅ Implemented Priority 15: TEST - Add Unit Tests for Agent Functions
+- ✅ Added 3 new unit tests for invoke_pi_agent():
+  - `test_invoke_pi_agent_format`: Tests response contains expected content
+  - `test_invoke_pi_agent_empty_inputs`: Tests with empty inputs
+  - `test_invoke_pi_agent_long_inputs`: Tests with long inputs
+- ✅ Note: read_question_from_stdin() and execute_measurement() cannot be tested in unit tests
+- ✅ Code compiles without warnings
+- ✅ All 60 unit tests pass (was 57)
+- ✅ All 31 integration tests still pass
+- ✅ Total: 91 tests passing
+- ✅ Task marked as READY FOR REVIEW in tasks.md

@@ -3036,6 +3036,35 @@ mod tests {
         let branch2 = generate_branch_name();
         assert_ne!(branch1, branch2);
     }
+
+    // Tests for agent functions
+
+    #[test]
+    fn test_invoke_pi_agent_format() {
+        // Test that agent response contains expected content
+        let response = invoke_pi_agent("test question", "current state", "metric feedback");
+        assert!(response.contains("test question"));
+        assert!(response.contains("current state"));
+        assert!(response.contains("metric feedback"));
+        assert!(response.contains("Proposed change"));
+    }
+
+    #[test]
+    fn test_invoke_pi_agent_empty_inputs() {
+        // Test with empty inputs
+        let response = invoke_pi_agent("", "", "");
+        assert!(response.contains("Proposed change"));
+        assert!(!response.is_empty());
+    }
+
+    #[test]
+    fn test_invoke_pi_agent_long_inputs() {
+        // Test with long inputs
+        let long_input = "a".repeat(100);
+        let response = invoke_pi_agent(&long_input, &long_input, &long_input);
+        assert!(response.contains("Proposed change"));
+        assert!(response.len() > 50); // Should contain the long inputs
+    }
 }
 
 #[tokio::main]
