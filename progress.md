@@ -392,3 +392,24 @@
 - ✅ All 31 integration tests pass (29 original + 2 new)
 - ✅ All 36 unit tests still pass
 - ✅ Task marked as READY FOR REVIEW in tasks.md
+
+### Review Session: 2026-04-01 07:00 UTC
+- ✅ Reviewed Priority 12: FEATURE - Experiment Comparison
+- ✅ Verified compare_experiments() function:
+  - Correctly reads session file and finds experiments by ID
+  - Properly handles all error cases (one not found, both not found)
+  - Calls display_experiment_comparison() for valid comparisons
+- ✅ Verified display_experiment_comparison() function:
+  - Correctly calculates best improvement for each experiment
+  - Properly determines winner based on improvement percentage
+  - Displays clear side-by-side comparison table
+  - Shows detailed iteration breakdown with kept/rejected markers
+- ✅ Verified helper functions:
+  - `format_duration()` - Correctly formats duration (s/m/h)
+  - `truncate_str()` - Correctly truncates long strings
+- ❌ Found issue with `calculate_session_runtime()`:
+  - Currently returns 0.0 placeholder value
+  - Should parse start_time and end_time timestamps
+  - Should calculate actual runtime in seconds
+- ✅ Feedback written to feedback.md
+- ✅ Task marked as REVISE in tasks.md
