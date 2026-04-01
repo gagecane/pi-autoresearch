@@ -980,12 +980,10 @@ fn generate_failure_recommendations(
     recommendations
 }
 
-fn finalize_experiment(
+/// Calculate the final improvement from baseline to best kept value
+fn calculate_final_improvement(
     session: &ExperimentSession,
-    target_improvement: f64,
-    stuck_reason: Option<&StuckReason>,
-    skip_git: bool,
-) -> Result<FinalizationResult> {
+) -> (f64, Option<f64>) {
     let baseline = session.baseline_record.value;
     let best_kept_value: Option<f64> = session.iterations
         .iter()
@@ -998,65 +996,20 @@ fn finalize_experiment(
         None => 0.0,
     };
     
-    let success = final_improvement >= target_improvement;
-    
-    if !success {
-        let recommendations = generate_failure_recommendations(
-            session,
-            final_improvement,
-            target_improvement,
-            stuck_reason,
-        );
-        
-        let failure_report = FailureReport {
-            best_improvement: final_improvement,
-            best_value: best_kept_value,
-            baseline,
-            target_improvement,
-            iterations_completed: session.iterations.len(),
-            stuck_reason: stuck_reason.map(|r| r.to_string()),
-            recommendations,
-        };
-        
-        return Ok(FinalizationResult {
-            success: false,
-            final_improvement,
-            best_value: best_kept_value,
-            branch_name: None,
-            commit_message: None,
-            key_changes: Vec::new(),
-            error_message: None,
-            failure_report: Some(failure_report),
-        });
-    }
-    
-    let runtime_secs = session.start_time
-        .parse::<chrono::DateTime<Utc>>()
-        .ok()
-        .and_then(|start| {
-            Some(session.end_time.clone()
-                .and_then(|end_str| end_str.parse::<chrono::DateTime<Utc>>().ok())
-                .map(|end| end.signed_duration_since(start).num_seconds())
-                .unwrap_or(0))
-        })
-        .unwrap_or(0);
-    
-    let iterations_count = session.iterations.len();
-    let best_value = best_kept_value.unwrap_or(baseline);
-    
+    (final_improvement, best_kept_value)
+}
+
+/// Extract key changes from iterations for commit message
+fn extract_key_changes(
+    session: &ExperimentSession,
+    baseline: f64,
+) -> Vec<String> {
     let mut key_changes = Vec::new();
+    
+    // Add best iteration first
     if let Some(best_iter_num) = session.best_iteration {
         if let Some(best_iter) = session.iterations.iter().find(|i| i.iteration == best_iter_num) {
-            let change_summary = best_iter.agent_action
-                .split(':')
-                .last()
-                .unwrap_or(&best_iter.agent_action)
-                .trim()
-                .split('.')
-                .next()
-                .unwrap_or(&best_iter.agent_action)
-                .trim()
-                .to_string();
+            let change_summary = extract_change_summary(&best_iter.agent_action);
             let iter_improvement = (baseline - best_iter.metric_value) / baseline * 100.0;
             key_changes.push(format!(
                 "Iteration {}: {} (-{:.1}%)",
@@ -1065,18 +1018,10 @@ fn finalize_experiment(
         }
     }
     
+    // Add other kept iterations
     for iter in &session.iterations {
         if iter.kept && iter.iteration != session.best_iteration.unwrap_or(0) {
-            let change_summary = iter.agent_action
-                .split(':')
-                .last()
-                .unwrap_or(&iter.agent_action)
-                .trim()
-                .split('.')
-                .next()
-                .unwrap_or(&iter.agent_action)
-                .trim()
-                .to_string();
+            let change_summary = extract_change_summary(&iter.agent_action);
             let iter_improvement = (baseline - iter.metric_value) / baseline * 100.0;
             key_changes.push(format!(
                 "Iteration {}: {} (-{:.1}%)",
@@ -1085,8 +1030,277 @@ fn finalize_experiment(
         }
     }
     
+    key_changes
+}
+
+/// Extract a short summary from agent action string
+fn extract_change_summary(agent_action: &str) -> String {
+    agent_action
+        .split(':')
+        .last()
+        .unwrap_or(agent_action)
+        .trim()
+        .split('.')
+        .next()
+        .unwrap_or(agent_action)
+        .trim()
+        .to_string()
+}
+
+/// Generate commit message for successful experiment
+fn generate_commit_message(
+    session: &ExperimentSession,
+    final_improvement: f64,
+    baseline: f64,
+    best_value: f64,
+) -> String {
+    let runtime_secs = calculate_runtime_seconds(session);
+    let iterations_count = session.iterations.len();
+    let convergence_status = match &session.status {
+        s if s.contains("completed") => "achieved",
+        _ => "not achieved",
+    };
+    
+    let mut commit_message = format!(
+        "[autoresearch] Reduce {} by {:.1}% ({:.0} → {:.0})\n\n",
+        session.design.metric,
+        final_improvement * 100.0,
+        baseline,
+        best_value
+    );
+    
+    commit_message = format!(
+        "{}Iterations: {}/{} | Runtime: {}s | Convergence: {}\n\n",
+        commit_message,
+        iterations_count,
+        session.iterations.len().max(20),
+        runtime_secs,
+        convergence_status
+    );
+    
+    let key_changes = extract_key_changes(session, baseline);
+    commit_message = format!(
+        "{}Key changes:\n{}\n\n",
+        commit_message,
+        key_changes.join("\n")
+    );
+    
+    commit_message = format!(
+        "{}Metric: {} | Baseline: {:.0} | Best: {:.0}",
+        commit_message,
+        session.design.metric,
+        baseline,
+        best_value
+    );
+    
+    commit_message
+}
+
+/// Calculate runtime in seconds from session timestamps
+fn calculate_runtime_seconds(session: &ExperimentSession) -> i64 {
+    session.start_time
+        .parse::<chrono::DateTime<Utc>>()
+        .ok()
+        .and_then(|start| {
+            session.end_time.clone().and_then(|end_str| {
+                end_str.parse::<chrono::DateTime<Utc>>()
+                    .ok()
+                    .map(|end| end.signed_duration_since(start).num_seconds())
+            })
+        })
+        .unwrap_or(0)
+}
+
+/// Generate branch name with timestamp and unique ID
+fn generate_branch_name() -> String {
+    let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
+    let unique_id = uuid_generate();
+    format!("autoresearch/{}-{}", timestamp, unique_id)
+}
+
+/// Execute git operations for successful experiment
+fn execute_git_operations(
+    branch_name: &str,
+    commit_message: &str,
+) -> Result<(bool, Option<String>)> {
+    // Get current branch for rollback
+    let current_branch = get_current_branch();
+    
+    // Check if branch exists
+    let branch_exists = does_branch_exist(branch_name);
+    
+    // Create or checkout branch
+    if let Err(e) = create_or_checkout_branch(branch_name, branch_exists) {
+        let _ = checkout_branch(&current_branch);
+        return Ok((false, Some(e.to_string())));
+    }
+    
+    // Stage all changes
+    if let Err(e) = stage_all_changes() {
+        let _ = checkout_branch(&current_branch);
+        return Ok((false, Some(e.to_string())));
+    }
+    
+    // Commit changes
+    if let Err(e) = commit_changes(commit_message) {
+        let _ = checkout_branch(&current_branch);
+        return Ok((false, Some(e.to_string())));
+    }
+    
+    // Push to remote if available
+    if has_remote_origin() {
+        if let Err(e) = push_branch(branch_name) {
+            let _ = checkout_branch(&current_branch);
+            return Ok((false, Some(e.to_string())));
+        }
+    }
+    
+    // Return to original branch
+    let _ = checkout_branch(&current_branch);
+    
+    Ok((true, None))
+}
+
+/// Get the current git branch name
+fn get_current_branch() -> String {
+    let output = Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output();
+    
+    if let Ok(output) = output {
+        if output.status.success() {
+            return String::from_utf8_lossy(&output.stdout).trim().to_string();
+        }
+    }
+    "main".to_string()
+}
+
+/// Check if a branch exists
+fn does_branch_exist(branch_name: &str) -> bool {
+    let output = Command::new("git")
+        .args(["show-ref", "--verify", "refs/heads/", branch_name])
+        .output();
+    
+    output.as_ref()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+/// Create a new branch or checkout existing one
+fn create_or_checkout_branch(branch_name: &str, branch_exists: bool) -> Result<()> {
+    let output = if branch_exists {
+        Command::new("git")
+            .args(["checkout", branch_name])
+            .output()
+    } else {
+        Command::new("git")
+            .args(["checkout", "-b", branch_name])
+            .output()
+    }?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Failed to create branch: {}", stderr));
+    }
+    
+    Ok(())
+}
+
+/// Stage all changes
+fn stage_all_changes() -> Result<()> {
+    let output = Command::new("git")
+        .args(["add", "-A"])
+        .output()?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Failed to stage changes: {}", stderr));
+    }
+    
+    Ok(())
+}
+
+/// Commit staged changes with message
+fn commit_changes(commit_message: &str) -> Result<()> {
+    let output = Command::new("git")
+        .args(["commit", "--allow-empty", "-m", commit_message])
+        .output()?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Failed to commit: {}", stderr));
+    }
+    
+    Ok(())
+}
+
+/// Check if remote origin exists
+fn has_remote_origin() -> bool {
+    Command::new("git")
+        .args(["remote", "get-url", "origin"])
+        .output()
+        .map(|out| out.status.success())
+        .unwrap_or(false)
+}
+
+/// Push branch to remote origin
+fn push_branch(branch_name: &str) -> Result<()> {
+    let output = Command::new("git")
+        .args(["push", "-u", "origin", branch_name])
+        .output()?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Failed to push branch: {}", stderr));
+    }
+    
+    Ok(())
+}
+
+/// Checkout a branch
+fn checkout_branch(branch_name: &str) -> Result<()> {
+    let output = Command::new("git")
+        .args(["checkout", branch_name])
+        .output()?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Failed to checkout branch: {}", stderr));
+    }
+    
+    Ok(())
+}
+
+/// Finalize experiment and create git branch if successful
+fn finalize_experiment(
+    session: &ExperimentSession,
+    target_improvement: f64,
+    stuck_reason: Option<&StuckReason>,
+    skip_git: bool,
+) -> Result<FinalizationResult> {
+    // Calculate final improvement
+    let (final_improvement, best_kept_value) = calculate_final_improvement(session);
+    let baseline = session.baseline_record.value;
+    let success = final_improvement >= target_improvement;
+    
+    // Handle failure case
+    if !success {
+        return create_failure_result(
+            session,
+            final_improvement,
+            best_kept_value,
+            baseline,
+            target_improvement,
+            stuck_reason,
+        );
+    }
+    
+    // Handle success case
+    let best_value = best_kept_value.unwrap_or(baseline);
+    let key_changes = extract_key_changes(session, baseline);
+    
+    // Skip git operations if requested
     if skip_git {
-        // Skip git operations for testing or dry-run
         return Ok(FinalizationResult {
             success: true,
             final_improvement,
@@ -1099,162 +1313,61 @@ fn finalize_experiment(
         });
     }
     
-    let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
-    let unique_id = uuid_generate();
-    let branch_name = format!("autoresearch/{}-{}", timestamp, unique_id);
+    // Generate branch name and commit message
+    let branch_name = generate_branch_name();
+    let commit_message = generate_commit_message(session, final_improvement, baseline, best_value);
     
-    let convergence_status = match &session.status {
-        s if s.contains("completed") => "achieved",
-        _ => "not achieved",
-    };
+    // Execute git operations
+    let (git_success, error_message) = execute_git_operations(&branch_name, &commit_message)?;
     
-    let commit_message = format!(
-        "[autoresearch] Reduce {} by {:.1}% ({:.0} → {:.0})\n\n",
-        session.design.metric,
-        final_improvement * 100.0,
-        baseline,
-        best_value
-    );
-    
-    let commit_message = format!(
-        "{}Iterations: {}/{} | Runtime: {}s | Convergence: {}\n\n",
-        commit_message,
-        iterations_count,
-        session.iterations.len().max(20),
-        runtime_secs,
-        convergence_status
-    );
-    
-    let commit_message = format!(
-        "{}Key changes:\n{}\n\n",
-        commit_message,
-        key_changes.join("\n")
-    );
-    
-    let commit_message = format!(
-        "{}Metric: {} | Baseline: {:.0} | Best: {:.0}",
-        commit_message,
-        session.design.metric,
-        baseline,
-        best_value
-    );
-    
-    let current_branch_output = Command::new("git")
-        .args(["rev-parse", "--abbrev-ref", "HEAD"])
-        .output();
-    
-    let current_branch = if let Ok(output) = current_branch_output {
-        if output.status.success() {
-            String::from_utf8_lossy(&output.stdout).trim().to_string()
-        } else {
-            "main".to_string()
-        }
-    } else {
-        "main".to_string()
-    };
-    
-    let mut result = FinalizationResult {
-        success: true,
+    Ok(FinalizationResult {
+        success: git_success,
         final_improvement,
-        best_value: Some(best_value),
-        branch_name: Some(branch_name.clone()),
-        commit_message: Some(commit_message.clone()),
+        best_value: if git_success { Some(best_value) } else { None },
+        branch_name: if git_success { Some(branch_name) } else { None },
+        commit_message: if git_success { Some(commit_message) } else { None },
         key_changes,
-        error_message: None,
+        error_message,
         failure_report: None,
+    })
+}
+
+/// Create failure result with recommendations
+fn create_failure_result(
+    session: &ExperimentSession,
+    final_improvement: f64,
+    best_kept_value: Option<f64>,
+    baseline: f64,
+    target_improvement: f64,
+    stuck_reason: Option<&StuckReason>,
+) -> Result<FinalizationResult> {
+    let recommendations = generate_failure_recommendations(
+        session,
+        final_improvement,
+        target_improvement,
+        stuck_reason,
+    );
+    
+    let failure_report = FailureReport {
+        best_improvement: final_improvement,
+        best_value: best_kept_value,
+        baseline,
+        target_improvement,
+        iterations_completed: session.iterations.len(),
+        stuck_reason: stuck_reason.map(|r| r.to_string()),
+        recommendations,
     };
     
-    let branch_exists_output = Command::new("git")
-        .args(["show-ref", "--verify", "refs/heads/", &branch_name])
-        .output();
-    
-    let branch_exists = branch_exists_output.as_ref()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
-    
-    let create_branch_output = if branch_exists {
-        Command::new("git")
-            .args(["checkout", &branch_name])
-            .output()
-    } else {
-        Command::new("git")
-            .args(["checkout", "-b", &branch_name])
-            .output()
-    };
-    
-    if create_branch_output.is_err() {
-        result.error_message = Some("Failed to create git branch".to_string());
-        result.success = false;
-        result.branch_name = None;
-        let _ = Command::new("git").args(["checkout", &current_branch]).output();
-        return Ok(result);
-    }
-    
-    if let Ok(output) = create_branch_output {
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            result.error_message = Some(format!("Failed to create branch: {}", stderr));
-            result.success = false;
-            result.branch_name = None;
-            let _ = Command::new("git").args(["checkout", &current_branch]).output();
-            return Ok(result);
-        }
-    }
-    
-    let has_remote = Command::new("git")
-        .args(["remote", "get-url", "origin"])
-        .output()
-        .map(|out| out.status.success())
-        .unwrap_or(false);
-    
-    let add_output = Command::new("git")
-        .args(["add", "-A"])
-        .output();
-    
-    if let Ok(output) = add_output {
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            result.error_message = Some(format!("Failed to stage changes: {}", stderr));
-            result.success = false;
-            let _ = Command::new("git").args(["checkout", &current_branch]).output();
-            return Ok(result);
-        }
-    }
-    
-    let commit_msg = commit_message.as_str();
-    let commit_output = Command::new("git")
-        .args(["commit", "--allow-empty", "-m", commit_msg])
-        .output();
-    
-    if let Ok(output) = commit_output {
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            result.error_message = Some(format!("Failed to commit: {}", stderr));
-            result.success = false;
-            let _ = Command::new("git").args(["checkout", &current_branch]).output();
-            return Ok(result);
-        }
-    }
-    
-    if has_remote {
-        let push_output = Command::new("git")
-            .args(["push", "-u", "origin", &branch_name])
-            .output();
-        
-        if let Ok(output) = push_output {
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                result.error_message = Some(format!("Failed to push branch: {}", stderr));
-                result.success = false;
-                let _ = Command::new("git").args(["checkout", &current_branch]).output();
-                return Ok(result);
-            }
-        }
-    }
-    
-    let _ = Command::new("git").args(["checkout", &current_branch]).output();
-    
-    Ok(result)
+    Ok(FinalizationResult {
+        success: false,
+        final_improvement,
+        best_value: best_kept_value,
+        branch_name: None,
+        commit_message: None,
+        key_changes: Vec::new(),
+        error_message: None,
+        failure_report: Some(failure_report),
+    })
 }
 
 // Beads (bd) integration
