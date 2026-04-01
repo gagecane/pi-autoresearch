@@ -548,3 +548,47 @@ Created 6 new actionable tasks:
 - Test patterns should be consistent across similar flags (--beads-enabled, --dry-run, --list-branches)
 - Using `--help` is a good way to test flag recognition without side effects
 - Integration tests should use `--auto-approve` and `--quiet` for predictable behavior
+
+---
+
+## Priority 23: TEST - Add Integration Test for Beads Flag (REVISE)
+
+### Date: 2026-04-01 10:50 UTC
+
+### Feedback Addressed
+- **Issue**: Redundant assertion in `test_beads_enabled_flag_recognized`
+- **Root Cause**: `assert!(stdout.contains("beads-enabled") || output.status.success())` - the `|| output.status.success()` part is always true because `output.status.success()` was already checked in the previous assertion
+- **Impact**: Test doesn't actually verify that "beads-enabled" appears in help output
+
+### Fix Applied
+Changed from:
+```rust
+assert!(output.status.success());
+let stdout = String::from_utf8_lossy(&output.stdout);
+assert!(stdout.contains("beads-enabled") || output.status.success());
+```
+
+To:
+```rust
+assert!(output.status.success());
+let stdout = String::from_utf8_lossy(&output.stdout);
+assert!(stdout.contains("beads-enabled"), "Flag should be documented in help text");
+```
+
+### Additional Fixes
+- Also fixed same issue in `test_resume_flag_recognized`
+- Also fixed same issue in `test_compare_flag_recognized`
+- Added descriptive error messages to assertions for better test failure diagnostics
+
+### Learnings
+- **Test Quality**: Assertions should be specific and meaningful, not redundant
+- **Redundant Conditions**: `|| output.status.success()` after checking `output.status.success()` is always true and masks test failures
+- **Error Messages**: Adding descriptive messages to assertions helps diagnose test failures
+- **Consistency**: Apply same quality improvements to all similar tests
+- **Code Review**: Even passing tests can have quality issues that should be fixed
+
+### Testing
+- All 33 integration tests pass
+- All 60 unit tests pass
+- Total: 93 tests passing
+- Task marked as READY FOR REVIEW

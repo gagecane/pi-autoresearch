@@ -509,7 +509,7 @@ fn test_beads_enabled_flag_recognized() {
     // Should show help (beads-enabled flag is recognized)
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("beads-enabled") || output.status.success());
+    assert!(stdout.contains("beads-enabled"), "Flag should be documented in help text");
 }
 
 #[test]
@@ -649,7 +649,7 @@ fn test_resume_flag_recognized() {
     // Should show help (resume flag is recognized)
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("resume") || output.status.success());
+    assert!(stdout.contains("resume"), "Flag should be documented in help text");
 }
 
 #[test]
@@ -663,7 +663,7 @@ fn test_compare_flag_recognized() {
     // Should show help (compare flags are recognized)
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("compare") || output.status.success());
+    assert!(stdout.contains("compare"), "Flags should be documented in help text");
 }
 
 #[test]

@@ -399,12 +399,14 @@
 **Test**: Research completed and 6 new tasks added to tasks.md
 
 ## Priority 23: TEST - Add Integration Test for Beads Flag
-**Status**: REVISE 🔧
+**Status**: READY FOR REVIEW ⏳
 **Description**: Add integration test for --beads-enabled flag
 **Rationale**: Beads integration feature lacks test coverage
 **Tests Added**:
 - `test_beads_enabled_flag_recognized`: Verifies --beads-enabled flag is recognized by CLI
 - `test_beads_enabled_with_auto_approve`: Verifies --beads-enabled works with --auto-approve
-**Result**: 2 new integration tests added, all pass (33 total integration tests + 60 unit tests = 93 total tests)
-**Feedback**: See feedback.md for issues with test quality (redundant assertion in test_beads_enabled_flag_recognized)
+**Feedback Addressed**:
+- Fixed redundant assertion in `test_beads_enabled_flag_recognized` - now properly verifies flag is documented in help text
+- Also fixed same issue in `test_resume_flag_recognized` and `test_compare_flag_recognized`
+**Result**: 33 total integration tests + 60 unit tests = 93 total tests passing
 

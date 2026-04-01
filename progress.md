@@ -814,3 +814,13 @@
   - Identified test quality issue: redundant assertion in test_beads_enabled_flag_recognized
   - Wrote feedback to feedback.md
   - Marked task as REVISE in tasks.md
+
+### Revise Session: 2026-04-01 10:50 UTC
+- ✅ Fixed Priority 23: TEST - Add Integration Test for Beads Flag
+  - Fixed redundant assertion in `test_beads_enabled_flag_recognized` - now properly verifies flag is documented in help text
+  - Also fixed same issue in `test_resume_flag_recognized` and `test_compare_flag_recognized`
+- ✅ All 33 integration tests pass
+- ✅ All 60 unit tests pass
+- ✅ Total: 93 tests passing
+- ✅ Task marked as READY FOR REVIEW in tasks.md
+- ✅ Feedback cleared from feedback.md
