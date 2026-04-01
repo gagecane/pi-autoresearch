@@ -1158,3 +1158,45 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - Baseline performance data is valuable for detecting regressions in future development
 
 **Task Status**: Priority 29 marked as COMPLETE in tasks.md
+
+---
+
+## 2026-04-01 20:30 UTC - Contract Tests Review (COMPLETE)
+
+**Review Summary**:
+- Verified all 7 contract tests properly implemented
+- Verified schema validation for all 3 record types (BaselineRecord, IterationRecord, ExperimentSession)
+- Verified roundtrip serialization/deserialization works correctly
+- Verified backward compatibility with compact JSONL format
+- Verified forward compatibility with pretty-printed JSON format
+- Verified graceful handling of malformed/invalid JSON
+- Verified all 112 tests pass (68 unit + 44 integration)
+
+**Test Coverage**:
+- ✅ test_contract_baseline_record_schema: Verifies 8 BaselineRecord fields and types
+- ✅ test_contract_iteration_record_schema: Verifies 6 IterationRecord fields and types
+- ✅ test_contract_experiment_session_schema: Verifies 9 ExperimentSession fields and types
+- ✅ test_contract_session_file_roundtrip: Verifies JSONL serialization/deserialization
+- ✅ test_contract_backward_compat_compact_jsonl: Verifies compact JSONL format support
+- ✅ test_contract_forward_compat_pretty_json: Verifies pretty-printed JSON format support
+- ✅ test_contract_validation_missing_fields: Verifies graceful handling of invalid JSON
+
+**Implementation Quality**:
+- ✅ Clear test names describing what's being tested
+- ✅ Proper assertions with meaningful error messages
+- ✅ Edge cases covered (compact vs pretty JSON, invalid JSON)
+- ✅ No redundant assertions
+- ✅ Tests verify schema compliance with specification
+- ✅ Tests verify data integrity through roundtrip serialization
+- ✅ Tests verify format compatibility (backward and forward)
+
+**Code Review Learnings**:
+- Contract tests verify that implementation conforms to specification
+- Schema validation tests ensure all required fields are present with correct types
+- Roundtrip tests verify data can be serialized and deserialized without loss
+- Compatibility tests ensure both compact JSONL and pretty-printed JSON formats work
+- Validation tests verify the tool handles malformed JSON gracefully without crashing
+- Contract tests are essential for maintaining API/format contracts over time
+- Session file format is critical for reproducibility and experiment comparison
+
+**Task Status**: Priority 30 marked as COMPLETE in tasks.md
