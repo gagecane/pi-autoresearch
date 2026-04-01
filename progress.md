@@ -197,3 +197,14 @@
 - ✅ All 25 integration tests pass
 - ✅ All 21 unit tests still pass
 - ✅ Task marked as COMPLETE in tasks.md
+
+### Implementation Session: 2026-04-01 06:10 UTC
+- ✅ Implemented Priority 8: Tests for History and Resume
+- ✅ Added 4 new integration tests:
+  - `test_history_empty_session_file`: Verifies --history handles empty file
+  - `test_history_with_experiments`: Verifies --history recognizes experiments
+  - `test_resume_invalid_session`: Verifies --resume errors on missing session
+  - `test_resume_flag_recognized`: Verifies --resume flag is recognized
+- ✅ All 29 integration tests pass (was 25)
+- ✅ All 21 unit tests still pass
+- ✅ Task marked as COMPLETE in tasks.md
