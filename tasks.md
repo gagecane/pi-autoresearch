@@ -12,7 +12,7 @@
 **Review**: Implementation verified correct - all git operations properly guarded, tests pass consistently
 
 ## Priority 2: FEATURE - Config File Support
-**Status**: REVISE (implementing feedback from review)  
+**Status**: READY FOR REVIEW  
 **Description**: Implement User Story 4.2 from PRD - read defaults from `~/.config/pi-autoresearch/config.json`
 **Acceptance Criteria**:
 - ✅ Read defaults from config file
