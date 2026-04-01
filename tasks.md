@@ -12,12 +12,13 @@
 **Review**: Implementation verified correct - all git operations properly guarded, tests pass consistently
 
 ## Priority 2: FEATURE - Config File Support
-**Status**: TODO  
+**Status**: REVISE  
 **Description**: Implement User Story 4.2 from PRD - read defaults from `~/.config/pi-autoresearch/config.json`
 **Acceptance Criteria**:
 - Read defaults from config file
 - CLI args override config file
 - Support `--config PATH` for project-specific configs
+**Review Feedback**: See feedback.md - several bugs in default-value detection logic need fixing
 
 ## Priority 3: FEATURE - Branch Cleanup
 **Status**: TODO

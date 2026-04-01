@@ -6,6 +6,7 @@ use std::process::Command;
 use chrono::Utc;
 use std::time::{Duration, Instant};
 use std::fs::OpenOptions;
+use std::path::PathBuf;
 
 
 #[derive(Parser, Debug)]
@@ -95,6 +96,137 @@ struct Cli {
     /// Skip git operations (branch creation, commits, pushes)
     #[arg(long)]
     skip_git: bool,
+
+    /// Path to config file (defaults to ~/.config/pi-autoresearch/config.json)
+    #[arg(long, short = 'c')]
+    config: Option<String>,
+}
+
+/// Configuration loaded from config file
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[serde(default)]
+struct Config {
+    /// Default metric name
+    metric: Option<String>,
+    /// Default measurement command
+    measure: Option<String>,
+    /// Default baseline value
+    baseline: Option<f64>,
+    /// Default target improvement ratio
+    target_improvement: Option<f64>,
+    /// Default maximum iterations
+    max_iterations: Option<usize>,
+    /// Default iteration timeout in minutes
+    iteration_timeout_minutes: Option<usize>,
+    /// Default total timeout in minutes
+    total_timeout_minutes: Option<usize>,
+    /// Default stall limit
+    stall_limit: Option<usize>,
+    /// Default convergence threshold
+    convergence_threshold: Option<f64>,
+    /// Default convergence window size
+    convergence_window: Option<usize>,
+    /// Default maximum variance between baseline measurements
+    max_variance: Option<f64>,
+    /// Default session file path
+    session_file: Option<String>,
+    /// Enable beads integration by default
+    beads_enabled: Option<bool>,
+}
+
+fn load_config(config_path: Option<&str>) -> Result<Option<Config>> {
+    let path = if let Some(p) = config_path {
+        PathBuf::from(p)
+    } else {
+        // Try default config path: ~/.config/pi-autoresearch/config.json
+        let home_dir = std::env::var("HOME").map_err(|_| anyhow::anyhow!("HOME environment variable not set"))?;
+        PathBuf::from(&home_dir)
+            .join(".config")
+            .join("pi-autoresearch")
+            .join("config.json")
+    };
+
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| anyhow::anyhow!("Failed to read config file {}: {}", path.display(), e))?;
+    
+    let config: Config = serde_json::from_str(&content)
+        .map_err(|e| anyhow::anyhow!("Failed to parse config file {}: {}", path.display(), e))?;
+    
+    Ok(Some(config))
+}
+
+/// Get effective metric value from CLI or config
+fn get_metric(cli: &Cli, config: &Option<Config>, default: &str) -> String {
+    cli.metric.clone()
+        .or(config.as_ref().and_then(|c| c.metric.clone()))
+        .unwrap_or_else(|| default.to_string())
+}
+
+/// Get effective measure value from CLI or config
+fn get_measure(cli: &Cli, config: &Option<Config>, default: &str) -> String {
+    cli.measure.clone()
+        .or(config.as_ref().and_then(|c| c.measure.clone()))
+        .unwrap_or_else(|| default.to_string())
+}
+
+/// Get effective baseline value from CLI or config
+fn get_baseline(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
+    cli.baseline
+        .or(config.as_ref().and_then(|c| c.baseline))
+        .unwrap_or(default)
+}
+
+/// Get effective target improvement from CLI or config
+fn get_target_improvement(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
+    cli.target_improvement
+        .or(config.as_ref().and_then(|c| c.target_improvement))
+        .unwrap_or(default)
+}
+
+/// Get effective max iterations from CLI or config
+fn get_max_iterations(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
+    cli.max_iterations
+        .or(config.as_ref().and_then(|c| c.max_iterations))
+        .unwrap_or(default)
+}
+
+/// Get effective max variance from CLI or config
+fn get_max_variance(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
+    if cli.max_variance != 0.05 {
+        // CLI explicitly set (not default)
+        cli.max_variance
+    } else {
+        config.as_ref()
+            .and_then(|c| c.max_variance)
+            .unwrap_or(default)
+    }
+}
+
+/// Get effective session file from CLI or config
+fn get_session_file(cli: &Cli, config: &Option<Config>) -> String {
+    if cli.session_file != "autoresearch.jsonl" {
+        // CLI explicitly set (not default)
+        cli.session_file.clone()
+    } else {
+        config.as_ref()
+            .and_then(|c| c.session_file.clone())
+            .unwrap_or_else(|| "autoresearch.jsonl".to_string())
+    }
+}
+
+/// Get effective beads enabled from CLI or config
+fn get_beads_enabled(cli: &Cli, config: &Option<Config>) -> bool {
+    if cli.beads_enabled {
+        true
+    } else {
+        config.as_ref()
+            .and_then(|c| c.beads_enabled)
+            .unwrap_or(false)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1342,15 +1474,29 @@ fn print_failure_report(result: &FinalizationResult, target_improvement: f64) {
 async fn run() -> Result<()> {
     let cli = Cli::parse();
 
+    // Load config file
+    let config = load_config(cli.config.as_deref())?;
+    
+    // Log config loading if verbose
+    if cli.verbose {
+        if config.is_some() {
+            eprintln!("Loaded config from: {:?}", cli.config);
+        } else {
+            eprintln!("No config file found, using defaults");
+        }
+    }
+
     // Handle --history flag
     if cli.history {
-        list_history(&cli.session_file)?;
+        let session_file = get_session_file(&cli, &config);
+        list_history(&session_file)?;
         return Ok(());
     }
 
     // Handle --resume flag
+    let session_file = get_session_file(&cli, &config);
     if let Some(ref session_id) = cli.resume {
-        if let Ok(Some(session)) = find_session_by_id(&cli.session_file, session_id) {
+        if let Ok(Some(session)) = find_session_by_id(&session_file, session_id) {
             println!("Resuming session: {}", session_id);
             println!("Question: {}", session.question);
             println!("Current best iteration: {:?}", session.best_iteration);
@@ -1371,8 +1517,8 @@ async fn run() -> Result<()> {
             let mut design_to_use = session.design.clone();
             design_to_use.baseline = resume_baseline;
 
-            let metric_to_use = cli.metric.clone().unwrap_or(design_to_use.metric.clone());
-            let measure_to_use = cli.measure.clone().unwrap_or(design_to_use.measurement.clone());
+            let metric_to_use = get_metric(&cli, &config, &design_to_use.metric);
+            let measure_to_use = get_measure(&cli, &config, &design_to_use.measurement);
             
             design_to_use.metric = metric_to_use;
             design_to_use.measurement = measure_to_use;
@@ -1425,10 +1571,10 @@ async fn run() -> Result<()> {
             let mut file = OpenOptions::new()
                 .create(true)
                 .append(true)
-                .open(&cli.session_file)?;
+                .open(&session_file)?;
             writeln!(file, "{}", session_json)?;
 
-            let target_improvement = cli.target_improvement.unwrap_or(design_to_use.target_improvement);
+            let target_improvement = get_target_improvement(&cli, &config, design_to_use.target_improvement);
             let finalization_result = finalize_experiment(&merged_session, target_improvement, stuck_reason.as_ref(), cli.skip_git)?;
 
             if !cli.quiet {
@@ -1455,21 +1601,22 @@ async fn run() -> Result<()> {
     }
 
     if cli.verify_baseline {
-        let metric = cli.metric.clone().ok_or_else(|| {
-            anyhow::anyhow!("--metric is required for baseline verification")
-        })?;
+        let metric = cli.metric.clone()
+            .or(config.as_ref().and_then(|c| c.metric.clone()))
+            .ok_or_else(|| anyhow::anyhow!("--metric is required for baseline verification (or set in config)"))?;
         
-        let measurement = cli.measure.clone().ok_or_else(|| {
-            anyhow::anyhow!("--measure is required for baseline verification")
-        })?;
+        let measurement = cli.measure.clone()
+            .or(config.as_ref().and_then(|c| c.measure.clone()))
+            .ok_or_else(|| anyhow::anyhow!("--measure is required for baseline verification (or set in config)"))?;
 
-        let max_variance = cli.max_variance;
+        let max_variance = get_max_variance(&cli, &config, 0.05);
+        let session_file = get_session_file(&cli, &config);
 
         match verify_baseline(&metric, &measurement, max_variance) {
             Ok(result) => {
                 if result.success {
                     if let Some(ref record) = result.baseline_record {
-                        save_to_session_file(&cli.session_file, record)?;
+                        save_to_session_file(&session_file, record)?;
                         
                         let json_output = serde_json::to_string_pretty(&result)?;
                         println!("{}", json_output);
@@ -1495,14 +1642,15 @@ async fn run() -> Result<()> {
         None => read_question_from_stdin()?,
     };
 
-    let mut beads = BeadsIntegration::new(cli.beads_enabled);
+    let beads_enabled = get_beads_enabled(&cli, &config);
+    let mut beads = BeadsIntegration::new(beads_enabled);
 
     let design = generate_design(&question);
     
     let json_output = serde_json::to_string_pretty(&design)?;
     println!("{}", json_output);
 
-    if cli.beads_enabled {
+    if beads_enabled {
         beads.create_experiment_bead(&question, &design)?;
     }
 
@@ -1519,12 +1667,17 @@ async fn run() -> Result<()> {
         }
     }
     
+    // Check if we should run iterations (CLI must explicitly set max_iterations)
+    // Config provides defaults for iteration parameters but doesn't trigger iterations on its own
     if cli.max_iterations.is_some() {
-        let metric_to_use = cli.metric.clone().unwrap_or(design.metric.clone());
-        let measure_to_use = cli.measure.clone().unwrap_or(design.measurement.clone());
-        let baseline_to_use = cli.baseline.unwrap_or(design.baseline);
+        let metric_to_use = get_metric(&cli, &config, &design.metric);
+        let measure_to_use = get_measure(&cli, &config, &design.measurement);
+        let baseline_to_use = get_baseline(&cli, &config, design.baseline);
+        let max_variance = get_max_variance(&cli, &config, 0.05);
+        let session_file = get_session_file(&cli, &config);
+        let max_iterations = get_max_iterations(&cli, &config, 20);
         
-        let baseline_record = if cli.baseline.is_some() {
+        let baseline_record = if cli.baseline.is_some() || config.as_ref().map(|c| c.baseline.is_some()).unwrap_or(false) {
             let git_commit = get_git_commit_hash()?;
             BaselineRecord {
                 timestamp: Utc::now().to_rfc3339(),
@@ -1540,7 +1693,7 @@ async fn run() -> Result<()> {
             let baseline_result = verify_baseline(
                 &metric_to_use,
                 &measure_to_use,
-                cli.max_variance,
+                max_variance,
             )?;
             
             if !baseline_result.success {
@@ -1555,7 +1708,7 @@ async fn run() -> Result<()> {
             })?
         };
         
-        save_to_session_file(&cli.session_file, &baseline_record)?;
+        save_to_session_file(&session_file, &baseline_record)?;
         
         let mut design_to_use = design.clone();
         design_to_use.metric = metric_to_use;
