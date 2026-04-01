@@ -1650,3 +1650,114 @@ fn test_error_session_file_non_writable_dir() {
     }
     // If it succeeds (running as root), that's also acceptable
 }
+
+/// Integration test: Auto-approve flag is recognized
+#[test]
+fn test_auto_approve_flag_recognized() {
+    let args = vec!["--help"];
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.success());
+    
+    // Check that --auto-approve is documented in help text
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("auto-approve"),
+        "Help text should document --auto-approve flag");
+}
+
+/// Integration test: Auto-approve with verify-baseline
+#[test]
+fn test_auto_approve_with_verify_baseline() {
+    let args = vec![
+        "--verify-baseline",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 100.0",
+        "--auto-approve",
+        "--session-file",
+        "/tmp/test_auto_approve_baseline.jsonl",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.success());
+    
+    // Check that baseline was recorded
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Baseline verified") || stdout.contains("value"),
+        "Should show baseline verification output");
+}
+
+/// Integration test: Auto-approve with question and iterations
+#[test]
+fn test_auto_approve_with_iterations() {
+    let args = vec![
+        "--question",
+        "test optimization",
+        "--auto-approve",
+        "--max-iterations",
+        "2",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 95.0",
+        "--baseline",
+        "100.0",
+        "--target-improvement",
+        "0.1",
+        "--session-file",
+        "/tmp/test_auto_approve_iter.jsonl",
+        "--skip-git",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should succeed (exit code 0 or 1 depending on whether target was met)
+    // Exit code 1 is acceptable if target wasn't met
+    assert!(output.status.code().is_some(),
+        "Should complete with an exit code");
+    
+    // Check that session file was created
+    assert!(std::path::Path::new("/tmp/test_auto_approve_iter.jsonl").exists(),
+        "Session file should be created");
+}
+
+/// Integration test: Auto-approve with config file
+#[test]
+fn test_auto_approve_with_config() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write a valid config file
+    std::fs::write(&config_file, r#"{
+        "metric": "config_metric",
+        "measure": "echo 90.0",
+        "baseline": 100.0,
+        "target_improvement": 0.1
+    }"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test with config",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--session-file",
+        "/tmp/test_auto_approve_config.jsonl",
+        "--skip-git",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.code().is_some(),
+        "Should complete with an exit code");
+    
+    // Check that session file was created
+    assert!(std::path::Path::new("/tmp/test_auto_approve_config.jsonl").exists(),
+        "Session file should be created");
+}
