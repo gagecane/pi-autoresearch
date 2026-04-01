@@ -989,3 +989,26 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 
 **Task Status**: Priority 28 marked as COMPLETE in tasks.md
 
+## 2026-04-01 18:00 UTC - Version Flag Review (COMPLETE)
+
+**Review Summary**:
+- Verified implementation using clap's built-in version support
+- Both `--version` and `-V` flags work correctly
+- Version matches Cargo.toml (0.1.0)
+- All 105 tests pass (68 unit + 37 integration)
+
+**Implementation Quality**:
+- ✅ Single attribute addition to Cli struct
+- ✅ No additional code required - clap handles everything
+- ✅ Version automatically synced with Cargo.toml
+- ✅ Both long (`--version`) and short (`-V`) forms supported
+- ✅ Standard CLI practice implemented correctly
+
+**Code Review Learnings**:
+- Clap's built-in version support is the idiomatic Rust way to add version flags
+- Using `env!("CARGO_PKG_VERSION")` ensures version stays in sync with Cargo.toml
+- No need for manual version string management
+- Zero code changes beyond adding the attribute
+
+**Task Status**: Priority 28 marked as COMPLETE in tasks.md
+

@@ -542,8 +542,9 @@
 - Version is read from Cargo.toml (0.1.0)
 **Test**:
 - `pi-autoresearch --version` outputs: `pi-autoresearch 0.1.0`
+- `pi-autoresearch -V` outputs: `pi-autoresearch 0.1.0`
 - All 68 unit tests and 37 integration tests pass (105 total)
-**Ready for Review**: Implementation complete, all acceptance criteria met
+**Review**: Implementation verified correct - both --version and -V flags work correctly, version matches Cargo.toml, all tests pass
 
 ## Priority 29: PERF - Add Performance Benchmarks
 **Status**: TODO 📝
