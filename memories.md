@@ -276,3 +276,24 @@ Created comprehensive specifications in specs/ folder aligned with implementatio
 3. **Document Edge Cases**: Validation errors, special modes, failure conditions
 4. **Clarify Precedence**: Explicitly state when CLI overrides config
 5. **Be Complete**: All fields, all modes, all error conditions documented
+
+## Task Decomposition Strategy
+
+### When to Decompose Tasks
+- When a task is too abstract (e.g., "improve code quality")
+- When a task has multiple distinct subtasks
+- When subtasks can be completed independently
+- When each subtask is small enough to complete in one session
+
+### Decomposition Example: Priority 18 → 19-21
+- **Original Task**: RESEARCH - Code Quality Improvements (too abstract)
+- **Decomposed Into**:
+  - Priority 19: CODE QUALITY - Fix Clippy Warnings (specific, actionable)
+  - Priority 20: CODE QUALITY - Fix Unused Variable Warning (specific, actionable)
+  - Priority 21: DOCS - Improve README.md (specific, actionable)
+
+### Benefits of Decomposition
+- Each task is focused and achievable
+- Progress can be tracked more granularly
+- Tasks can be reviewed and completed independently
+- Reduces risk of incomplete work
