@@ -56,6 +56,15 @@ This guide provides detailed instructions on how to use pi-autoresearch.
 - `--config <PATH>`: Path to config file (defaults to ~/.config/pi-autoresearch/config.json)
 - `--beads-enabled`: Enable beads (bd) integration for issue tracking
 
+## Metric Detection
+
+pi-autoresearch auto-detects metrics based on question keywords:
+
+- "memory" → `peak_memory_mb`
+- "speed"/"performance" → `execution_time_ms`
+- "accuracy" → `accuracy_percent`
+- Default: `metric_value`
+
 ## Workflow
 
 ### 1. Define Research Question
@@ -107,27 +116,18 @@ pi-autoresearch --cleanup-branches --cleanup-days 7
 Experiments are saved in JSONL format (one JSON object per line):
 
 ```json
-{
-  "session_id": "uuid",
-  "question": "...",
-  "design": {...},
-  "baseline_record": {...},
-  "iterations": [...],
-  "best_iteration": 0,
-  "start_time": "...",
-  "end_time": "...",
-  "status": "completed"
-}
+{"session_id": "uuid-1", "question": "How to reduce memory?", "status": "completed", "baseline": 100.0, "best_improvement": 0.25}
+{"session_id": "uuid-2", "question": "How to improve speed?", "status": "in_progress", "baseline": 500.0, "iterations": 3}
 ```
 
-## Metric Detection
-
-pi-autoresearch auto-detects metrics based on question keywords:
-
-- "memory" → `peak_memory_mb`
-- "speed"/"performance" → `execution_time_ms`
-- "accuracy" → `accuracy_percent`
-- Default: `metric_value`
+Each line is a complete JSON object containing:
+- `session_id`: Unique identifier for the experiment
+- `question`: Research question being explored
+- `status`: `in_progress`, `completed`, or `failed`
+- `baseline`: Baseline measurement value
+- `best_improvement`: Best improvement achieved (if completed)
+- `iterations`: Array of iteration results
+- `start_time`, `end_time`: Timestamps for the experiment
 
 ## Error Handling
 

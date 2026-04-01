@@ -558,3 +558,17 @@
 - ✅ Feedback written to feedback.md
 - ✅ Task marked as REVISE in tasks.md
 - ✅ Updated memories.md with documentation review findings
+
+### Revise Session: 2026-04-01 07:55 UTC
+- ✅ Fixed Priority 16: DOCS - Create Documentation
+- ✅ Fixed docs/README.md:
+  - Updated installation instructions to build from source (not crates.io)
+  - Added Development section with build, test, and run instructions
+  - Added link to main README.md at the top
+- ✅ Fixed docs/USAGE.md:
+  - Clarified session file format with multi-line JSONL example
+  - Moved Metric Detection section higher (after Command-Line Options)
+  - Removed duplicate Metric Detection section from bottom
+- ✅ Updated tasks.md: Marked Priority 16 as READY FOR REVIEW
+- ✅ Cleared feedback.md
+- ✅ Ready for review

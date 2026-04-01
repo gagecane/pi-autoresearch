@@ -177,3 +177,10 @@ All config value retrieval uses helper functions:
 - Documentation should link to related documents
 - Important features (like auto-detection) should be prominently placed
 
+### Documentation Fixes Applied (2026-04-01)
+- Installation instructions updated to build from source (not crates.io)
+- Development section added with build, test, and run instructions
+- Link to main README.md added at top of docs/README.md
+- Session file format clarified with multi-line JSONL example
+- Metric Detection section moved higher for better visibility
+

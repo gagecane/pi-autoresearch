@@ -2,12 +2,37 @@
 
 pi-autoresearch is an autonomous research experiment orchestrator that helps optimize metrics through iterative experimentation.
 
+> **Note**: This is the documentation for pi-autoresearch. For a quick overview, see the [main README](../README.md).
+
 ## Quick Start
 
-### Installation
+### Installation from Source
 
 ```bash
-cargo install pi-autoresearch
+# Clone the repository
+git clone <repository-url>
+cd pi-autoresearch
+
+# Build the project
+cargo build --release
+
+# Install locally
+cargo install --path .
+```
+
+### Development
+
+To run in development mode without installing:
+
+```bash
+# Build the project
+cargo build
+
+# Run tests
+cargo test
+
+# Run in development mode
+cargo run -- <arguments>
 ```
 
 ### Basic Usage
