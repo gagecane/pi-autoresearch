@@ -43,6 +43,7 @@ Important learnings and context about the pi-autoresearch project.
 - Prevents branch name collisions in parallel test runs
 - Enables dry-run mode for future implementation
 - Maintains separation of concerns (testing vs. production)
+- Used in all 19 integration tests
 
 ### Branch Naming Convention
 - Format: `autoresearch/YYYYMMDD-HHMMSS-{uuid}`
@@ -52,9 +53,23 @@ Important learnings and context about the pi-autoresearch project.
 
 ## Known Limitations
 
-1. No config file support (Priority 2 task)
+1. Config file support has bugs in default-value detection (Priority 2 task - REVISE needed)
 2. No branch cleanup functionality (Priority 3 task)
 3. No dry-run mode for previewing changes (Priority 4 task)
+
+## Config File Implementation Notes
+
+### Bug Pattern: Default Value Detection
+When CLI has a default value (e.g., `--max-variance` defaults to `0.05`), checking `if cli.max_variance != 0.05` cannot distinguish between:
+- User explicitly passing `--max-variance 0.05`
+- User not passing the flag at all (clap provides default)
+
+**Solution**: CLI arguments should always take precedence. Don't try to detect if user explicitly set the default - just use the CLI value directly since clap already handles defaults.
+
+### Config Precedence Order
+1. CLI arguments (highest priority)
+2. Config file values
+3. Hardcoded defaults (lowest priority)
 
 ## Integration Points
 
