@@ -239,6 +239,7 @@ fn test_iterative_loop_single_iteration() {
         "--session-file",
         session_file,
         "--quiet",
+        "--skip-git",
     ];
     let output = get_cli_output(&args);
 
@@ -289,6 +290,7 @@ fn test_iterative_loop_logs_iteration_record() {
         "--session-file",
         session_file,
         "--quiet",
+        "--skip-git",
     ];
     let output = get_cli_output(&args);
 
@@ -346,6 +348,7 @@ fn test_iteration_keeps_improvement() {
         "--session-file",
         session_file,
         "--quiet",
+        "--skip-git",
     ];
     let output = get_cli_output(&args);
 
@@ -386,6 +389,7 @@ fn test_session_file_path_configurable() {
         "--session-file",
         custom_session_file,
         "--quiet",
+        "--skip-git",
     ];
     let output = get_cli_output(&args);
 

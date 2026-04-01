@@ -91,6 +91,10 @@ struct Cli {
     /// Enable beads (bd) integration for issue tracking
     #[arg(long)]
     beads_enabled: bool,
+
+    /// Skip git operations (branch creation, commits, pushes)
+    #[arg(long)]
+    skip_git: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -751,6 +755,7 @@ fn finalize_experiment(
     session: &ExperimentSession,
     target_improvement: f64,
     stuck_reason: Option<&StuckReason>,
+    skip_git: bool,
 ) -> Result<FinalizationResult> {
     let baseline = session.baseline_record.value;
     let best_kept_value: Option<f64> = session.iterations
@@ -795,10 +800,6 @@ fn finalize_experiment(
             failure_report: Some(failure_report),
         });
     }
-    
-    let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
-    let unique_id = uuid_generate();
-    let branch_name = format!("autoresearch/{}-{}", timestamp, unique_id);
     
     let runtime_secs = session.start_time
         .parse::<chrono::DateTime<Utc>>()
@@ -854,6 +855,24 @@ fn finalize_experiment(
             ));
         }
     }
+    
+    if skip_git {
+        // Skip git operations for testing or dry-run
+        return Ok(FinalizationResult {
+            success: true,
+            final_improvement,
+            best_value: best_kept_value,
+            branch_name: None,
+            commit_message: None,
+            key_changes,
+            error_message: None,
+            failure_report: None,
+        });
+    }
+    
+    let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
+    let unique_id = uuid_generate();
+    let branch_name = format!("autoresearch/{}-{}", timestamp, unique_id);
     
     let convergence_status = match &session.status {
         s if s.contains("completed") => "achieved",
@@ -1410,7 +1429,7 @@ async fn run() -> Result<()> {
             writeln!(file, "{}", session_json)?;
 
             let target_improvement = cli.target_improvement.unwrap_or(design_to_use.target_improvement);
-            let finalization_result = finalize_experiment(&merged_session, target_improvement, stuck_reason.as_ref())?;
+            let finalization_result = finalize_experiment(&merged_session, target_improvement, stuck_reason.as_ref(), cli.skip_git)?;
 
             if !cli.quiet {
                 eprintln!("\n=== Finalization ===");
@@ -1588,7 +1607,7 @@ async fn run() -> Result<()> {
         
         let target_improvement = cli.target_improvement.unwrap_or(design.target_improvement);
         
-        let finalization_result = finalize_experiment(&session, target_improvement, stuck_reason.as_ref())?;
+        let finalization_result = finalize_experiment(&session, target_improvement, stuck_reason.as_ref(), cli.skip_git)?;
         
         if let Some(ref mut beads_integration) = beads {
             let _ = beads_integration.close_bead(
