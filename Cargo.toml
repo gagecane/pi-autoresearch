@@ -26,3 +26,6 @@ assert_cmd = "2.0"
 criterion = "0.5"
 tempfile = "3.0"
 rand = "0.8"
+# Mutation testing support
+# Install with: cargo install cargo-mutest
+# Run with: cargo mutest test

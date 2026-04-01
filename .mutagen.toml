@@ -1,0 +1,40 @@
+# Mutagen Configuration
+# Mutation testing configuration for pi-autoresearch
+
+[mutagen]
+# Enable mutation testing
+enabled = true
+
+# Coverage threshold (percentage of mutants that should be killed)
+coverage_threshold = 80
+
+# Maximum mutations to test per run
+max_mutations = 100
+
+# Timeouts
+test_timeout = 300  # 5 minutes per mutation run
+build_timeout = 120  # 2 minutes for build
+
+# Which tests to run during mutation testing
+test_filter = "mutation_tests"
+
+# Mutators to apply
+mutators = [
+    "arithmetic",
+    "logical",
+    "conditional",
+    "return_value",
+    "remove_statement",
+]
+
+# Files to exclude from mutation testing
+exclude = [
+    "tests/integration_tests.rs",
+    "benches/*",
+]
+
+# Report settings
+report = {
+    format = "html",
+    output = "target/mutation-report",
+}
