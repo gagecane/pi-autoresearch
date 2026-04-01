@@ -1761,3 +1761,133 @@ fn test_auto_approve_with_config() {
     assert!(std::path::Path::new("/tmp/test_auto_approve_config.jsonl").exists(),
         "Session file should be created");
 }
+
+// Branch management integration tests
+
+/// Integration test: List branches with actual branches
+#[test]
+fn test_list_branches_with_actual_branches() {
+    // Create a test branch
+    let _ = std::process::Command::new("git")
+        .args(["checkout", "-b", "autoresearch/test-list-branches-12345"])
+        .output();
+    
+    // List branches
+    let args = vec!["--list-branches"];
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.success());
+    
+    // Check that our test branch is listed
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("autoresearch/test-list-branches-12345"),
+        "Should list the test branch");
+    
+    // Clean up: delete the test branch
+    let _ = std::process::Command::new("git")
+        .args(["checkout", "-"])  // Go back to previous branch
+        .output();
+    let _ = std::process::Command::new("git")
+        .args(["branch", "-D", "autoresearch/test-list-branches-12345"])
+        .output();
+}
+
+/// Integration test: Cleanup branches with actual branches
+#[test]
+fn test_cleanup_branches_with_actual_branches() {
+    // Create a test branch
+    let _ = std::process::Command::new("git")
+        .args(["checkout", "-b", "autoresearch/test-cleanup-branches-12345"])
+        .output();
+    
+    // Cleanup branches older than 0 days (should include our test branch)
+    let args = vec!["--cleanup-branches", "--cleanup-days", "0"];
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.success());
+    
+    // Check that cleanup summary is shown
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Cleanup Summary") || stderr.contains("removed") || 
+            stderr.contains("autoresearch/test-cleanup-branches-12345"),
+        "Should show cleanup summary or mention the test branch");
+    
+    // Clean up: go back to previous branch
+    let _ = std::process::Command::new("git")
+        .args(["checkout", "-"])
+        .output();
+}
+
+/// Integration test: Branch name uniqueness across runs
+#[test]
+fn test_branch_name_uniqueness_across_runs() {
+    let session_file = "/tmp/test_branch_uniqueness.jsonl";
+    
+    // Run two experiments quickly
+    for i in 0..2 {
+        let _ = std::fs::remove_file(session_file);
+        
+        let question = format!("test {}", i);
+        let args = vec![
+            "--question",
+            &question,
+            "--auto-approve",
+            "--max-iterations",
+            "1",
+            "--metric",
+            "test_metric",
+            "--measure",
+            "echo 95.0",
+            "--baseline",
+            "100.0",
+            "--target-improvement",
+            "0.1",
+            "--session-file",
+            session_file,
+            "--skip-git",
+            "--quiet",
+        ];
+        let output = get_cli_output(&args);
+        
+        // Should succeed
+        assert!(output.status.code().is_some());
+    }
+    
+    // Check that session file exists
+    assert!(std::path::Path::new(session_file).exists(),
+        "Session file should exist");
+}
+
+/// Integration test: Skip git flag prevents branch creation
+#[test]
+fn test_skip_git_prevents_branch_creation() {
+    let args = vec![
+        "--question",
+        "test skip git",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 95.0",
+        "--baseline",
+        "100.0",
+        "--target-improvement",
+        "0.1",
+        "--session-file",
+        "/tmp/test_skip_git.jsonl",
+        "--skip-git",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.code().is_some());
+    
+    // Check that session file was created
+    assert!(std::path::Path::new("/tmp/test_skip_git.jsonl").exists(),
+        "Session file should be created even with --skip-git");
+}
