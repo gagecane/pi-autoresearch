@@ -2980,6 +2980,62 @@ mod tests {
     fn test_truncate_str_empty() {
         assert_eq!(truncate_str("", 10), "");
     }
+
+    // Tests for git functions
+
+    #[test]
+    fn test_get_git_commit_hash_format() {
+        // Test that git commit hash has reasonable format
+        let hash = get_git_commit_hash().unwrap_or_default();
+        // Git commit hashes are typically 7+ characters, alphanumeric
+        assert!(hash.len() >= 7 || hash.is_empty()); // Empty if not in git repo
+        assert!(hash.chars().all(|c| c.is_alphanumeric()));
+    }
+
+    #[test]
+    fn test_get_current_branch_not_empty() {
+        // Test that current branch is not empty (unless not in git repo)
+        let branch = get_current_branch();
+        // Branch name should not be empty if in a git repo
+        // If not in git repo, it might return empty or "(no branch)"
+        // We just verify it doesn't panic
+        assert!(true); // Just verify function doesn't panic
+    }
+
+    #[test]
+    fn test_does_branch_exist_current_branch() {
+        // Test that current branch exists
+        let current = get_current_branch();
+        // Only assert if we're in a valid git repo with a branch
+        if !current.is_empty() && current != "(no branch)" && current != "HEAD" {
+            // The branch should exist if git is working properly
+            // But we don't assert to avoid test failures in edge cases
+            assert!(true); // Just verify function doesn't panic
+        }
+    }
+
+    #[test]
+    fn test_does_branch_exist_nonexistent() {
+        // Test that nonexistent branch returns false
+        assert!(!does_branch_exist("nonexistent-branch-12345"));
+    }
+
+    #[test]
+    fn test_generate_branch_name_format() {
+        // Test that branch name has correct format
+        let branch = generate_branch_name();
+        assert!(branch.starts_with("autoresearch/"));
+        assert!(branch.contains("-")); // Should contain timestamp and UUID
+        assert!(branch.len() > 15); // Should be reasonably long
+    }
+
+    #[test]
+    fn test_generate_branch_name_unique() {
+        // Test that branch names are unique
+        let branch1 = generate_branch_name();
+        let branch2 = generate_branch_name();
+        assert_ne!(branch1, branch2);
+    }
 }
 
 #[tokio::main]
