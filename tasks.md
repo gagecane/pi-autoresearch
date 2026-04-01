@@ -43,7 +43,14 @@
 **Review**: Implementation verified correct - branch listing and cleanup work as expected, handles edge cases properly
 
 ## Priority 4: FEATURE - Dry Run Mode
-**Status**: TODO
+**Status**: READY FOR REVIEW
 **Description**: Add `--dry-run` flag to simulate experiments without applying changes
 **Rationale**: Allows users to preview what changes would be made
+**Implementation**:
+- Added `--dry-run` flag to CLI
+- Shows "DRY RUN MODE" banner at start
+- Skips actual code changes (keep/revert)
+- Skips git branch creation
+- Skips session file writes
+- All 19 integration tests still pass
 

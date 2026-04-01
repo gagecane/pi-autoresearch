@@ -109,6 +109,10 @@ struct Cli {
     #[arg(long, default_value = "7")]
     cleanup_days: usize,
 
+    /// Dry run - show what would be done without making changes
+    #[arg(long)]
+    dry_run: bool,
+
     /// Path to config file (defaults to ~/.config/pi-autoresearch/config.json)
     #[arg(long, short = 'c')]
     config: Option<String>,
@@ -618,13 +622,19 @@ fn run_iteration(
     best_metric: f64,
     measure_command: &str,
     session_file: &str,
+    dry_run: bool,
 ) -> Result<(f64, String, bool)> {
     let current_state = format!("Iteration {}, best metric: {:.2}", iteration, best_metric);
     let metric_feedback = format!("Baseline: {:.2}, current best: {:.2}", baseline_value, best_metric);
     
     let agent_action = invoke_pi_agent(question, &current_state, &metric_feedback);
     
-    let branch_name = apply_changes_in_branch(&agent_action)?;
+    // In dry-run mode, simulate branch creation without actually creating it
+    let branch_name = if dry_run {
+        format!("[DRY-RUN] autoresearch/iter-{}", uuid_generate())
+    } else {
+        apply_changes_in_branch(&agent_action)?
+    };
     
     let metric_value = execute_measurement(measure_command)?;
     
@@ -641,12 +651,18 @@ fn run_iteration(
         kept,
     };
     
-    log_iteration(session_file, &record)?;
+    // In dry-run mode, don't actually log to session file
+    if !dry_run {
+        log_iteration(session_file, &record)?;
+    }
     
-    if kept {
-        keep_changes(&branch_name)?;
-    } else {
-        revert_changes(&branch_name)?;
+    // In dry-run mode, don't actually keep or revert changes
+    if !dry_run {
+        if kept {
+            keep_changes(&branch_name)?;
+        } else {
+            revert_changes(&branch_name)?;
+        }
     }
     
     Ok((metric_value, agent_action, kept))
@@ -659,6 +675,7 @@ fn run_iterative_loop(
     cli: &Cli,
     config: &Option<Config>,
     beads: &mut Option<BeadsIntegration>,
+    dry_run: bool,
 ) -> Result<(ExperimentSession, Option<StuckReason>)> {
     let max_iterations = get_max_iterations(cli, config, 20);
     let baseline_value = baseline_record.value;
@@ -729,6 +746,7 @@ fn run_iterative_loop(
             state.best_metric,
             &design.measurement,
             &cli.session_file,
+            dry_run,
         );
         
         if iteration_start.elapsed() > iteration_timeout {
@@ -1619,6 +1637,13 @@ fn print_failure_report(result: &FinalizationResult, target_improvement: f64) {
 async fn run() -> Result<()> {
     let cli = Cli::parse();
 
+    // Show dry-run mode message
+    if cli.dry_run {
+        eprintln!("\n=== DRY RUN MODE ===");
+        eprintln!("No changes will be made to the codebase or git repository.");
+        eprintln!("======================\n");
+    }
+
     // Load config file
     let explicit_config = cli.config.is_some();
     let config = load_config(cli.config.as_deref(), explicit_config)?;
@@ -1722,7 +1747,9 @@ async fn run() -> Result<()> {
             design_to_use.measurement = measure_to_use;
 
             let baseline_record = session.baseline_record.clone();
-            save_to_session_file(&cli.session_file, &baseline_record)?;
+            if !cli.dry_run {
+                save_to_session_file(&cli.session_file, &baseline_record)?;
+            }
 
             let mut beads_resume = if cli.beads_enabled { Some(BeadsIntegration::new(true)) } else { None };
             let (new_session, stuck_reason) = run_iterative_loop(
@@ -1732,6 +1759,7 @@ async fn run() -> Result<()> {
                 &cli,
                 &config,
                 &mut beads_resume,
+                cli.dry_run,
             )?;
 
             // Merge the new iterations with the old session
@@ -1766,15 +1794,17 @@ async fn run() -> Result<()> {
                 }
             }
 
-            let session_json = serde_json::to_string_pretty(&merged_session)?;
-            let mut file = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&session_file)?;
-            writeln!(file, "{}", session_json)?;
+            if !cli.dry_run {
+                let session_json = serde_json::to_string_pretty(&merged_session)?;
+                let mut file = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&session_file)?;
+                writeln!(file, "{}", session_json)?;
+            }
 
             let target_improvement = get_target_improvement(&cli, &config, design_to_use.target_improvement);
-            let finalization_result = finalize_experiment(&merged_session, target_improvement, stuck_reason.as_ref(), cli.skip_git)?;
+            let finalization_result = finalize_experiment(&merged_session, target_improvement, stuck_reason.as_ref(), cli.skip_git || cli.dry_run)?;
 
             if !cli.quiet {
                 eprintln!("\n=== Finalization ===");
@@ -1822,7 +1852,9 @@ async fn run() -> Result<()> {
             Ok(result) => {
                 if result.success {
                     if let Some(ref record) = result.baseline_record {
-                        save_to_session_file(&session_file, record)?;
+                        if !cli.dry_run {
+                            save_to_session_file(&session_file, record)?;
+                        }
                         
                         let json_output = serde_json::to_string_pretty(&result)?;
                         println!("{}", json_output);
@@ -1913,7 +1945,9 @@ async fn run() -> Result<()> {
             })?
         };
         
-        save_to_session_file(&session_file, &baseline_record)?;
+        if !cli.dry_run {
+            save_to_session_file(&session_file, &baseline_record)?;
+        }
         
         let mut design_to_use = design.clone();
         design_to_use.metric = metric_to_use;
@@ -1921,7 +1955,7 @@ async fn run() -> Result<()> {
         design_to_use.baseline = baseline_to_use;
         
         let mut beads_opt = Some(beads);
-        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &config, &mut beads_opt)?;
+        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &config, &mut beads_opt, cli.dry_run)?;
         let mut beads = beads_opt;
         
         let best_kept_value: Option<f64> = session.iterations
@@ -1956,16 +1990,18 @@ async fn run() -> Result<()> {
             eprintln!("Final improvement: {:+.2}%", final_improvement * 100.0);
         }
         
-        let session_json = serde_json::to_string_pretty(&session)?;
-        let mut file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&get_session_file(&cli, &config))?;
-        writeln!(file, "{}", session_json)?;
+        if !cli.dry_run {
+            let session_json = serde_json::to_string_pretty(&session)?;
+            let mut file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&get_session_file(&cli, &config))?;
+            writeln!(file, "{}", session_json)?;
+        }
         
         let target_improvement = get_target_improvement(&cli, &config, design.target_improvement);
         
-        let finalization_result = finalize_experiment(&session, target_improvement, stuck_reason.as_ref(), cli.skip_git)?;
+        let finalization_result = finalize_experiment(&session, target_improvement, stuck_reason.as_ref(), cli.skip_git || cli.dry_run)?;
         
         if let Some(ref mut beads_integration) = beads {
             let _ = beads_integration.close_bead(
