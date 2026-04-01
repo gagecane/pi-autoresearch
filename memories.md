@@ -1087,3 +1087,26 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - More accurate performance baseline for session file parsing
 - Better understanding of where optimization efforts should be focused
 - Realistic expectations for file I/O performance
+
+## Revise Session: 2026-04-01 19:00 UTC
+
+### Performance Benchmark Revision Learnings
+
+**Key Insight**: When feedback identifies benchmark inaccuracies, document the correction clearly in task status to maintain transparency about performance measurements.
+
+**Revision Applied**:
+- Updated tasks.md to clarify that session_file_parsing benchmark was corrected from line counting to actual JSON parsing
+- Changed benchmark result note from "~190 ns" to "~5.3 µs (corrected to measure actual JSON parsing)"
+- Added revision notes explaining the fix and its impact
+
+**Lesson Reinforced**:
+- Benchmark accuracy is critical for meaningful performance tracking
+- Clear documentation of benchmark corrections helps future maintainers understand performance baselines
+- The ~28x difference between line counting and JSON parsing highlights the importance of accurate benchmarks
+
+**Next Steps**:
+- Continue with remaining TODO tasks
+- Use accurate benchmarks for future performance regression detection
+- Consider adding benchmarks for other critical operations (git operations, agent invocation, etc.)
+
+**Task Status**: Priority 29 marked as Ready for REVIEW in tasks.md

@@ -547,7 +547,7 @@
 **Review**: Implementation verified correct - both --version and -V flags work correctly, version matches Cargo.toml, all tests pass
 
 ## Priority 29: PERF - Add Performance Benchmarks
-**Status**: REVISE 📝
+**Status**: Ready for REVIEW ⏳
 **Description**: Add performance benchmarks for key operations
 **Rationale**: Need to track performance over time and identify bottlenecks
 **Implementation**:
@@ -562,13 +562,13 @@
 - Configured `[[bench]]` section in Cargo.toml
 - Baseline performance recorded
 **Benchmark Results** (baseline):
-- session_file_parsing: 5.3-5.4 µs (updated to reflect actual JSON parsing)
+- session_file_parsing: 5.3-5.4 µs (corrected to measure actual JSON parsing, not just line counting)
 - config_file_loading: 14.4-14.7 µs
 - metric_detection: 553-562 ns
 - git_branch_name_generation: 338-344 ns
 - iteration_record_creation: 357-363 ns
 **Test**: All 68 unit tests and 37 integration tests pass (105 total)
-**Feedback**: See feedback.md for details on benchmark correction
+**Revision Notes**: Updated benchmark to correctly measure JSON parsing performance instead of just line counting. The corrected benchmark shows ~5.3µs for session file parsing, which accurately reflects real-world performance.
 
 ## Priority 30: TEST - Add Contract Tests for Session File Format
 **Status**: TODO 📝
