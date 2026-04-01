@@ -412,15 +412,170 @@
 **Review**: Implementation verified correct - tests follow best practices, verify flag recognition and basic functionality, handle edge cases gracefully, all tests pass consistently
 
 ## Priority 24: RESEARCH - Discover Next Improvement Opportunities
-**Status**: TODO 📝
+**Status**: COMPLETE ✅
 **Description**: Research the codebase to discover additional improvement opportunities
 **Rationale**: All previous tasks are complete; need to identify next areas for improvement
-**Research Areas**:
-- Test coverage gaps (unit tests for stdin/command functions, resume functionality)
-- Feature enhancements (logging configuration, performance benchmarks)
-- Advanced testing (mutation testing, contract tests)
-- Code quality improvements (refactoring opportunities, documentation gaps)
-- User experience improvements (error messages, help text, CLI ergonomics)
-- Integration testing (edge cases, error handling, concurrency)
-**Deliverable**: Decompose findings into actionable tasks for Priority 25+
+**Research Date**: 2026-04-01 12:00 UTC
+**Findings**:
+- ✅ Code quality is excellent:
+  - 61 functions in src/main.rs (3073 lines)
+  - 60 unit tests + 33 integration tests = 93 total tests
+  - All tests pass consistently
+  - No clippy warnings
+  - No compiler warnings
+- ✅ Documentation is comprehensive:
+  - README.md: 6040 bytes with complete overview
+  - docs/: 4 files (USAGE, CONFIG, EXAMPLES, README)
+  - specs/: 4 files (CLI, SESSION, CONFIG, WORKFLOW)
+- ✅ Identified 37 functions without dedicated unit tests:
+  - `read_question_from_stdin()` - requires stdin mocking
+  - `execute_measurement()` - requires command execution mocking
+  - Git operations (checkout, commit, push, etc.) - require git repository
+  - File operations (read_session_file, save_to_session_file) - require file I/O
+  - Core logic (finalize_experiment, run_iteration, run_iterative_loop) - integration-level
+- ✅ Identified improvement opportunities:
+  - Add unit tests for stdin and command functions with mocking
+  - Add full integration test for resume functionality with actual session data
+  - Add structured logging with tracing or env_logger crate
+  - Add performance benchmarks for key operations
+  - Add contract tests for session file format
+  - Add mutation testing framework
+  - Add integration tests for error handling edge cases
+  - Add --version flag for CLI
+  - Add better error messages with suggestions
+  - Add progress bars for long operations
+**Decomposed Into**:
+- Priority 25: TEST - Add Unit Tests for stdin and Command Functions
+- Priority 26: TEST - Add Resume Functionality Integration Test
+- Priority 27: FEATURE - Add Structured Logging
+- Priority 28: FEATURE - Add Version Flag
+- Priority 29: PERF - Add Performance Benchmarks
+- Priority 30: TEST - Add Contract Tests for Session File Format
+- Priority 31: TEST - Add Error Handling Edge Case Tests
+- Priority 32: TEST - Add Mutation Testing Framework
+**Review**: Research completed thoroughly - all major areas analyzed, 8 actionable tasks created
+
+## Priority 25: TEST - Add Unit Tests for stdin and Command Functions
+**Status**: TODO 📝
+**Description**: Add unit tests for `read_question_from_stdin()` and `execute_measurement()` functions
+**Rationale**: These functions are critical but lack unit test coverage
+**Implementation Plan**:
+- Add `mock_stdin()` helper function to simulate stdin input
+- Add `mock_command_execution()` helper function to simulate command output
+- Test `read_question_from_stdin()` with various inputs (empty, short, long, special chars)
+- Test `execute_measurement()` with various outputs (valid numbers, invalid output, errors)
+- Use `std::io::Stdin` mocking or environment variable approach
+**Acceptance Criteria**:
+- ✅ Unit tests for `read_question_from_stdin()` pass
+- ✅ Unit tests for `execute_measurement()` pass
+- ✅ All existing tests still pass
+- ✅ Tests cover edge cases (empty input, invalid output, errors)
+
+## Priority 26: TEST - Add Resume Functionality Integration Test
+**Status**: TODO 📝
+**Description**: Add full integration test for `--resume` flag with actual session data
+**Rationale**: Resume functionality is critical but only has basic flag recognition test
+**Implementation Plan**:
+- Create a test session file with a completed experiment
+- Run `--resume` with the session ID
+- Verify that the experiment resumes correctly
+- Verify that new iterations are added to the session file
+- Verify that the final result is correct
+**Acceptance Criteria**:
+- ✅ Integration test for `--resume` with valid session passes
+- ✅ Integration test for `--resume` with invalid session fails gracefully
+- ✅ All existing tests still pass
+
+## Priority 27: FEATURE - Add Structured Logging
+**Status**: TODO 📝
+**Description**: Add structured logging using `tracing` or `env_logger` crate
+**Rationale**: Current `eprintln!` usage is inconsistent and hard to configure
+**Implementation Plan**:
+- Add `tracing` crate as dependency
+- Replace `eprintln!` calls with `tracing::info!`, `tracing::debug!`, etc.
+- Add log level configuration via `--verbose` and `--quiet` flags
+- Add environment variable support for log level (RUST_LOG)
+- Ensure JSON output mode is not affected by logging
+**Acceptance Criteria**:
+- ✅ Structured logging implemented
+- ✅ Log levels configurable via CLI and environment
+- ✅ All existing tests still pass
+- ✅ JSON output mode works correctly
+
+## Priority 28: FEATURE - Add Version Flag
+**Status**: TODO 📝
+**Description**: Add `--version` flag to display version information
+**Rationale**: Standard CLI practice, helps users identify their version
+**Implementation Plan**:
+- Add `--version` flag to CLI using clap's built-in version support
+- Display version from Cargo.toml
+- Optionally display build information (Rust version, target, etc.)
+**Acceptance Criteria**:
+- ✅ `--version` flag works correctly
+- ✅ Version matches Cargo.toml
+- ✅ All existing tests still pass
+
+## Priority 29: PERF - Add Performance Benchmarks
+**Status**: TODO 📝
+**Description**: Add performance benchmarks for key operations
+**Rationale**: Need to track performance over time and identify bottlenecks
+**Implementation Plan**:
+- Add `criterion` crate as dev dependency
+- Add benchmarks for:
+  - Session file parsing
+  - Git operations
+  - Config file loading
+  - Metric detection
+- Run benchmarks in CI
+**Acceptance Criteria**:
+- ✅ Benchmarks implemented for key operations
+- ✅ Benchmarks run successfully
+- ✅ Baseline performance recorded
+- ✅ All existing tests still pass
+
+## Priority 30: TEST - Add Contract Tests for Session File Format
+**Status**: TODO 📝
+**Description**: Add contract tests to ensure session file format compliance
+**Rationale**: Session file format is critical for reproducibility and comparison
+**Implementation Plan**:
+- Add `serde_json` schema validation
+- Test that all session files conform to the spec
+- Test that session files can be parsed and re-serialized correctly
+- Test that session files from different versions are compatible
+**Acceptance Criteria**:
+- ✅ Contract tests implemented
+- ✅ All session files pass validation
+- ✅ All existing tests still pass
+
+## Priority 31: TEST - Add Error Handling Edge Case Tests
+**Status**: TODO 📝
+**Description**: Add integration tests for error handling edge cases
+**Rationale**: Error handling is critical but not fully tested
+**Test Scenarios**:
+- Invalid config file (malformed JSON, invalid values)
+- Missing measurement command
+- Git repository errors (not a git repo, no remote, etc.)
+- Session file errors (permission denied, disk full, etc.)
+- Timeout scenarios
+- Network errors (if applicable)
+**Acceptance Criteria**:
+- ✅ Error handling tests implemented
+- ✅ All error cases handled gracefully
+- ✅ Clear error messages displayed
+- ✅ All existing tests still pass
+
+## Priority 32: TEST - Add Mutation Testing Framework
+**Status**: TODO 📝
+**Description**: Add mutation testing framework to verify test quality
+**Rationale**: Mutation testing helps identify weak tests
+**Implementation Plan**:
+- Add `mutagen` or `cargo-mutest` as dev dependency
+- Configure mutation testing for key functions
+- Run mutation tests in CI
+- Fix weak tests identified by mutation testing
+**Acceptance Criteria**:
+- ✅ Mutation testing framework configured
+- ✅ Mutation tests run successfully
+- ✅ Mutation score reported
+- ✅ Weak tests identified and fixed (if any)
 

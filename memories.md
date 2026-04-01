@@ -47,6 +47,58 @@ Important learnings and context about the pi-autoresearch project.
 ### Total Test Coverage
 - 93 total tests (60 unit + 33 integration)
 - All tests pass consistently
+- 37 functions lack dedicated unit tests (integration-level functions)
+
+## Research Findings (2026-04-01)
+
+### Code Quality Status
+- 61 functions in src/main.rs (3073 lines)
+- No clippy warnings
+- No compiler warnings
+- All tests pass consistently
+
+### Functions Without Dedicated Unit Tests (37 functions)
+**Mocking Required**:
+- `read_question_from_stdin()` - requires stdin mocking
+- `execute_measurement()` - requires command execution mocking
+
+**Git Operations** (require git repository):
+- `checkout_branch()`, `commit_changes()`, `push_branch()`
+- `create_or_checkout_branch()`, `execute_git_operations()`
+- `stage_all_changes()`
+
+**File Operations** (require file I/O):
+- `read_session_file()`, `save_to_session_file()`
+
+**Core Logic** (integration-level):
+- `finalize_experiment()`, `run_iteration()`, `run_iterative_loop()`
+- `compare_experiments()`, `display_experiment_comparison()`
+- `cleanup_autoresearch_branches()`, `list_autoresearch_branches()`
+- `list_history()`, `find_session_by_id()`
+
+**Utility Functions**:
+- `calculate_final_improvement()`, `calculate_runtime_seconds()`, `calculate_session_runtime()`
+- `create_failure_result()`, `print_failure_report()`
+- `extract_change_summary()`, `extract_key_changes()`
+- `generate_commit_message()`, `generate_design()`, `generate_failure_recommendations()`
+- `has_remote_origin()`, `log_iteration()`, `verify_baseline()`
+- `apply_changes_in_branch()`, `keep_changes()`, `revert_changes()`
+
+### Identified Improvement Opportunities
+1. **Test Coverage**: Add unit tests for stdin and command functions with mocking
+2. **Integration Tests**: Add full resume functionality test with actual session data
+3. **Logging**: Add structured logging with tracing or env_logger crate
+4. **CLI**: Add --version flag
+5. **Performance**: Add benchmarks for key operations
+6. **Testing**: Add contract tests for session file format
+7. **Testing**: Add error handling edge case tests
+8. **Testing**: Add mutation testing framework
+
+### Documentation Status
+- README.md: 6040 bytes with complete overview
+- docs/: 4 files (USAGE, CONFIG, EXAMPLES, README) - 14.8KB total
+- specs/: 4 files (CLI, SESSION, CONFIG, WORKFLOW) - 28.7KB total
+- All documentation aligns with implementation
 
 ### Test Parallelization
 - **Issue**: Branch names using timestamp format could collide in parallel tests
