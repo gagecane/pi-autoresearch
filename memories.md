@@ -193,3 +193,51 @@ All config value retrieval uses helper functions:
 - docs/EXAMPLES.md: 12 detailed examples covering all features and use cases
 - Documentation aligns perfectly with current implementation
 - All feedback from previous review successfully addressed
+
+## Documentation and Specifications
+
+### Spec Files Created (Priority 17)
+
+Created comprehensive specifications in specs/ folder aligned with implementation:
+
+**specs/CLI.md**:
+- Documents all 25+ CLI arguments organized by category
+- Clarifies argument precedence: CLI > config > default
+- Notes exceptions: max_variance and session_file are CLI-only
+- Documents special modes: dry-run, resume, comparison, history, branch management
+- Includes 12 practical usage examples
+- Documents exit codes (0=success, 1=failure)
+
+**specs/SESSION.md**:
+- Documents JSONL format with 3 record types
+- BaselineRecord: 8 fields, verification_runs array, variance calculation
+- IterationRecord: 6 fields, improvement ratio formula
+- ExperimentSession: 9 fields, nested ExperimentDesign object
+- Provides complete JSON examples for each record type
+- Documents file operations: append-only, line-by-line parsing
+- Notes session_file is CLI-only (config ignored)
+
+**specs/CONFIG.md**:
+- Documents 13 optional config fields
+- Validation rules for 8 numeric fields with specific ranges
+- Error messages for all validation failures
+- Multiple errors reported together
+- Non-destructive validation (doesn't create directories)
+- Provides 3 example configs: minimal, comprehensive, project-specific
+
+**specs/WORKFLOW.md**:
+- Documents 5-stage workflow: Initialization → Design → Baseline → Iteration → Finalization
+- Includes ASCII workflow diagram
+- Documents 5 termination conditions with StuckReason enum
+- Convergence detection: variance of recent metrics < threshold
+- Stall detection: consecutive no-improvement count with backoff
+- Commit message format with metadata
+- Failure report structure with recommendations
+
+### Spec Writing Principles
+
+1. **Align with Implementation**: Specs reflect actual code behavior, not ideal behavior
+2. **Include Examples**: Every record type has a complete JSON example
+3. **Document Edge Cases**: Validation errors, special modes, failure conditions
+4. **Clarify Precedence**: Explicitly state when CLI overrides config
+5. **Be Complete**: All fields, all modes, all error conditions documented
