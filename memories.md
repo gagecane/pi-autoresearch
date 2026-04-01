@@ -45,9 +45,16 @@ Important learnings and context about the pi-autoresearch project.
   - Utility functions (15 functions)
 
 ### Total Test Coverage
-- 112 total tests (68 unit + 44 integration)
+- 141 total tests (68 unit + 60 integration + 13 mutation-resistant)
 - All tests pass consistently
 - 37 functions lack dedicated unit tests (integration-level functions)
+
+### Mutation-Resistant Tests
+- 13 mutation-resistant tests in `tests/mutation_tests.rs`
+- Tests designed to catch common mutation types (operator flips, logic inversions, etc.)
+- NOT the same as a mutation testing framework (which would automatically introduce mutations)
+- Tests follow mutation testing principles but don't implement automated mutation generation
+- Future work: Consider implementing cargo-mutagen or cargo-mutest for actual mutation testing
 
 ### Contract Tests
 - 7 contract tests for session file format validation:
@@ -1151,6 +1158,39 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - ✅ Benchmark names are descriptive and self-explanatory
 
 **Code Review Learnings**:
+
+## 2026-04-01 21:00 UTC - Mutation-Resistant Tests Review (REVISE)
+
+**Review Summary**:
+- Verified 13 mutation-resistant tests implemented and all pass
+- ❌ Found task name mismatch: "Mutation Testing Framework" vs "Mutation-Resistant Tests"
+- ❌ Found incorrect test counts: tasks.md says 112, tests/README.md says 119, actual is 141
+- ❌ Found no actual mutation testing framework implemented (cargo-mutagen/cargo-mutest not installed)
+- ❌ Found documentation inconsistencies in tests/README.md
+
+**What Was Implemented**:
+- ✅ 13 well-designed mutation-resistant tests
+- ✅ Tests follow mutation testing principles (would fail if common bugs introduced)
+- ✅ All tests pass consistently
+- ✅ Documentation files created (.mutagen.toml, test-mutation.sh, tests/README.md)
+
+**What Was NOT Implemented**:
+- ❌ Actual mutation testing framework (automated mutation generation)
+- ❌ Mutation coverage reporting
+- ❌ cargo-mutagen or cargo-mutest installation/configuration
+
+**Key Distinction**:
+- **Mutation-Resistant Tests**: Tests designed to follow mutation testing principles (what was implemented)
+- **Mutation Testing Framework**: Tool that automatically introduces mutations and runs tests (NOT implemented)
+
+**Feedback Written**: See feedback.md for detailed issues and recommendations
+
+**Code Review Learnings**:
+- Mutation-resistant tests are different from mutation testing frameworks
+- Test counts should be verified and kept accurate across all documentation
+- Task names should accurately reflect what was implemented
+- Documentation should not reference tools that aren't actually installed/configured
+- When creating test documentation, verify actual counts before writing them down
 - Benchmark accuracy is critical - must measure actual operations, not simulations
 - JSON parsing is ~28x slower than line counting (~5.3 µs vs ~190 ns)
 - Criterion provides excellent statistical analysis with outlier detection
