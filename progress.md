@@ -413,3 +413,16 @@
   - Should calculate actual runtime in seconds
 - ✅ Feedback written to feedback.md
 - ✅ Task marked as REVISE in tasks.md
+
+### Revise Session: 2026-04-01 07:05 UTC
+- ✅ Fixed Priority 12: Experiment Comparison - Runtime Calculation
+- ✅ Updated `calculate_session_runtime()` to properly parse timestamps:
+  - Uses chrono::DateTime::parse_from_rfc3339() to parse start_time and end_time
+  - Calculates difference using signed_duration_since()
+  - Returns runtime in seconds as f64
+  - Returns 0.0 if timestamps cannot be parsed or end_time is missing
+- ✅ Code compiles without warnings
+- ✅ All 31 integration tests pass
+- ✅ All 36 unit tests still pass
+- ✅ Task marked as READY FOR REVIEW in tasks.md
+- ✅ Cleared feedback from feedback.md

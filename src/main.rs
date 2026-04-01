@@ -1903,13 +1903,15 @@ fn display_experiment_comparison(e1: &ExperimentSession, e2: &ExperimentSession)
 
 /// Calculate session runtime in seconds
 fn calculate_session_runtime(session: &ExperimentSession) -> f64 {
-    if session.end_time.is_some() {
-        // Simple approximation: parse timestamps and calculate difference
-        // For now, return a placeholder value
-        0.0
-    } else {
-        0.0
+    if let Some(ref end_time) = session.end_time {
+        if let (Ok(start), Ok(end)) = (
+            chrono::DateTime::parse_from_rfc3339(&session.start_time),
+            chrono::DateTime::parse_from_rfc3339(end_time)
+        ) {
+            return end.signed_duration_since(start).num_seconds() as f64;
+        }
     }
+    0.0
 }
 
 /// Format duration for display

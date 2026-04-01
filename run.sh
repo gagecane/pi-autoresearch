@@ -13,7 +13,7 @@ echo "Starting task runner..."
 while true; do
     # Execute the pi command
     echo "------------------------------------------"
-    echo "Attempt #$counter: Running pi command..."
+    echo "Iteration #$counter: Running pi command..."
     pi code -p "Read PROMPT.md and follow the instructions"
 
     # Check if the progress file exists

@@ -189,7 +189,7 @@
 **Review**: Implementation verified correct - all validation rules properly implemented, non-destructive validation, clear error messages, all errors reported together
 
 ## Priority 12: FEATURE - Experiment Comparison
-**Status**: REVISE
+**Status**: Ready for REVIEW
 **Description**: Add `--compare-id1 SESSION_ID1 --compare-id2 SESSION_ID2` to compare two experiments
 **Rationale**: Users need to compare results from different experimental runs
 **Implementation**:
@@ -200,6 +200,7 @@
 - Comparison shows: question, metric, baseline, iterations, best improvement, status, runtime
 - Highlights winner based on best improvement percentage
 - Shows detailed iteration breakdown for each experiment
+- Runtime calculation properly parses timestamps using chrono
 **Test**: All 31 integration tests pass (29 original + 2 new compare tests) + 36 unit tests
-**Review Feedback**: Runtime calculation is incomplete - `calculate_session_runtime()` returns 0.0 placeholder. Needs proper timestamp parsing.
+**Review**: Runtime calculation fixed - now properly parses start_time and end_time timestamps
 
