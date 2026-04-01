@@ -27,9 +27,13 @@ Important learnings and context about the pi-autoresearch project.
 ## Testing Strategy
 
 ### Integration Tests
-- 31 total tests in `tests/integration_tests.rs`
+- 33 total tests in `tests/integration_tests.rs`
 - Tests use `--skip-git` flag to avoid git branch conflicts
 - All tests should pass consistently when run in parallel
+- Flag recognition tests follow consistent pattern:
+  1. Use `--help` to verify flag is recognized
+  2. Assert flag is documented in help text
+  3. Example: `test_beads_enabled_flag_recognized`, `test_resume_flag_recognized`, `test_compare_flag_recognized`
 
 ### Unit Tests
 - 60 unit tests in `src/main.rs`
@@ -41,7 +45,7 @@ Important learnings and context about the pi-autoresearch project.
   - Utility functions (15 functions)
 
 ### Total Test Coverage
-- 91 total tests (60 unit + 31 integration)
+- 93 total tests (60 unit + 33 integration)
 - All tests pass consistently
 
 ### Test Parallelization
