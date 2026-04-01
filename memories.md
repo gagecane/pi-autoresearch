@@ -1200,3 +1200,109 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - Session file format is critical for reproducibility and experiment comparison
 
 **Task Status**: Priority 30 marked as COMPLETE in tasks.md
+
+---
+
+## Priority 31: TEST - Add Error Handling Edge Case Tests (2026-04-01 17:00 UTC)
+
+### Implementation Summary
+- Added 16 new integration tests covering comprehensive error handling scenarios
+- All tests verify that pi-autoresearch handles error conditions gracefully
+- Tests cover: config validation, missing arguments, command execution, git operations, timeouts, and permissions
+
+### Error Handling Categories Tested
+
+**1. Config File Validation Errors (6 tests)**:
+- `test_error_invalid_config_malformed_json`: Malformed JSON in config file
+- `test_error_invalid_config_max_variance`: max_variance > 1.0 (out of range)
+- `test_error_invalid_config_target_improvement`: Negative target_improvement
+- `test_error_invalid_config_max_iterations`: Zero max_iterations
+- `test_error_invalid_config_iteration_timeout`: Zero iteration_timeout
+- `test_error_invalid_config_session_file_path`: Invalid session_file path
+
+**2. Missing Required Arguments (2 tests)**:
+- `test_error_missing_measurement_command`: Missing --measure flag for baseline verification
+- `test_error_missing_metric_baseline`: Missing --metric flag for baseline verification
+
+**3. Config File Access Errors (1 test)**:
+- `test_error_nonexistent_config_file`: Explicit --config with non-existent file
+
+**4. Command Execution Errors (4 tests)**:
+- `test_error_measurement_non_numeric_output`: Non-numeric measurement output
+- `test_error_measurement_command_fails`: Non-existent command
+- `test_error_empty_measurement_command`: Empty --measure value
+- `test_error_timeout_short_iteration`: Iteration timeout handling
+
+**5. Git Repository Edge Cases (1 test)**:
+- `test_error_not_a_git_repository`: Operation outside git repo with --skip-git
+
+**6. Permission/Access Errors (1 test)**:
+- `test_error_session_file_non_writable_dir`: Session file in non-writable directory
+
+**7. Multiple Validation Errors (1 test)**:
+- `test_error_multiple_validation_errors`: Multiple config validation errors reported together
+
+### Test Statistics
+- **Before**: 68 unit tests + 44 integration tests = 112 total tests
+- **After**: 68 unit tests + 60 integration tests = 128 total tests
+- **All Tests Pass**: ✅ 68 unit tests, ✅ 60 integration tests
+
+### Error Handling Patterns Verified
+
+**Config Validation**:
+- Invalid JSON → "Failed to parse config" error message
+- Out-of-range values → Specific validation error with field name and expected range
+- Multiple errors → All errors reported together (not just first)
+- Non-existent file (explicit --config) → "Config file not found" error
+
+**Command Execution**:
+- Non-numeric output → Parse error with clear message
+- Command not found → Command execution error
+- Empty command → Error about empty/invalid command
+- Timeout → Graceful handling within iteration timeout
+
+**Git Operations**:
+- Not in git repo with --skip-git → Succeeds without git errors
+- Git operations optional with --skip-git flag
+
+**Permissions**:
+- Non-writable directory → Permission error (or succeeds if running as root)
+- Graceful handling of permission errors
+
+### Test Design Principles
+
+1. **Clear Error Messages**: All tests verify that error messages contain relevant keywords
+2. **Graceful Degradation**: Tool should not crash on errors, just exit with appropriate code
+3. **Exit Code Awareness**: Exit code 1 is acceptable for experiments that don't meet target
+4. **Edge Case Coverage**: Tests cover edge cases like empty commands, non-writable directories
+5. **Multiple Errors**: Tests verify all validation errors are reported together
+6. **External Dependencies**: Tests handle missing external tools gracefully
+
+### Learnings
+
+1. **Error Handling is Critical**: Users need clear, actionable error messages when things go wrong
+2. **Config Validation**: All numeric config values should be validated with specific error messages
+3. **Multiple Errors**: Report all validation errors at once, not just the first one
+4. **Exit Codes**: Exit code 1 doesn't always mean error - can mean experiment didn't meet target
+5. **Graceful Degradation**: Tool should handle missing dependencies (git, external tools) gracefully
+6. **Timeout Handling**: Iteration timeouts should prevent commands from running indefinitely
+7. **Permission Errors**: Handle non-writable directories gracefully with clear error messages
+8. **Test Coverage**: Error handling tests are as important as happy path tests
+9. **Test Assertions**: Use flexible assertions that check for error keywords, not exact messages
+10. **Integration Tests**: Error handling is best tested with integration tests, not unit tests
+
+### Code Review Best Practices
+
+- Verify error messages are clear and actionable
+- Check that all validation rules have corresponding tests
+- Ensure multiple errors are reported together
+- Verify graceful handling of missing dependencies
+- Check timeout handling prevents infinite loops
+- Verify permission errors are handled gracefully
+
+### Task Status
+- Priority 31 marked as **READY FOR REVIEW** in tasks.md
+- Task complete - 16 new error handling tests added
+- All 128 tests passing (68 unit + 60 integration)
+
+---

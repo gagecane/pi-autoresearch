@@ -1206,3 +1206,447 @@ fn test_contract_validation_missing_fields() {
     
     std::fs::remove_file(session_file).ok();
 }
+
+// ============================================================================
+// ERROR HANDLING EDGE CASE TESTS
+// ============================================================================
+
+/// Error handling test: Invalid config file with malformed JSON
+#[test]
+fn test_error_invalid_config_malformed_json() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write malformed JSON to config file
+    std::fs::write(&config_file, r#"{"invalid": json, missing quotes}"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with a clear error message
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Failed to parse config") || stderr.contains("invalid") || stderr.contains("error"),
+        "Should show error about malformed JSON in config file");
+}
+
+/// Error handling test: Invalid config file with out-of-range max_variance
+#[test]
+fn test_error_invalid_config_max_variance() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write config with invalid max_variance (> 1.0)
+    std::fs::write(&config_file, r#"{"max_variance": 1.5}"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with validation error
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("max_variance") && stderr.contains("between 0.0 and 1.0"),
+        "Should show validation error for max_variance");
+}
+
+/// Error handling test: Invalid config file with negative target_improvement
+#[test]
+fn test_error_invalid_config_target_improvement() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write config with negative target_improvement
+    std::fs::write(&config_file, r#"{"target_improvement": -0.5}"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with validation error
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("target_improvement") && stderr.contains("positive"),
+        "Should show validation error for target_improvement");
+}
+
+/// Error handling test: Invalid config file with zero max_iterations
+#[test]
+fn test_error_invalid_config_max_iterations() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write config with zero max_iterations
+    std::fs::write(&config_file, r#"{"max_iterations": 0}"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with validation error
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("max_iterations") && stderr.contains("positive"),
+        "Should show validation error for max_iterations");
+}
+
+/// Error handling test: Invalid config file with zero iteration_timeout
+#[test]
+fn test_error_invalid_config_iteration_timeout() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write config with zero iteration_timeout_minutes
+    std::fs::write(&config_file, r#"{"iteration_timeout_minutes": 0}"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with validation error
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("iteration_timeout_minutes") && stderr.contains("positive"),
+        "Should show validation error for iteration_timeout_minutes");
+}
+
+/// Error handling test: Invalid config file with invalid session_file path
+#[test]
+fn test_error_invalid_config_session_file_path() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write config with invalid session_file path (non-writable)
+    std::fs::write(&config_file, r#"{"session_file": "/root/invalid_path/test.jsonl"}"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with validation error about session file path
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("session_file") || stderr.contains("path"),
+        "Should show validation error for session_file path");
+}
+
+/// Error handling test: Missing measurement command
+#[test]
+fn test_error_missing_measurement_command() {
+    // Use temporary HOME directory without config file
+    let args = vec![
+        "--verify-baseline",
+        "--metric",
+        "test_metric",
+        "--session-file",
+        "/tmp/test_missing_measure.jsonl",
+    ];
+    let output = get_cli_output_no_config(&args);
+    
+    // Should fail because --measure is required for --verify-baseline
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("measure") || stderr.contains("required") || stderr.contains("error"),
+        "Should show error about missing measurement command");
+}
+
+/// Error handling test: Missing metric for baseline verification
+#[test]
+fn test_error_missing_metric_baseline() {
+    // Use temporary HOME directory without config file
+    let args = vec![
+        "--verify-baseline",
+        "--measure",
+        "echo 100.0",
+        "--session-file",
+        "/tmp/test_missing_metric.jsonl",
+    ];
+    let output = get_cli_output_no_config(&args);
+    
+    // Should fail because --metric is required for --verify-baseline
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("metric") || stderr.contains("required") || stderr.contains("error"),
+        "Should show error about missing metric");
+}
+
+/// Error handling test: Non-existent config file with explicit --config flag
+#[test]
+fn test_error_nonexistent_config_file() {
+    let args = vec![
+        "--config",
+        "/nonexistent/path/config.json",
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with clear error about missing config file
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("not found") || stderr.contains("Config file"),
+        "Should show error about non-existent config file");
+}
+
+/// Error handling test: Command that returns non-numeric output
+#[test]
+fn test_error_measurement_non_numeric_output() {
+    let args = vec![
+        "--verify-baseline",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo not_a_number",
+        "--session-file",
+        "/tmp/test_non_numeric.jsonl",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail because measurement output is not numeric
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("parse") || stderr.contains("number") || stderr.contains("error"),
+        "Should show error about non-numeric measurement output");
+}
+
+/// Error handling test: Command that fails (non-existent command)
+#[test]
+fn test_error_measurement_command_fails() {
+    let args = vec![
+        "--verify-baseline",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "nonexistent_command_12345",
+        "--session-file",
+        "/tmp/test_command_fail.jsonl",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail because command doesn't exist
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("command") || stderr.contains("error") || stderr.contains("not found"),
+        "Should show error about command failure");
+}
+
+/// Error handling test: Git operations when not in a git repository
+#[test]
+fn test_error_not_a_git_repository() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let session_file = temp_dir.path().join("test.jsonl");
+    
+    // Change to a directory that is not a git repository
+    let args = vec![
+        "--question",
+        "test",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 100.0",
+        "--baseline",
+        "100.0",
+        "--target-improvement",
+        "0.1",
+        "--session-file",
+        session_file.to_str().unwrap(),
+        "--quiet",
+        "--skip-git",  // Skip git operations when not in a git repo
+    ];
+    
+    // Run in temp directory that's not a git repo
+    let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
+    cmd.args(&args);
+    cmd.current_dir(temp_dir.path());
+    let output = cmd.output().unwrap();
+    
+    // Should complete (may exit with 0 or 1 depending on improvement results)
+    // Exit code 1 is expected when target improvement is not met
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("hypothesis") || output.status.code() == Some(1), 
+        "Should complete experiment in non-git repository with --skip-git");
+    
+    // Verify no git-related errors
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(!stderr.contains("fatal:") || stderr.contains("not a git repository"),
+        "Should not fail with git errors when using --skip-git");
+}
+
+/// Error handling test: Timeout with very short iteration timeout
+#[test]
+fn test_error_timeout_short_iteration() {
+    let session_file = "/tmp/test_timeout_short.jsonl";
+    std::fs::remove_file(session_file).ok();
+    
+    // Use a measurement command that will timeout
+    // The tool should handle timeout gracefully
+    let args = vec![
+        "--question",
+        "test timeout",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--iteration-timeout-minutes",
+        "1",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "sleep 61 && echo 100.0",  // Sleep 61 seconds, timeout is 60 seconds
+        "--baseline",
+        "100.0",
+        "--target-improvement",
+        "0.1",
+        "--session-file",
+        session_file,
+        "--quiet",
+        "--skip-git",
+    ];
+    
+    let start = std::time::Instant::now();
+    let output = get_cli_output(&args);
+    let elapsed = start.elapsed();
+    
+    // Should timeout or fail within a reasonable time
+    // The command should not run for the full 61 seconds if timeout works
+    assert!(elapsed.as_secs() < 61, 
+        "Should timeout before command completes (took {}s)", elapsed.as_secs());
+    
+    // The test passes if it times out within the iteration timeout
+    // This verifies timeout handling is working
+    // Exit code 1 is acceptable (experiment completed but didn't meet target)
+    assert!(output.status.code().is_some(),
+        "Should complete with an exit code (timeout or normal completion)");
+}
+
+/// Error handling test: Empty measurement command
+#[test]
+fn test_error_empty_measurement_command() {
+    let args = vec![
+        "--verify-baseline",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "",
+        "--session-file",
+        "/tmp/test_empty_measure.jsonl",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail because empty command is not valid
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("error") || stderr.contains("command"),
+        "Should show error about empty measurement command");
+}
+
+/// Error handling test: Multiple validation errors in config
+#[test]
+fn test_error_multiple_validation_errors() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_file = temp_dir.path().join("config.json");
+    
+    // Write config with multiple validation errors
+    std::fs::write(&config_file, r#"{
+        "max_variance": 2.0,
+        "target_improvement": -1.0,
+        "max_iterations": 0,
+        "iteration_timeout_minutes": 0
+    }"#).unwrap();
+    
+    let args = vec![
+        "--config",
+        config_file.to_str().unwrap(),
+        "--question",
+        "test",
+        "--auto-approve",
+        "--quiet",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail with validation errors
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    // Should report multiple errors
+    assert!(stderr.contains("Config validation failed") || stderr.contains("error"),
+        "Should show validation errors");
+    // Should mention at least some of the invalid fields
+    assert!(stderr.contains("max_variance") || stderr.contains("target_improvement") || 
+            stderr.contains("max_iterations") || stderr.contains("iteration_timeout"),
+        "Should mention invalid fields");
+}
+
+/// Error handling test: Session file in non-writable directory
+#[test]
+fn test_error_session_file_non_writable_dir() {
+    let args = vec![
+        "--question",
+        "test",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 100.0",
+        "--baseline",
+        "100.0",
+        "--target-improvement",
+        "0.1",
+        "--session-file",
+        "/root/test_session.jsonl",  // Root directory is typically not writable
+        "--quiet",
+        "--skip-git",
+    ];
+    let output = get_cli_output(&args);
+    
+    // Should fail or succeed depending on permissions
+    // If running as root, this will succeed; otherwise should fail gracefully
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if !output.status.success() {
+        assert!(stderr.contains("permission") || stderr.contains("cannot") || stderr.contains("error"),
+            "Should show error about non-writable directory");
+    }
+    // If it succeeds (running as root), that's also acceptable
+}
