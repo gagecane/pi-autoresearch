@@ -84,7 +84,13 @@ All config file values are validated when the config is loaded:
 - All errors are collected and reported together (not just first error)
 - Validation happens in `load_config()` after parsing JSON
 - Invalid config files cause the program to exit with a clear error message
-- `is_valid_session_path()` creates a test file to verify writability, then cleans it up
+- `is_valid_session_path()` creates a test file in parent directory to verify writability, then cleans it up
+- Validation is non-destructive (does not create directories or modify existing files)
+
+### ConfigValidationError Enum
+- Provides specific error types for each validation rule
+- Clear, actionable error messages for users
+- Implements Display and Error traits for proper error handling
 
 ## Config File Implementation Notes
 
