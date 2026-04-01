@@ -1306,3 +1306,47 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - All 128 tests passing (68 unit + 60 integration)
 
 ---
+
+## Review Session: 2026-04-01 20:00 UTC
+
+### Learnings from Priority 31 Review: Error Handling Edge Case Tests
+
+**Test Design Patterns**:
+- Error handling tests should verify both the failure (non-success status) and the error message content
+- Use `tempfile::tempdir()` for isolated test environments that clean up automatically
+- Use `get_cli_output_no_config()` for tests that require no config file
+- Verify error messages in stderr, not stdout
+- Tests should be resilient to different error message formats (use OR conditions)
+
+**Error Categories Covered**:
+1. **Config file validation**: Malformed JSON, out-of-range values, invalid paths
+2. **Missing required arguments**: --measure, --metric flags
+3. **Command execution**: Non-existent commands, non-numeric output, empty commands
+4. **Git repository edge cases**: Operations outside git repos with --skip-git
+5. **Timeout scenarios**: Iteration timeout handling
+6. **Permission errors**: Non-writable directories
+7. **Multiple validation errors**: All errors reported together
+
+**Test Quality Principles**:
+- Clear test names that describe what's being tested
+- Proper assertions with meaningful error messages
+- Edge cases covered (malformed JSON, invalid values, missing files)
+- Tests should not rely on specific exit codes (some errors may exit with different codes)
+- Use `--quiet` flag to reduce noise in test output
+- Use `--skip-git` when testing outside git repositories
+
+**Implementation Patterns**:
+- Create temporary config files with invalid values using `std::fs::write()`
+- Use `tempfile::tempdir()` for temporary directories
+- Test both the negative case (error occurs) and verify the error message content
+- For timeout tests, measure elapsed time to verify timeout is working
+- For permission tests, handle both success (running as root) and failure cases
+
+**Review Checklist for Error Handling Tests**:
+- ✅ Test verifies non-success status
+- ✅ Test verifies error message content
+- ✅ Test uses isolated environment (tempfile)
+- ✅ Test handles edge cases appropriately
+- ✅ Test doesn't rely on specific exit codes
+- ✅ Test name clearly describes the error scenario
+- ✅ Test follows existing patterns in the test suite
