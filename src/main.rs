@@ -134,7 +134,7 @@ struct Config {
     beads_enabled: Option<bool>,
 }
 
-fn load_config(config_path: Option<&str>) -> Result<Option<Config>> {
+fn load_config(config_path: Option<&str>, explicit_config: bool) -> Result<Option<Config>> {
     let path = if let Some(p) = config_path {
         PathBuf::from(p)
     } else {
@@ -147,6 +147,9 @@ fn load_config(config_path: Option<&str>) -> Result<Option<Config>> {
     };
 
     if !path.exists() {
+        if explicit_config {
+            return Err(anyhow::anyhow!("Config file not found: {}", path.display()));
+        }
         return Ok(None);
     }
 
@@ -195,27 +198,15 @@ fn get_max_iterations(cli: &Cli, config: &Option<Config>, default: usize) -> usi
 }
 
 /// Get effective max variance from CLI or config
-fn get_max_variance(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
-    if cli.max_variance != 0.05 {
-        // CLI explicitly set (not default)
-        cli.max_variance
-    } else {
-        config.as_ref()
-            .and_then(|c| c.max_variance)
-            .unwrap_or(default)
-    }
+/// CLI always takes precedence, then config, then default
+fn get_max_variance(cli: &Cli, _config: &Option<Config>, _default: f64) -> f64 {
+    cli.max_variance
 }
 
 /// Get effective session file from CLI or config
-fn get_session_file(cli: &Cli, config: &Option<Config>) -> String {
-    if cli.session_file != "autoresearch.jsonl" {
-        // CLI explicitly set (not default)
-        cli.session_file.clone()
-    } else {
-        config.as_ref()
-            .and_then(|c| c.session_file.clone())
-            .unwrap_or_else(|| "autoresearch.jsonl".to_string())
-    }
+/// CLI always takes precedence, then config, then default
+fn get_session_file(cli: &Cli, _config: &Option<Config>) -> String {
+    cli.session_file.clone()
 }
 
 /// Get effective beads enabled from CLI or config
@@ -227,6 +218,41 @@ fn get_beads_enabled(cli: &Cli, config: &Option<Config>) -> bool {
             .and_then(|c| c.beads_enabled)
             .unwrap_or(false)
     }
+}
+
+/// Get effective iteration timeout from CLI or config
+fn get_iteration_timeout(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
+    cli.iteration_timeout_minutes
+        .or(config.as_ref().and_then(|c| c.iteration_timeout_minutes))
+        .unwrap_or(default)
+}
+
+/// Get effective total timeout from CLI or config
+fn get_total_timeout(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
+    cli.total_timeout_minutes
+        .or(config.as_ref().and_then(|c| c.total_timeout_minutes))
+        .unwrap_or(default)
+}
+
+/// Get effective stall limit from CLI or config
+fn get_stall_limit(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
+    cli.stall_limit
+        .or(config.as_ref().and_then(|c| c.stall_limit))
+        .unwrap_or(default)
+}
+
+/// Get effective convergence threshold from CLI or config
+fn get_convergence_threshold(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
+    cli.convergence_threshold
+        .or(config.as_ref().and_then(|c| c.convergence_threshold))
+        .unwrap_or(default)
+}
+
+/// Get effective convergence window from CLI or config
+fn get_convergence_window(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
+    cli.convergence_window
+        .or(config.as_ref().and_then(|c| c.convergence_window))
+        .unwrap_or(default)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -619,15 +645,16 @@ fn run_iterative_loop(
     design: &ExperimentDesign,
     baseline_record: &BaselineRecord,
     cli: &Cli,
+    config: &Option<Config>,
     beads: &mut Option<BeadsIntegration>,
 ) -> Result<(ExperimentSession, Option<StuckReason>)> {
-    let max_iterations = cli.max_iterations.unwrap_or(20);
+    let max_iterations = get_max_iterations(cli, config, 20);
     let baseline_value = baseline_record.value;
-    let iteration_timeout = Duration::from_secs(cli.iteration_timeout_minutes.unwrap_or(10) as u64 * 60);
-    let total_timeout = Duration::from_secs(cli.total_timeout_minutes.unwrap_or(120) as u64 * 60);
-    let stall_limit = cli.stall_limit.unwrap_or(5);
-    let convergence_threshold = cli.convergence_threshold.unwrap_or(0.01);
-    let convergence_window = cli.convergence_window.unwrap_or(3);
+    let iteration_timeout = Duration::from_secs(get_iteration_timeout(cli, config, 10) as u64 * 60);
+    let total_timeout = Duration::from_secs(get_total_timeout(cli, config, 120) as u64 * 60);
+    let stall_limit = get_stall_limit(cli, config, 5);
+    let convergence_threshold = get_convergence_threshold(cli, config, 0.01);
+    let convergence_window = get_convergence_window(cli, config, 3);
     
     let mut state = IterationState {
         current_iteration: 0,
@@ -1475,7 +1502,8 @@ async fn run() -> Result<()> {
     let cli = Cli::parse();
 
     // Load config file
-    let config = load_config(cli.config.as_deref())?;
+    let explicit_config = cli.config.is_some();
+    let config = load_config(cli.config.as_deref(), explicit_config)?;
     
     // Log config loading if verbose
     if cli.verbose {
@@ -1532,6 +1560,7 @@ async fn run() -> Result<()> {
                 &design_to_use,
                 &baseline_record,
                 &cli,
+                &config,
                 &mut beads_resume,
             )?;
 
@@ -1675,7 +1704,6 @@ async fn run() -> Result<()> {
         let baseline_to_use = get_baseline(&cli, &config, design.baseline);
         let max_variance = get_max_variance(&cli, &config, 0.05);
         let session_file = get_session_file(&cli, &config);
-        let max_iterations = get_max_iterations(&cli, &config, 20);
         
         let baseline_record = if cli.baseline.is_some() || config.as_ref().map(|c| c.baseline.is_some()).unwrap_or(false) {
             let git_commit = get_git_commit_hash()?;
@@ -1716,7 +1744,7 @@ async fn run() -> Result<()> {
         design_to_use.baseline = baseline_to_use;
         
         let mut beads_opt = Some(beads);
-        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &mut beads_opt)?;
+        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &config, &mut beads_opt)?;
         let mut beads = beads_opt;
         
         let best_kept_value: Option<f64> = session.iterations

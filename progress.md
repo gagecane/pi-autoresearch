@@ -21,19 +21,29 @@
   - No issues found during review
 
 ### Next Steps
-1. **REVISE: Config File Support** (Priority 2) - Address feedback from review
+1. **REVIEW: Config File Support** (Priority 2) - Ready for review after fixes
 2. Implement FEATURE: Branch Cleanup (Priority 3)
 3. Implement FEATURE: Dry Run Mode (Priority 4)
 
-### Review Session: 2024-01-15
-- ✅ Reviewed Priority 2: Config File Support implementation
-- ⚠️ Found 6 issues requiring fixes:
-  - Bug in `get_max_variance()` default-value detection
-  - Bug in `get_session_file()` default-value detection
-  - Inconsistent use of helper functions
-  - Missing error for explicit missing config file
-  - Missing helper functions for timeout values
-  - Missing config options for some CLI flags
-- 📝 Feedback written to feedback.md
-- 🔄 Task marked as REVISE in tasks.md
+### Revise Session: 2026-04-01
+- ✅ Fixed default-value detection bugs:
+  - `get_max_variance()`: Now returns `cli.max_variance` directly (CLI always wins)
+  - `get_session_file()`: Now returns `cli.session_file.clone()` directly (CLI always wins)
+- ✅ Added missing helper functions:
+  - `get_iteration_timeout()`
+  - `get_total_timeout()`
+  - `get_stall_limit()`
+  - `get_convergence_threshold()`
+  - `get_convergence_window()`
+- ✅ Added error handling for missing explicit config files:
+  - `load_config()` now takes `explicit_config` parameter
+  - Returns error when `--config PATH` is provided but file doesn't exist
+- ✅ Updated `run_iterative_loop()` signature to accept `config` parameter
+- ✅ Updated all calls to `run_iterative_loop()` to pass config
+- ✅ All 19 integration tests pass (tested without config file)
+- ✅ Manual testing confirms:
+  - Config file defaults are used when CLI doesn't specify values
+  - CLI arguments override config file values
+  - Missing explicit config file returns error
+- 🔄 Task marked as READY FOR REVIEW in tasks.md
 

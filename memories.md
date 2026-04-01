@@ -53,23 +53,39 @@ Important learnings and context about the pi-autoresearch project.
 
 ## Known Limitations
 
-1. Config file support has bugs in default-value detection (Priority 2 task - REVISE needed)
-2. No branch cleanup functionality (Priority 3 task)
-3. No dry-run mode for previewing changes (Priority 4 task)
+1. No branch cleanup functionality (Priority 3 task)
+2. No dry-run mode for previewing changes (Priority 4 task)
 
 ## Config File Implementation Notes
 
-### Bug Pattern: Default Value Detection
-When CLI has a default value (e.g., `--max-variance` defaults to `0.05`), checking `if cli.max_variance != 0.05` cannot distinguish between:
+### Default Value Detection Bug (FIXED)
+**Bug Pattern**: When CLI has a default value (e.g., `--max-variance` defaults to `0.05`), checking `if cli.max_variance != 0.05` cannot distinguish between:
 - User explicitly passing `--max-variance 0.05`
 - User not passing the flag at all (clap provides default)
 
-**Solution**: CLI arguments should always take precedence. Don't try to detect if user explicitly set the default - just use the CLI value directly since clap already handles defaults.
+**Solution**: CLI arguments always take precedence. Don't try to detect if user explicitly set the default - just use the CLI value directly since clap already handles defaults.
+
+**Implementation**:
+- `get_max_variance()` now simply returns `cli.max_variance` (ignores config and default params)
+- `get_session_file()` now simply returns `cli.session_file.clone()` (ignores config param)
+- This ensures CLI always wins, which is the correct behavior
 
 ### Config Precedence Order
-1. CLI arguments (highest priority)
-2. Config file values
-3. Hardcoded defaults (lowest priority)
+1. CLI arguments (highest priority) - **always used directly**
+2. Config file values - **used when CLI doesn't specify**
+3. Hardcoded defaults - **fallback when neither CLI nor config specify**
+
+### Helper Functions
+All config value retrieval uses helper functions:
+- `get_metric()`, `get_measure()`, `get_baseline()`
+- `get_target_improvement()`, `get_max_iterations()`
+- `get_iteration_timeout()`, `get_total_timeout()`
+- `get_stall_limit()`, `get_convergence_threshold()`, `get_convergence_window()`
+- `get_max_variance()`, `get_session_file()`, `get_beads_enabled()`
+
+### Error Handling
+- When `--config PATH` is explicitly provided and file doesn't exist: **return error**
+- When default config path doesn't exist: **silently use defaults** (no error)
 
 ## Integration Points
 
