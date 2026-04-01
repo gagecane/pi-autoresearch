@@ -210,7 +210,7 @@ fn validate_config(config: &Config) -> Result<()> {
 
     // Validate max_variance: must be between 0.0 and 1.0
     if let Some(value) = config.max_variance {
-        if value < 0.0 || value > 1.0 {
+        if !(0.0..=1.0).contains(&value) {
             errors.push(ConfigValidationError::MaxVarianceOutOfRange { value });
         }
     }
@@ -1195,7 +1195,7 @@ fn extract_key_changes(
 fn extract_change_summary(agent_action: &str) -> String {
     agent_action
         .split(':')
-        .last()
+        .next_back()
         .unwrap_or(agent_action)
         .trim()
         .split('.')
@@ -1681,7 +1681,7 @@ struct FailureReport {
 enum SessionRecord {
     Baseline(BaselineRecord),
     Iteration(IterationRecord),
-    Experiment(ExperimentSession),
+    Experiment(Box<ExperimentSession>),
 }
 
 fn read_session_file(session_file: &str) -> Result<Vec<SessionRecord>> {
@@ -1702,7 +1702,7 @@ fn read_session_file(session_file: &str) -> Result<Vec<SessionRecord>> {
         // Try to parse as ExperimentSession first (has session_id field)
         if trimmed.contains("\"session_id\"") {
             if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) {
-                records.push(SessionRecord::Experiment(session));
+                records.push(SessionRecord::Experiment(Box::new(session)));
                 continue;
             }
         }
@@ -1725,7 +1725,7 @@ fn read_session_file(session_file: &str) -> Result<Vec<SessionRecord>> {
         
         // Fallback: try each type
         if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) {
-            records.push(SessionRecord::Experiment(session));
+            records.push(SessionRecord::Experiment(Box::new(session)));
         } else if let Ok(iteration) = serde_json::from_str::<IterationRecord>(trimmed) {
             records.push(SessionRecord::Iteration(iteration));
         } else if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(trimmed) {
@@ -1992,9 +1992,9 @@ fn find_session_by_id(session_file: &str, session_id: &str) -> Result<Option<Exp
     let records = read_session_file(session_file)?;
 
     for record in &records {
-        if let SessionRecord::Experiment(ref session) = record {
+        if let SessionRecord::Experiment(session) = &record {
             if session.session_id == session_id {
-                return Ok(Some(session.clone()));
+                return Ok(Some(session.as_ref().clone()));
             }
         }
     }
@@ -2107,9 +2107,9 @@ async fn run() -> Result<()> {
     }
 
     // Handle --compare flag
-    if cli.compare_id1.is_some() && cli.compare_id2.is_some() {
+    if let (Some(id1), Some(id2)) = (&cli.compare_id1, &cli.compare_id2) {
         let session_file = get_session_file(&cli, &config);
-        compare_experiments(&session_file, cli.compare_id1.as_ref().unwrap(), cli.compare_id2.as_ref().unwrap())?;
+        compare_experiments(&session_file, id1, id2)?;
         return Ok(());
     }
 
@@ -2165,7 +2165,7 @@ async fn run() -> Result<()> {
             let max_old_iter = session.iterations.iter().map(|it| it.iteration).max().unwrap_or(0);
             
             for mut iter in new_session.iterations {
-                iter.iteration = max_old_iter + iter.iteration;
+                iter.iteration += max_old_iter;
                 merged_session.iterations.push(iter);
             }
             
@@ -2393,7 +2393,7 @@ async fn run() -> Result<()> {
             let mut file = OpenOptions::new()
                 .create(true)
                 .append(true)
-                .open(&get_session_file(&cli, &config))?;
+                .open(get_session_file(&cli, &config))?;
             writeln!(file, "{}", session_json)?;
         }
         
