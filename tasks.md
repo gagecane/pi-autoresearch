@@ -498,7 +498,8 @@
 **Review**: Implementation verified correct - read_session_file() properly handles both multi-line and compact JSON formats, helper functions work correctly, all 4 new integration tests pass, no regressions (105 total tests passing)
 
 ## Priority 27: FEATURE - Add Structured Logging
-**Status**: READY FOR REVIEW 📝
+**Status**: REVISE 📝
+**Feedback**: One remaining `eprint!` call at line 706 should be changed to `debug!` or `info!` macro. Associated `io::stdout().flush()?` at line 707 should be removed. See feedback.md for details.
 **Description**: Add structured logging using `tracing` crate
 **Rationale**: Current `eprintln!` usage is inconsistent and hard to configure
 **Implementation**:

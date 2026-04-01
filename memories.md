@@ -902,3 +902,18 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - Use `with_writer(std::io::stderr)` to output to stderr
 - Preserve println! for JSON API output to maintain backward compatibility
 - Keep eprint! for interactive prompts (stdin/stdout interaction)
+
+## 2026-04-01 16:00 UTC - Structured Logging Implementation
+
+**Learnings**:
+- When migrating from println!/eprintln! to tracing macros, need to audit entire codebase for any remaining print! calls
+- Progress output (eprint! with flush) should also be converted to tracing macros for consistency
+- Tracing integrates well with existing test infrastructure - tests just need to check stderr instead of stdout
+- Log level configuration via CLI flags (quiet/verbose) provides good user experience
+- Environment variable support (RUST_LOG) allows advanced users to customize logging
+- JSON API output should use println! to maintain backward compatibility with tools that parse stdout
+
+**Code Review Pattern**:
+- Always grep for remaining println!/eprint!/eprint! calls after refactoring to tracing
+- Check that flush() calls are removed when converting from eprint! to tracing macros
+- Verify that interactive prompts (print! for user input) are preserved
