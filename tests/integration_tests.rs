@@ -414,3 +414,122 @@ fn test_session_file_path_configurable() {
     assert!(output.status.success());
     assert!(std::path::Path::new(custom_session_file).exists());
 }
+
+#[test]
+fn test_dry_run_shows_banner() {
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--dry-run",
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(output.status.success());
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("DRY RUN MODE"));
+    assert!(stderr.contains("No changes will be made"));
+}
+
+#[test]
+fn test_dry_run_no_session_file_created() {
+    let session_file = "/tmp/test_dry_run_no_file.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 350.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.1",
+        "--session-file",
+        session_file,
+        "--quiet",
+        "--dry-run",
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(output.status.success());
+    assert!(!std::path::Path::new(session_file).exists(), 
+        "Session file should not be created in dry-run mode");
+}
+
+#[test]
+fn test_dry_run_with_iterations() {
+    let session_file = "/tmp/test_dry_run_iterations.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    let args = vec![
+        "--question",
+        "reduce memory",
+        "--auto-approve",
+        "--max-iterations",
+        "2",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 350.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.1",
+        "--session-file",
+        session_file,
+        "--dry-run",
+    ];
+    let output = get_cli_output(&args);
+
+    assert!(output.status.success());
+    
+    // In dry-run mode, session file should not be created
+    assert!(!std::path::Path::new(session_file).exists());
+    
+    // But should still show experiment complete message
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Experiment Complete") || stderr.contains("DRY RUN"));
+}
+
+#[test]
+fn test_list_branches_flag() {
+    let args = vec!["--list-branches"];
+    let output = get_cli_output(&args);
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // Should either show branches or say no branches found
+    assert!(stdout.contains("autoresearch") || stdout.contains("No autoresearch branches"));
+}
+
+#[test]
+fn test_cleanup_branches_flag() {
+    let args = vec!["--cleanup-branches", "--cleanup-days", "7"];
+    let output = get_cli_output(&args);
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // Should show cleanup summary
+    assert!(stdout.contains("Cleanup Summary") || stdout.contains("No autoresearch branches"));
+}
+
+#[test]
+fn test_cleanup_branches_with_custom_days() {
+    let args = vec!["--cleanup-branches", "--cleanup-days", "30"];
+    let output = get_cli_output(&args);
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // Should show cleanup summary
+    assert!(stdout.contains("Cleanup Summary") || stdout.contains("No autoresearch branches"));
+}

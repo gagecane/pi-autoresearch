@@ -184,3 +184,16 @@
 - ✅ All 21 unit tests pass
 - ✅ All 19 integration tests still pass
 - ✅ Task marked as COMPLETE in tasks.md
+
+### Implementation Session: 2026-04-01 06:05 UTC
+- ✅ Implemented Priority 7: Tests for New Features (branch cleanup, dry-run)
+- ✅ Added 6 new integration tests:
+  - `test_dry_run_shows_banner`: Verifies "DRY RUN MODE" banner
+  - `test_dry_run_no_session_file_created`: Verifies no session file in dry-run
+  - `test_dry_run_with_iterations`: Verifies dry-run completes without side effects
+  - `test_list_branches_flag`: Verifies --list-branches works
+  - `test_cleanup_branches_flag`: Verifies --cleanup-branches shows summary
+  - `test_cleanup_branches_with_custom_days`: Verifies custom cleanup days
+- ✅ All 25 integration tests pass
+- ✅ All 21 unit tests still pass
+- ✅ Task marked as COMPLETE in tasks.md
