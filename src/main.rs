@@ -739,13 +739,14 @@ fn run_iterative_loop(
         // Layer 1: Per-iteration timeout
         let iteration_start = Instant::now();
         
+        let session_file = get_session_file(cli, config);
         let iteration_result = run_iteration(
             state.current_iteration,
             question,
             baseline_value,
             state.best_metric,
             &design.measurement,
-            &cli.session_file,
+            &session_file,
             dry_run,
         );
         
@@ -1747,8 +1748,9 @@ async fn run() -> Result<()> {
             design_to_use.measurement = measure_to_use;
 
             let baseline_record = session.baseline_record.clone();
+            let session_file = get_session_file(&cli, &config);
             if !cli.dry_run {
-                save_to_session_file(&cli.session_file, &baseline_record)?;
+                save_to_session_file(&session_file, &baseline_record)?;
             }
 
             let mut beads_resume = if cli.beads_enabled { Some(BeadsIntegration::new(true)) } else { None };

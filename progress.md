@@ -146,3 +146,11 @@
   - Priority 11: FEATURE - Config File Validation
   - Priority 12: FEATURE - Experiment Comparison
 - ✅ Ready to start Priority 5: BUG FIX
+
+### Implementation Session: 2026-04-01 05:50 UTC
+- ✅ Fixed Priority 5: Session File Config Precedence bugs
+  - Line 748: Changed `&cli.session_file` to `get_session_file(cli, config)` in `run_iterative_loop()`
+  - Line 1751: Changed `&cli.session_file` to `get_session_file(&cli, &config)` in `--resume` section
+- ✅ Verified code compiles with `cargo check`
+- ✅ All 19 integration tests pass
+- ✅ Task marked as READY FOR REVIEW in tasks.md
