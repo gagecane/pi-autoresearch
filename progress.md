@@ -881,3 +881,29 @@
   - Priority 32: TEST - Add Mutation Testing Framework
 - ✅ Task marked as COMPLETE in tasks.md
 - ✅ Task done - research complete, 8 new tasks created
+
+### Implementation Session: 2026-04-01 12:05 UTC
+- ✅ Implemented Priority 25: TEST - Add Unit Tests for stdin and Command Functions
+- ✅ Added 9 new unit tests:
+  - `test_read_question_from_stdin_non_empty`: Verifies function exists and has correct signature
+  - `test_execute_measurement_valid_command`: Tests with valid numeric output (echo 42.5)
+  - `test_execute_measurement_integer_output`: Tests with integer output (echo 100)
+  - `test_execute_measurement_negative_output`: Tests with negative number output (echo -25.75)
+  - `test_execute_measurement_empty_command`: Tests empty command returns error
+  - `test_execute_measurement_invalid_output`: Tests non-numeric output returns error
+  - `test_execute_measurement_command_not_found`: Tests non-existent command returns error
+  - `test_execute_measurement_whitespace_handling`: Tests whitespace in output is handled correctly
+  - `test_execute_measurement_scientific_notation`: Tests scientific notation (echo 1.5e2)
+- ✅ Code compiles without warnings
+- ✅ All 69 unit tests pass (was 60)
+- ✅ All 33 integration tests still pass
+- ✅ Total: 102 tests passing
+- ✅ Task marked as READY FOR REVIEW in tasks.md
+- ✅ Ready for review
+
+### Learnings
+- `execute_measurement()` is testable with simple shell commands like `echo`
+- `read_question_from_stdin()` requires stdin mocking which is better suited for integration tests
+- Unit tests can verify function signatures and basic behavior even for I/O functions
+- Error handling tests are important for command execution functions
+- Scientific notation parsing works correctly with f64::parse()
