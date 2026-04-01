@@ -2995,7 +2995,7 @@ mod tests {
     #[test]
     fn test_get_current_branch_not_empty() {
         // Test that current branch is not empty (unless not in git repo)
-        let branch = get_current_branch();
+        let _branch = get_current_branch();
         // Branch name should not be empty if in a git repo
         // If not in git repo, it might return empty or "(no branch)"
         // We just verify it doesn't panic
