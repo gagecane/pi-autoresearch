@@ -1522,3 +1522,22 @@
 - ✅ Task marked as COMPLETE in tasks.md
 - ✅ Ready for review
 
+
+## Implementation Session: 2026-04-01 18:00 UTC
+- ✅ Implemented Priority 38: DOCS - Add Troubleshooting Guide
+- ✅ Created docs/TROUBLESHOOTING.md (7.5KB) with comprehensive troubleshooting content:
+  - Installation issues (command not found, Rust installation, llvm-tools)
+  - Configuration issues (validation errors, missing config)
+  - Measurement issues (parse errors, command failures, variance)
+  - Git issues (not a repo, branch creation, push failures)
+  - Experiment issues (stall limit, timeouts, convergence)
+  - Session file issues (not found, invalid ID)
+  - Performance issues (slow experiments, high memory)
+  - Beads integration issues
+  - Logging issues
+  - Common error messages with solutions
+  - Debug mode instructions
+  - Bug reporting guidelines
+- ✅ Task marked as COMPLETE in tasks.md
+- ✅ Ready for review
+
