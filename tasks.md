@@ -476,15 +476,21 @@
 **Review**: Implementation verified correct - all 8 execute_measurement tests properly implemented, cover valid output, error cases, and edge cases, placeholder test for read_question_from_stdin correctly removed, all tests pass consistently
 
 ## Priority 26: TEST - Add Resume Functionality Integration Test
-**Status**: TODO 📝
+**Status**: READY FOR REVIEW 🔄
 **Description**: Add full integration test for `--resume` flag with actual session data
 **Rationale**: Resume functionality is critical but only has basic flag recognition test
-**Implementation Plan**:
-- Create a test session file with a completed experiment
-- Run `--resume` with the session ID
-- Verify that the experiment resumes correctly
-- Verify that new iterations are added to the session file
-- Verify that the final result is correct
+**Implementation**:
+- Added 4 new integration tests:
+  - `test_resume_with_valid_session`: Creates session, resumes it, verifies iterations increased
+  - `test_resume_preserves_session_data`: Verifies original question preserved after resume
+  - `test_resume_invalid_session_id`: Verifies error on non-existent session ID
+  - `test_resume_with_empty_session_file`: Verifies error on empty session file
+- Fixed `read_session_file()` to handle multi-line pretty-printed JSON objects
+- Added helper functions:
+  - `extract_session_id_from_file()`: Extracts session_id from session file (handles both JSONL and pretty-printed JSON)
+  - `count_iterations_in_file()`: Counts iterations in session file
+**Tests Added**: 4 new integration tests
+**Result**: 68 unit tests + 37 integration tests = 105 total tests passing
 **Acceptance Criteria**:
 - ✅ Integration test for `--resume` with valid session passes
 - ✅ Integration test for `--resume` with invalid session fails gracefully

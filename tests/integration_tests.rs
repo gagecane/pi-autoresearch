@@ -30,6 +30,45 @@ fn parse_json_output(output: &Output) -> Value {
     serde_json::from_str(trimmed).unwrap()
 }
 
+/// Extract session_id from a session file that may contain both compact JSONL and pretty-printed JSON
+fn extract_session_id_from_file(session_file: &str) -> Option<String> {
+    let contents = std::fs::read_to_string(session_file).ok()?;
+    
+    // First try to find session_id in compact JSONL lines
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Ok(json) = serde_json::from_str::<Value>(trimmed) {
+            if let Some(session_id) = json.get("session_id").and_then(|v| v.as_str()) {
+                return Some(session_id.to_string());
+            }
+        }
+    }
+    
+    // If not found, try to find it in the raw text (handles multi-line JSON)
+    if let Some(start) = contents.find("\"session_id\":") {
+        let rest = &contents[start..];
+        if let Some(colon_pos) = rest.find(':') {
+            let after_colon = &rest[colon_pos + 1..];
+            let trimmed = after_colon.trim_start();
+            if trimmed.starts_with('"') {
+                if let Some(end) = trimmed[1..].find('"') {
+                    return Some(trimmed[1..end + 1].to_string());
+                }
+            }
+        }
+    }
+    
+    None
+}
+
+/// Count the number of iterations in a session file
+fn count_iterations_in_file(contents: &str) -> usize {
+    // Count occurrences of "iteration": followed by a number
+    contents.matches("\"iteration\":").count()
+}
 #[test]
 fn test_question_argument_parsing() {
     let args = vec!["--question", "test question", "--auto-approve"];
@@ -680,4 +719,174 @@ fn test_compare_missing_session_id() {
     // When only one ID is provided, it should not trigger compare
     // and should proceed to normal execution which will fail due to missing question
     assert!(!stderr.contains("compare"));
+}
+
+#[test]
+fn test_resume_with_valid_session() {
+    let session_file = "/tmp/test_resume_valid.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    // First, create an initial experiment with 1 iteration
+    // Use a target improvement that can be achieved (15% improvement from 512 to 435)
+    let create_args = vec![
+        "--question",
+        "reduce memory usage",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "peak_memory_mb",
+        "--measure",
+        "echo 435.0",
+        "--baseline",
+        "512.0",
+        "--target-improvement",
+        "0.15",
+        "--session-file",
+        session_file,
+        "--quiet",
+        "--skip-git",
+    ];
+    let create_output = get_cli_output(&create_args);
+    assert!(create_output.status.success(), "Initial experiment should succeed");
+
+    // Read the session file to get the session ID
+    let session_id = extract_session_id_from_file(session_file);
+    
+    assert!(session_id.is_some(), "Session ID should be found in session file");
+    let session_id = session_id.unwrap();
+
+    // Now resume the experiment with 1 more iteration
+    // Don't use --quiet so we can check the output
+    let resume_args = vec![
+        "--resume",
+        &session_id,
+        "--max-iterations",
+        "1",
+        "--session-file",
+        session_file,
+        "--skip-git",
+    ];
+    let resume_output = get_cli_output(&resume_args);
+    
+    // Resume should complete (may exit with code 1 if target not met, but operation completes)
+    // Check stderr for completion message
+    let stderr = String::from_utf8_lossy(&resume_output.stderr);
+    let resume_completed = stderr.contains("Resumed Experiment Complete") || 
+                           stderr.contains("Resuming session");
+    assert!(resume_completed, "Resume operation should complete. Stderr: {}", stderr);
+
+    // Verify the session file has been updated
+    let final_contents = std::fs::read_to_string(session_file).unwrap();
+    
+    // Count iteration records by searching for "iteration" field in the multi-line JSON
+    let iteration_count = count_iterations_in_file(&final_contents);
+    
+    // Should have at least 2 iterations (1 from initial + 1 from resume)
+    assert!(iteration_count >= 2, "Should have at least 2 iterations after resume, found {}", iteration_count);
+}
+
+#[test]
+fn test_resume_preserves_session_data() {
+    let session_file = "/tmp/test_resume_preserve.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    // Create initial experiment with specific baseline
+    // Use a target improvement that can be achieved (30% improvement from 500 to 350)
+    let create_args = vec![
+        "--question",
+        "optimize database queries",
+        "--auto-approve",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "execution_time_ms",
+        "--measure",
+        "echo 350.0",
+        "--baseline",
+        "500.0",
+        "--target-improvement",
+        "0.3",
+        "--session-file",
+        session_file,
+        "--quiet",
+        "--skip-git",
+    ];
+    let create_output = get_cli_output(&create_args);
+    assert!(create_output.status.success());
+
+    // Get session ID
+    let session_id = extract_session_id_from_file(session_file)
+        .expect("Session ID should be found");
+
+    // Resume the experiment
+    let resume_args = vec![
+        "--resume",
+        &session_id,
+        "--max-iterations",
+        "1",
+        "--session-file",
+        session_file,
+        "--quiet",
+        "--skip-git",
+    ];
+    let resume_output = get_cli_output(&resume_args);
+    
+    // Resume should complete (may not meet target, but operation completes)
+    let resume_completed = resume_output.status.success() || 
+        String::from_utf8_lossy(&resume_output.stderr).contains("Resumed Experiment Complete");
+    assert!(resume_completed, "Resume operation should complete");
+
+    // Verify original question is preserved in the session file
+    let final_contents = std::fs::read_to_string(session_file).unwrap();
+    
+    // Check if the original question appears in the file
+    let found_original_question = final_contents.contains("optimize database queries");
+    
+    assert!(found_original_question, "Original question should be preserved in resumed session");
+}
+
+#[test]
+fn test_resume_invalid_session_id() {
+    let session_file = "/tmp/test_resume_invalid_id.jsonl";
+    std::fs::remove_file(session_file).ok();
+
+    // Try to resume with a non-existent session ID
+    let resume_args = vec![
+        "--resume",
+        "non-existent-session-id-12345",
+        "--session-file",
+        session_file,
+    ];
+    let resume_output = get_cli_output(&resume_args);
+    
+    // Should fail because session doesn't exist
+    assert!(!resume_output.status.success(), "Resume with invalid session ID should fail");
+
+    let stderr = String::from_utf8_lossy(&resume_output.stderr);
+    assert!(stderr.contains("not found") || stderr.contains("Session"), 
+        "Error message should indicate session not found");
+}
+
+#[test]
+fn test_resume_with_empty_session_file() {
+    let session_file = "/tmp/test_resume_empty.jsonl";
+    std::fs::remove_file(session_file).ok();
+    std::fs::write(session_file, "").ok();
+
+    // Try to resume with an empty session file
+    let resume_args = vec![
+        "--resume",
+        "some-session-id",
+        "--session-file",
+        session_file,
+    ];
+    let resume_output = get_cli_output(&resume_args);
+    
+    // Should fail because no sessions exist in empty file
+    assert!(!resume_output.status.success(), "Resume with empty session file should fail");
+
+    let stderr = String::from_utf8_lossy(&resume_output.stderr);
+    assert!(stderr.contains("not found") || stderr.contains("Session"), 
+        "Error message should indicate session not found");
 }

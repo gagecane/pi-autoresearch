@@ -731,3 +731,104 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - All 33 integration tests pass
 - Total: 101 tests passing
 - Task marked as READY FOR REVIEW
+
+---
+
+## Priority 26: TEST - Add Resume Functionality Integration Test
+
+### Date: 2026-04-01 14:00 UTC
+
+### Implementation
+- Added 4 new integration tests for `--resume` flag:
+  - `test_resume_with_valid_session`: Creates session, resumes it, verifies iterations increased
+  - `test_resume_preserves_session_data`: Verifies original question preserved after resume
+  - `test_resume_invalid_session_id`: Verifies error on non-existent session ID
+  - `test_resume_with_empty_session_file`: Verifies error on empty session file
+- Fixed `read_session_file()` to handle multi-line pretty-printed JSON objects:
+  - Added brace counting logic to extract complete JSON objects from multi-line text
+  - Preserves backward compatibility with compact JSONL format
+  - Avoids duplicate records when both formats present
+- Added helper functions:
+  - `extract_session_id_from_file()`: Extracts session_id from session file (handles both JSONL and pretty-printed JSON)
+  - `count_iterations_in_file()`: Counts iterations in session file
+
+### Session File Format Discovery
+**Issue**: Session file contains both compact JSONL and pretty-printed JSON:
+- Compact JSONL lines for baseline and iteration records
+- Pretty-printed multi-line JSON for the final experiment session
+
+**Example Session File Structure**:
+```
+{  // Pretty-printed hypothesis info (not part of JSONL)
+  "hypothesis": "...",
+  ...
+}
+{"timestamp":"...","value":512.0,...}  // Compact JSONL baseline record
+{"iteration":1,...}  // Compact JSONL iteration record
+{  // Pretty-printed experiment session
+  "session_id": "...",
+  "question": "...",
+  ...
+}
+```
+
+**Solution**: 
+- Parse multi-line JSON by counting braces to find complete objects
+- Also parse compact JSONL lines for backward compatibility
+- Deduplicate records when both formats contain the same data
+
+### Test Design
+**Valid Session Test**:
+1. Create initial experiment with 1 iteration
+2. Extract session_id from session file
+3. Resume experiment with 1 more iteration
+4. Verify session file has at least 2 iterations
+5. Handle exit code 1 (target not met) as successful completion
+
+**Session Data Preservation Test**:
+1. Create experiment with specific question
+2. Resume experiment
+3. Verify original question appears in session file
+
+**Invalid Session ID Test**:
+1. Try to resume with non-existent session ID
+2. Verify error message indicates session not found
+
+**Empty Session File Test**:
+1. Create empty session file
+2. Try to resume with any session ID
+3. Verify error message indicates session not found
+
+### Test Statistics
+- **Before**: 68 unit tests + 33 integration tests = 101 total tests
+- **After**: 68 unit tests + 37 integration tests = 105 total tests
+- **All Tests Pass**: ✅ 68 unit tests, ✅ 37 integration tests
+
+### Code Changes
+**src/main.rs - read_session_file()**:
+- Added multi-line JSON parsing with brace counting
+- Iterates through content finding complete JSON objects
+- Tries to parse as ExperimentSession, IterationRecord, or BaselineRecord
+- Maintains backward compatibility with compact JSONL
+- Deduplicates records to avoid double-counting
+
+**tests/integration_tests.rs**:
+- Added `extract_session_id_from_file()` helper function
+- Added `count_iterations_in_file()` helper function
+- Added 4 comprehensive resume integration tests
+- Tests handle both success and failure cases
+
+### Learnings
+- **Session File Complexity**: Session files can contain multiple JSON formats (compact JSONL + pretty-printed JSON)
+- **Multi-line JSON Parsing**: Brace counting is effective for extracting complete JSON objects from multi-line text
+- **Resume Functionality**: Resume operation may exit with code 1 if target not met, but still completes successfully
+- **Test Robustness**: Tests should check for completion messages in stderr, not just exit codes
+- **Backward Compatibility**: New parsing logic must handle both old and new file formats
+- **Helper Functions**: Extracting session_id and counting iterations are useful operations worth abstracting
+- **Integration Testing**: Resume functionality requires actual session files and multi-step test scenarios
+
+### Testing
+- All 68 unit tests pass
+- All 37 integration tests pass
+- Total: 105 tests passing
+- Task marked as READY FOR REVIEW

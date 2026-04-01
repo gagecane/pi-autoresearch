@@ -1692,6 +1692,56 @@ fn read_session_file(session_file: &str) -> Result<Vec<SessionRecord>> {
     let contents = std::fs::read_to_string(session_file)?;
     let mut records = Vec::new();
 
+    // First, try to extract and parse multi-line JSON objects (pretty-printed)
+    // Look for the final ExperimentSession which is typically pretty-printed
+    let mut remaining = contents.as_str();
+    while let Some(start_pos) = remaining.find('{') {
+        let start_idx = start_pos;
+        let mut brace_count = 0;
+        let mut end_idx = start_idx;
+        let mut found_complete = false;
+        
+        for (i, ch) in remaining[start_idx..].char_indices() {
+            match ch {
+                '{' => brace_count += 1,
+                '}' => {
+                    brace_count -= 1;
+                    if brace_count == 0 {
+                        end_idx = start_idx + i;
+                        found_complete = true;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        
+        if found_complete {
+            let json_str = &remaining[start_idx..=end_idx];
+            
+            // Try to parse as ExperimentSession first (has session_id field)
+            if json_str.contains("\"session_id\"") {
+                if let Ok(session) = serde_json::from_str::<ExperimentSession>(json_str) {
+                    records.push(SessionRecord::Experiment(Box::new(session)));
+                    remaining = &remaining[end_idx + 1..];
+                    continue;
+                }
+            }
+            
+            // Try other types
+            if let Ok(iteration) = serde_json::from_str::<IterationRecord>(json_str) {
+                records.push(SessionRecord::Iteration(iteration));
+            } else if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(json_str) {
+                records.push(SessionRecord::Baseline(baseline));
+            }
+            
+            remaining = &remaining[end_idx + 1..];
+        } else {
+            break;
+        }
+    }
+
+    // Also parse any remaining compact JSONL lines
     for line in contents.lines() {
         if line.trim().is_empty() {
             continue;
@@ -1699,37 +1749,40 @@ fn read_session_file(session_file: &str) -> Result<Vec<SessionRecord>> {
         
         let trimmed = line.trim();
         
-        // Try to parse as ExperimentSession first (has session_id field)
-        if trimmed.contains("\"session_id\"") {
-            if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) {
-                records.push(SessionRecord::Experiment(Box::new(session)));
-                continue;
+        // Skip if this looks like it's part of a multi-line JSON (already parsed above)
+        if trimmed.starts_with('{') && trimmed.ends_with('}') {
+            // Try to parse as ExperimentSession first (has session_id field)
+            if trimmed.contains("\"session_id\"") {
+                if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) {
+                    // Check if we already have this session (avoid duplicates)
+                    if !records.iter().any(|r| {
+                        if let SessionRecord::Experiment(s) = r {
+                            s.session_id == session.session_id
+                        } else {
+                            false
+                        }
+                    }) {
+                        records.push(SessionRecord::Experiment(Box::new(session)));
+                    }
+                    continue;
+                }
             }
-        }
-        
-        // Try to parse as IterationRecord (has iteration field)
-        if trimmed.contains("\"iteration\"") && trimmed.contains("\"agent_action\"") {
-            if let Ok(iteration) = serde_json::from_str::<IterationRecord>(trimmed) {
-                records.push(SessionRecord::Iteration(iteration));
-                continue;
+            
+            // Try to parse as IterationRecord (has iteration field)
+            if trimmed.contains("\"iteration\"") && trimmed.contains("\"agent_action\"") {
+                if let Ok(iteration) = serde_json::from_str::<IterationRecord>(trimmed) {
+                    records.push(SessionRecord::Iteration(iteration));
+                    continue;
+                }
             }
-        }
-        
-        // Try to parse as BaselineRecord (has verification_runs field)
-        if trimmed.contains("\"verification_runs\"") {
-            if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(trimmed) {
-                records.push(SessionRecord::Baseline(baseline));
-                continue;
+            
+            // Try to parse as BaselineRecord (has verification_runs field)
+            if trimmed.contains("\"verification_runs\"") {
+                if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(trimmed) {
+                    records.push(SessionRecord::Baseline(baseline));
+                    continue;
+                }
             }
-        }
-        
-        // Fallback: try each type
-        if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) {
-            records.push(SessionRecord::Experiment(Box::new(session)));
-        } else if let Ok(iteration) = serde_json::from_str::<IterationRecord>(trimmed) {
-            records.push(SessionRecord::Iteration(iteration));
-        } else if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(trimmed) {
-            records.push(SessionRecord::Baseline(baseline));
         }
     }
 
