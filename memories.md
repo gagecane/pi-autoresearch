@@ -27,9 +27,22 @@ Important learnings and context about the pi-autoresearch project.
 ## Testing Strategy
 
 ### Integration Tests
-- 19 total tests in `tests/integration_tests.rs`
+- 31 total tests in `tests/integration_tests.rs`
 - Tests use `--skip-git` flag to avoid git branch conflicts
 - All tests should pass consistently when run in parallel
+
+### Unit Tests
+- 60 unit tests in `src/main.rs`
+- Tests cover:
+  - Config helper functions (13 functions)
+  - Validation functions (8 rules)
+  - Git functions (6 functions)
+  - Agent functions (3 functions)
+  - Utility functions (15 functions)
+
+### Total Test Coverage
+- 91 total tests (60 unit + 31 integration)
+- All tests pass consistently
 
 ### Test Parallelization
 - **Issue**: Branch names using timestamp format could collide in parallel tests
@@ -48,6 +61,25 @@ Important learnings and context about the pi-autoresearch project.
 ### Branch Naming Convention
 - Format: `autoresearch/YYYYMMDD-HHMMSS-{uuid}`
 - Includes timestamp for chronological ordering
+- UUID ensures uniqueness in parallel test runs
+
+### Documentation Structure
+- `docs/` folder contains user-facing documentation:
+  - README.md: Overview and quick start
+  - USAGE.md: Detailed usage guide
+  - CONFIG.md: Configuration documentation
+  - EXAMPLES.md: Example use cases
+- `specs/` folder contains technical specifications:
+  - CLI.md: CLI interface specification
+  - SESSION.md: Session file format specification
+  - CONFIG.md: Configuration file specification
+  - WORKFLOW.md: Experiment workflow specification
+
+### Code Quality
+- All helper functions properly implemented with single responsibility
+- Config validation is non-destructive (does not create directories or files)
+- All 5 termination conditions properly documented and implemented
+- Minor issue: Unused variable warning at line 2998 in test code
 - Includes UUID for uniqueness (prevents collisions)
 - Prefix allows easy identification and cleanup
 
