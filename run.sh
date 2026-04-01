@@ -23,6 +23,7 @@ while true; do
             echo "Success: Completion string found in $PROGRESS_FILE."
             pi code -p "Summarize the progress report in progress.md and the status of tasks in tasks.md and the learnings in memories.md"
             exit 0
+        fi
     fi
 
     # Increment counter

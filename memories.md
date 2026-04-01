@@ -155,3 +155,25 @@ All config value retrieval uses helper functions:
 - Default max variance: 5%
 - Records git commit hash for reproducibility
 
+## Documentation Review Findings
+
+### Documentation Structure
+- `docs/README.md` - Overview and quick start guide
+- `docs/USAGE.md` - Detailed usage guide with all CLI options
+- `docs/CONFIG.md` - Configuration file documentation with tables
+- `docs/EXAMPLES.md` - 12 example use cases
+
+### Documentation Quality Issues
+1. **Installation Instructions**: Package not on crates.io, needs build-from-source instructions
+2. **Build Instructions**: Missing development/build instructions
+3. **Session File Format**: JSONL format needs clearer multi-line example
+4. **Cross-References**: Missing link to main README.md
+5. **Section Organization**: Metric detection section should be more prominent
+
+### Documentation Best Practices
+- Installation instructions should match actual distribution method
+- Build instructions essential for unpublished packages
+- Examples should show actual file formats clearly
+- Documentation should link to related documents
+- Important features (like auto-detection) should be prominently placed
+
