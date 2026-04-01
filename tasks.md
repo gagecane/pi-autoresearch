@@ -120,14 +120,20 @@
 **Result**: 4 new integration tests added, all pass (29 total integration tests + 21 unit tests)
 
 ## Priority 9: REFACTOR - Extract Date Parsing Logic
-**Status**: TODO
-**Description**: Refactor duplicate date parsing logic into a helper function
-**Root Cause**: Date parsing code is duplicated in:
-1. `cleanup_autoresearch_branches()` (lines 1636-1649)
-2. `list_autoresearch_branches()` in main run() (lines 1706-1719)
-**Fix Required**: 
-- Create `parse_branch_age(branch: &str) -> Result<String>` helper function
-- Use in both locations
+**Status**: COMPLETE ✅
+**Description**: Refactor duplicate date parsing logic into helper functions
+**Root Cause**: Date parsing code was duplicated in:
+1. `cleanup_autoresearch_branches()` - 25 lines of date parsing logic
+2. `list_autoresearch_branches()` in main run() - 25 lines of identical logic
+**Fix Applied**:
+- Created `parse_branch_age_days(branch: &str) -> i64` helper function
+- Created `format_branch_age(days: i64) -> String` helper function
+- Both locations now use the helper functions (reduced from 50 lines to 2 lines each)
+**Benefits**:
+- Eliminates code duplication
+- Easier to maintain and test
+- Consistent date parsing across the codebase
+**Test**: All 29 integration tests and 21 unit tests pass
 
 ## Priority 10: REFACTOR - Split finalize_experiment Function
 **Status**: TODO

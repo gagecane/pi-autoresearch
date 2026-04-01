@@ -459,6 +459,45 @@ fn get_git_commit_hash() -> Result<String> {
     }
 }
 
+/// Parse branch age from git commit date
+/// Returns number of days since commit, or -1 if unknown
+fn parse_branch_age_days(branch: &str) -> i64 {
+    let date_output = Command::new("git")
+        .args(["log", "-1", "--format=%ai", branch])
+        .output();
+
+    if let Ok(output) = date_output {
+        if output.status.success() {
+            let date_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            // Try to parse the date in various formats
+            let commit_date = chrono::DateTime::parse_from_rfc3339(&date_str)
+                .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S %z"))
+                .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.f %z"));
+            
+            if let Ok(parsed_date) = commit_date {
+                let now = Utc::now();
+                let duration = now.signed_duration_since(parsed_date);
+                duration.num_days()
+            } else {
+                -1 // Unknown age
+            }
+        } else {
+            -1 // Unknown age
+        }
+    } else {
+        -1 // Unknown age
+    }
+}
+
+/// Format branch age as a human-readable string
+fn format_branch_age(days: i64) -> String {
+    if days >= 0 {
+        format!("{} days old", days)
+    } else {
+        "unknown age".to_string()
+    }
+}
+
 fn verify_baseline(
     metric: &str,
     measurement_command: &str,
@@ -1506,42 +1545,13 @@ fn cleanup_autoresearch_branches(days: usize) -> Result<usize> {
     println!("\n=== Autoresearch Branches ===\n");
     println!("Found {} autoresearch branch(es):\n", branches.len());
 
-    let now = Utc::now();
     let mut deleted_count = 0;
     let mut kept_count = 0;
 
     for branch in &branches {
         // Get the commit date for this branch
-        let date_output = Command::new("git")
-            .args(["log", "-1", "--format=%ai", branch])
-            .output();
-
-        let branch_age = if let Ok(output) = date_output {
-            if output.status.success() {
-                let date_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                // Try to parse the date in various formats
-                let commit_date = chrono::DateTime::parse_from_rfc3339(&date_str)
-                    .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S %z"))
-                    .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.f %z"));
-                
-                if let Ok(parsed_date) = commit_date {
-                    let duration = now.signed_duration_since(parsed_date);
-                    duration.num_days()
-                } else {
-                    -1 // Unknown age
-                }
-            } else {
-                -1 // Unknown age
-            }
-        } else {
-            -1 // Unknown age
-        };
-
-        let age_str = if branch_age >= 0 {
-            format!("{} days old", branch_age)
-        } else {
-            "unknown age".to_string()
-        };
+        let branch_age = parse_branch_age_days(branch);
+        let age_str = format_branch_age(branch_age);
 
         println!("  {} - {}", branch, age_str);
 
@@ -1670,33 +1680,10 @@ async fn run() -> Result<()> {
             
             for branch in &branches {
                 // Get the commit date for this branch
-                let date_output = Command::new("git")
-                    .args(["log", "-1", "--format=%ai", branch])
-                    .output();
+                let branch_age = parse_branch_age_days(branch);
+                let age_str = format_branch_age(branch_age);
 
-                let branch_age = if let Ok(output) = date_output {
-                    if output.status.success() {
-                        let date_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                        // Try to parse the date in various formats
-                        let commit_date = chrono::DateTime::parse_from_rfc3339(&date_str)
-                            .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S %z"))
-                            .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.f %z"));
-                        
-                        if let Ok(parsed_date) = commit_date {
-                            let now = Utc::now();
-                            let duration = now.signed_duration_since(parsed_date);
-                            format!("{} days old", duration.num_days())
-                        } else {
-                            "unknown age".to_string()
-                        }
-                    } else {
-                        "unknown age".to_string()
-                    }
-                } else {
-                    "unknown age".to_string()
-                };
-
-                println!("  {} - {}", branch, branch_age);
+                println!("  {} - {}", branch, age_str);
             }
             
             println!("\nUse --cleanup-branches to remove old branches");

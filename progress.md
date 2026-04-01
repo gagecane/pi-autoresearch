@@ -217,3 +217,14 @@
 - ✅ Completed Priority 8: TEST - Tests for History and Resume (4 tests added)
 - 📊 Total: 21 unit tests + 29 integration tests = 50 tests passing
 - 🔜 Next: Priority 9 - REFACTOR - Extract Date Parsing Logic
+
+### Implementation Session: 2026-04-01 06:20 UTC
+- ✅ Implemented Priority 9: REFACTOR - Extract Date Parsing Logic
+- ✅ Created `parse_branch_age_days(branch: &str) -> i64` helper function
+- ✅ Created `format_branch_age(days: i64) -> String` helper function
+- ✅ Refactored both duplicate locations to use helper functions
+- ✅ Removed unused `now` variable from cleanup function
+- ✅ Fixed println to use formatted age string
+- ✅ Code compiles without warnings
+- ✅ All 29 integration tests and 21 unit tests pass
+- ✅ Task marked as COMPLETE in tasks.md
