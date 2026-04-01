@@ -150,6 +150,153 @@ struct Config {
     beads_enabled: Option<bool>,
 }
 
+/// Validation error for config values
+#[derive(Debug)]
+enum ConfigValidationError {
+    MaxVarianceOutOfRange { value: f64 },
+    TargetImprovementNotPositive { value: f64 },
+    MaxIterationsNotPositive { value: usize },
+    IterationTimeoutNotPositive { value: usize },
+    TotalTimeoutNotPositive { value: usize },
+    StallLimitNotPositive { value: usize },
+    ConvergenceWindowNotPositive { value: usize },
+    SessionFileInvalidPath { path: String },
+}
+
+impl std::fmt::Display for ConfigValidationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigValidationError::MaxVarianceOutOfRange { value } => {
+                write!(f, "max_variance must be between 0.0 and 1.0, got {:.2}", value)
+            }
+            ConfigValidationError::TargetImprovementNotPositive { value } => {
+                write!(f, "target_improvement must be positive, got {:.2}", value)
+            }
+            ConfigValidationError::MaxIterationsNotPositive { value } => {
+                write!(f, "max_iterations must be positive, got {}", value)
+            }
+            ConfigValidationError::IterationTimeoutNotPositive { value } => {
+                write!(f, "iteration_timeout_minutes must be positive, got {}", value)
+            }
+            ConfigValidationError::TotalTimeoutNotPositive { value } => {
+                write!(f, "total_timeout_minutes must be positive, got {}", value)
+            }
+            ConfigValidationError::StallLimitNotPositive { value } => {
+                write!(f, "stall_limit must be positive, got {}", value)
+            }
+            ConfigValidationError::ConvergenceWindowNotPositive { value } => {
+                write!(f, "convergence_window must be positive, got {}", value)
+            }
+            ConfigValidationError::SessionFileInvalidPath { path } => {
+                write!(f, "session_file path is not valid or writable: {}", path)
+            }
+        }
+    }
+}
+
+impl std::error::Error for ConfigValidationError {}
+
+/// Validate config file values
+fn validate_config(config: &Config) -> Result<()> {
+    let mut errors = Vec::new();
+
+    // Validate max_variance: must be between 0.0 and 1.0
+    if let Some(value) = config.max_variance {
+        if value < 0.0 || value > 1.0 {
+            errors.push(ConfigValidationError::MaxVarianceOutOfRange { value });
+        }
+    }
+
+    // Validate target_improvement: must be positive
+    if let Some(value) = config.target_improvement {
+        if value <= 0.0 {
+            errors.push(ConfigValidationError::TargetImprovementNotPositive { value });
+        }
+    }
+
+    // Validate max_iterations: must be positive
+    if let Some(value) = config.max_iterations {
+        if value == 0 {
+            errors.push(ConfigValidationError::MaxIterationsNotPositive { value });
+        }
+    }
+
+    // Validate iteration_timeout_minutes: must be positive
+    if let Some(value) = config.iteration_timeout_minutes {
+        if value == 0 {
+            errors.push(ConfigValidationError::IterationTimeoutNotPositive { value });
+        }
+    }
+
+    // Validate total_timeout_minutes: must be positive
+    if let Some(value) = config.total_timeout_minutes {
+        if value == 0 {
+            errors.push(ConfigValidationError::TotalTimeoutNotPositive { value });
+        }
+    }
+
+    // Validate stall_limit: must be positive
+    if let Some(value) = config.stall_limit {
+        if value == 0 {
+            errors.push(ConfigValidationError::StallLimitNotPositive { value });
+        }
+    }
+
+    // Validate convergence_window: must be positive
+    if let Some(value) = config.convergence_window {
+        if value == 0 {
+            errors.push(ConfigValidationError::ConvergenceWindowNotPositive { value });
+        }
+    }
+
+    // Validate session_file: must be a valid writable path
+    if let Some(path) = &config.session_file {
+        if !is_valid_session_path(path) {
+            errors.push(ConfigValidationError::SessionFileInvalidPath { path: path.clone() });
+        }
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        let error_messages: Vec<String> = errors.into_iter().map(|e| e.to_string()).collect();
+        Err(anyhow::anyhow!("Config validation failed:\n  {}", error_messages.join("\n  ")))
+    }
+}
+
+/// Check if a session file path is valid and writable
+fn is_valid_session_path(path: &str) -> bool {
+    let path = std::path::Path::new(path);
+    
+    // Check if parent directory exists or can be created
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            // Try to create parent directory
+            match std::fs::create_dir_all(parent) {
+                Ok(_) => {}
+                Err(_) => return false,
+            }
+        }
+    }
+    
+    // Check if we can write to the path (or its parent if file doesn't exist)
+    let test_path = if path.exists() {
+        path.to_path_buf()
+    } else {
+        path.to_path_buf()
+    };
+    
+    // Try to create/open the file for writing
+    match std::fs::File::create(&test_path) {
+        Ok(_) => {
+            // Clean up the test file we created
+            let _ = std::fs::remove_file(&test_path);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
 fn load_config(config_path: Option<&str>, explicit_config: bool) -> Result<Option<Config>> {
     let path = if let Some(p) = config_path {
         PathBuf::from(p)
@@ -174,6 +321,11 @@ fn load_config(config_path: Option<&str>, explicit_config: bool) -> Result<Optio
     
     let config: Config = serde_json::from_str(&content)
         .map_err(|e| anyhow::anyhow!("Failed to parse config file {}: {}", path.display(), e))?;
+    
+    // Validate config values
+    validate_config(&config).map_err(|e| {
+        anyhow::anyhow!("Invalid config file {}: {}", path.display(), e)
+    })?;
     
     Ok(Some(config))
 }
@@ -2414,6 +2566,179 @@ mod tests {
         assert_eq!(get_max_variance(&cli, &config, 0.05), 0.08);
         assert_eq!(get_session_file(&cli, &config), "cli_session.jsonl");
         assert!(get_beads_enabled(&cli, &config));
+    }
+
+    // Tests for config validation
+
+    #[test]
+    fn test_validate_config_valid() {
+        let config = Config {
+            max_variance: Some(0.05),
+            target_improvement: Some(0.30),
+            max_iterations: Some(20),
+            iteration_timeout_minutes: Some(10),
+            total_timeout_minutes: Some(120),
+            stall_limit: Some(5),
+            convergence_window: Some(3),
+            session_file: Some("test.jsonl".to_string()),
+            ..Default::default()
+        };
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_validate_config_max_variance_too_low() {
+        let config = Config {
+            max_variance: Some(-0.1),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("max_variance"));
+    }
+
+    #[test]
+    fn test_validate_config_max_variance_too_high() {
+        let config = Config {
+            max_variance: Some(1.5),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("max_variance"));
+    }
+
+    #[test]
+    fn test_validate_config_target_improvement_zero() {
+        let config = Config {
+            target_improvement: Some(0.0),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("target_improvement"));
+    }
+
+    #[test]
+    fn test_validate_config_target_improvement_negative() {
+        let config = Config {
+            target_improvement: Some(-0.1),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("target_improvement"));
+    }
+
+    #[test]
+    fn test_validate_config_max_iterations_zero() {
+        let config = Config {
+            max_iterations: Some(0),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("max_iterations"));
+    }
+
+    #[test]
+    fn test_validate_config_iteration_timeout_zero() {
+        let config = Config {
+            iteration_timeout_minutes: Some(0),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("iteration_timeout_minutes"));
+    }
+
+    #[test]
+    fn test_validate_config_total_timeout_zero() {
+        let config = Config {
+            total_timeout_minutes: Some(0),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("total_timeout_minutes"));
+    }
+
+    #[test]
+    fn test_validate_config_stall_limit_zero() {
+        let config = Config {
+            stall_limit: Some(0),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("stall_limit"));
+    }
+
+    #[test]
+    fn test_validate_config_convergence_window_zero() {
+        let config = Config {
+            convergence_window: Some(0),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("convergence_window"));
+    }
+
+    #[test]
+    fn test_validate_config_session_file_invalid_path() {
+        let config = Config {
+            session_file: Some("/nonexistent/directory/path/test.jsonl".to_string()),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("session_file"));
+    }
+
+    #[test]
+    fn test_validate_config_session_file_valid_temp_path() {
+        let temp_dir = std::env::temp_dir();
+        let test_file = temp_dir.join("test_config_validation.jsonl");
+        let config = Config {
+            session_file: Some(test_file.to_string_lossy().to_string()),
+            ..Default::default()
+        };
+        assert!(validate_config(&config).is_ok());
+        // Clean up
+        let _ = std::fs::remove_file(&test_file);
+    }
+
+    #[test]
+    fn test_validate_config_multiple_errors() {
+        let config = Config {
+            max_variance: Some(2.0),
+            target_improvement: Some(-0.1),
+            max_iterations: Some(0),
+            ..Default::default()
+        };
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        let error_msg = result.unwrap_err().to_string();
+        // Should report all errors
+        assert!(error_msg.contains("max_variance"));
+        assert!(error_msg.contains("target_improvement"));
+        assert!(error_msg.contains("max_iterations"));
+    }
+
+    #[test]
+    fn test_is_valid_session_path_writable() {
+        let temp_dir = std::env::temp_dir();
+        let test_file = temp_dir.join("test_session_path.jsonl");
+        assert!(is_valid_session_path(&test_file.to_string_lossy()));
+        // Clean up if created
+        let _ = std::fs::remove_file(&test_file);
+    }
+
+    #[test]
+    fn test_is_valid_session_path_unwritable() {
+        // Test with a path that's clearly invalid
+        assert!(!is_valid_session_path("/nonexistent/directory/path/test.jsonl"));
     }
 }
 

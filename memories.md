@@ -53,8 +53,26 @@ Important learnings and context about the pi-autoresearch project.
 
 ## Known Limitations
 
-1. No branch cleanup functionality (Priority 3 task)
-2. No dry-run mode for previewing changes (Priority 4 task)
+1. No experiment comparison feature (Priority 12 task)
+
+## Config File Validation
+
+### Validation Rules
+All config file values are validated when the config is loaded:
+- `max_variance`: Must be between 0.0 and 1.0
+- `target_improvement`: Must be positive (> 0)
+- `max_iterations`: Must be positive (> 0)
+- `iteration_timeout_minutes`: Must be positive (> 0)
+- `total_timeout_minutes`: Must be positive (> 0)
+- `stall_limit`: Must be positive (> 0)
+- `convergence_window`: Must be positive (> 0)
+- `session_file`: Must be a valid writable path
+
+### Validation Design
+- All errors are collected and reported together (not just first error)
+- Validation happens in `load_config()` after parsing JSON
+- Invalid config files cause the program to exit with a clear error message
+- `is_valid_session_path()` creates a test file to verify writability, then cleans it up
 
 ## Config File Implementation Notes
 

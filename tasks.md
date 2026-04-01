@@ -167,18 +167,25 @@
 **Review**: Implementation verified correct - all 17 helper functions properly implemented, code quality excellent, proper separation of concerns, no regressions
 
 ## Priority 11: FEATURE - Config File Validation
-**Status**: TODO
+**Status**: READY FOR REVIEW
 **Description**: Add validation for config file schema and values
 **Rationale**: Invalid config values (negative numbers, invalid paths) should be caught early
-**Validation Needed**:
-- `max_variance`: Must be between 0.0 and 1.0
-- `target_improvement`: Must be positive
-- `max_iterations`: Must be positive
-- `iteration_timeout_minutes`: Must be positive
-- `total_timeout_minutes`: Must be positive
-- `stall_limit`: Must be positive
-- `convergence_window`: Must be positive
-- `session_file`: Must be a valid writable path
+**Validation Implemented**:
+- ✅ `max_variance`: Must be between 0.0 and 1.0
+- ✅ `target_improvement`: Must be positive
+- ✅ `max_iterations`: Must be positive
+- ✅ `iteration_timeout_minutes`: Must be positive
+- ✅ `total_timeout_minutes`: Must be positive
+- ✅ `stall_limit`: Must be positive
+- ✅ `convergence_window`: Must be positive
+- ✅ `session_file`: Must be a valid writable path
+**Implementation**:
+- Created `ConfigValidationError` enum with specific error types for each validation rule
+- Created `validate_config()` function that checks all config values and reports all errors at once
+- Created `is_valid_session_path()` helper function to check if session file path is writable
+- Updated `load_config()` to call `validate_config()` after loading config
+- Added 15 unit tests for validation functions
+**Test**: All 36 unit tests and 29 integration tests pass
 
 ## Priority 12: FEATURE - Experiment Comparison
 **Status**: TODO
