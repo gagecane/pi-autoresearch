@@ -265,35 +265,33 @@ fn validate_config(config: &Config) -> Result<()> {
 }
 
 /// Check if a session file path is valid and writable
+/// This function is non-destructive - it does not create directories or modify files
 fn is_valid_session_path(path: &str) -> bool {
     let path = std::path::Path::new(path);
     
-    // Check if parent directory exists or can be created
+    // Check if parent directory exists and is writable
     if let Some(parent) = path.parent() {
+        // If parent is empty (just a filename with no directory component),
+        // treat it as current directory which should be writable
+        if parent.as_os_str().is_empty() {
+            return true;
+        }
+        
         if !parent.exists() {
-            // Try to create parent directory
-            match std::fs::create_dir_all(parent) {
-                Ok(_) => {}
-                Err(_) => return false,
+            return false; // Don't create directories during validation
+        }
+        
+        // Check if parent is writable by trying to create a temp file
+        let temp_file = parent.join(".validation_temp");
+        match std::fs::File::create(&temp_file) {
+            Ok(_) => {
+                let _ = std::fs::remove_file(&temp_file);
+                true
             }
+            Err(_) => false,
         }
-    }
-    
-    // Check if we can write to the path (or its parent if file doesn't exist)
-    let test_path = if path.exists() {
-        path.to_path_buf()
     } else {
-        path.to_path_buf()
-    };
-    
-    // Try to create/open the file for writing
-    match std::fs::File::create(&test_path) {
-        Ok(_) => {
-            // Clean up the test file we created
-            let _ = std::fs::remove_file(&test_path);
-            true
-        }
-        Err(_) => false,
+        false
     }
 }
 
