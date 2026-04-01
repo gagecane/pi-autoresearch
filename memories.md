@@ -367,3 +367,48 @@ All 7 clippy warnings were fixed to improve code quality:
 ### Testing
 - `cargo build` completes with no warnings
 - All 31 integration tests pass
+
+---
+
+## Priority 21: DOCS - Improve README.md
+
+### Date: 2026-04-01 08:50 UTC
+
+### Implementation
+- Expanded README.md from 79 bytes (1 line) to 6040 bytes (comprehensive documentation)
+- Added structured sections with proper markdown formatting
+
+### Content Added
+1. **Project Description**: Clear explanation of what pi-autoresearch does
+2. **Features**: 10 key features with emoji icons for visual appeal
+3. **Installation**: Build-from-source instructions (not crates.io)
+4. **Requirements**: Rust, Cargo, Git dependencies
+5. **Quick Start**: Basic usage and configuration file examples
+6. **Common Use Cases**: Performance, memory, and accuracy optimization examples
+7. **Command-Line Options**: Complete table with 25+ options, descriptions, and defaults
+8. **Documentation Links**: Cross-references to docs/ and specs/ folders
+9. **Development**: Build, test, and code quality commands
+10. **Contributing**: PR guidelines and workflow
+11. **License & Support**: MIT license and issue tracking info
+
+### Design Decisions
+- **Emoji Icons**: Used in features section for visual appeal and quick scanning
+- **Code Examples**: Provided practical, copy-pasteable examples
+- **Table Format**: Used for CLI options for easy reference
+- **Cross-References**: Linked to detailed docs/ and specs/ for comprehensive information
+- **Build from Source**: Emphasized that package is not on crates.io
+
+### Best Practices Applied
+- Clear hierarchy with headers (H1, H2, H3)
+- Code blocks with syntax highlighting
+- Tables for structured data (CLI options)
+- Bullet points for lists
+- Links to related documentation
+- Contributing guidelines for open-source collaboration
+
+### Learnings
+- README.md is the first impression of the project
+- Should balance brevity with completeness
+- Cross-reference detailed documentation rather than duplicating it
+- Include practical examples that users can copy and run
+- Make installation method clear (build from source vs. package manager)
