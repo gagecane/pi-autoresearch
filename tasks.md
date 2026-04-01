@@ -533,17 +533,17 @@
 **Review**: Implementation verified correct - all eprintln!/eprint! calls replaced with appropriate tracing macros, log level configuration works correctly (quiet/verbose/RUST_LOG), stderr output preserved for backward compatibility, JSON API output preserved with println!, all tests pass
 
 ## Priority 28: FEATURE - Add Version Flag
-**Status**: TODO 📝
+**Status**: COMPLETE ✅
 **Description**: Add `--version` flag to display version information
 **Rationale**: Standard CLI practice, helps users identify their version
-**Implementation Plan**:
-- Add `--version` flag to CLI using clap's built-in version support
-- Display version from Cargo.toml
-- Optionally display build information (Rust version, target, etc.)
-**Acceptance Criteria**:
-- ✅ `--version` flag works correctly
-- ✅ Version matches Cargo.toml
-- ✅ All existing tests still pass
+**Implementation**:
+- Added `#[command(version = env!("CARGO_PKG_VERSION"))]` to Cli struct
+- Clap automatically handles `--version` and `-V` flags
+- Version is read from Cargo.toml (0.1.0)
+**Test**:
+- `pi-autoresearch --version` outputs: `pi-autoresearch 0.1.0`
+- All 68 unit tests and 37 integration tests pass (105 total)
+**Ready for Review**: Implementation complete, all acceptance criteria met
 
 ## Priority 29: PERF - Add Performance Benchmarks
 **Status**: TODO 📝

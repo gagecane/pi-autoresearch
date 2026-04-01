@@ -14,6 +14,7 @@ use tracing_subscriber::EnvFilter;
 #[derive(Parser, Debug, Default)]
 #[command(name = "pi-autoresearch")]
 #[command(about = "Autonomous research experiment orchestrator")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 struct Cli {
     /// Research question to explore
     #[arg(long)]

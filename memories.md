@@ -967,3 +967,25 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - Audit entire codebase for consistency, not just main code paths
 
 **Task Status**: Priority 27 marked as COMPLETE in tasks.md
+
+## 2026-04-01 17:30 UTC - Version Flag Implementation
+
+**Implementation**:
+- Added `#[command(version = env!("CARGO_PKG_VERSION"))]` to Cli struct in src/main.rs
+- Clap automatically handles `--version` and `-V` flags
+- Version is read from Cargo.toml using environment variable (0.1.0)
+
+**Testing**:
+- `pi-autoresearch --version` outputs: `pi-autoresearch 0.1.0`
+- All 68 unit tests pass
+- All 37 integration tests pass
+- Total: 105 tests passing
+
+**Code Review Best Practices**:
+- Use clap's built-in version support via `#[command(version = ...)]` attribute
+- Use `env!("CARGO_PKG_VERSION")` to automatically sync with Cargo.toml
+- No additional code needed - clap handles the flag automatically
+- Version flag is standard CLI practice and expected by users
+
+**Task Status**: Priority 28 marked as COMPLETE in tasks.md
+
