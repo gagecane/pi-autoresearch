@@ -12,7 +12,7 @@
 **Review**: Implementation verified correct - all git operations properly guarded, tests pass consistently
 
 ## Priority 2: FEATURE - Config File Support
-**Status**: READY FOR REVIEW  
+**Status**: REVISE (implementing feedback from review)  
 **Description**: Implement User Story 4.2 from PRD - read defaults from `~/.config/pi-autoresearch/config.json`
 **Acceptance Criteria**:
 - ✅ Read defaults from config file
@@ -23,7 +23,9 @@
 - Added missing helper functions: `get_iteration_timeout()`, `get_total_timeout()`, `get_stall_limit()`, `get_convergence_threshold()`, `get_convergence_window()`
 - Added error handling for missing explicit config files (--config PATH errors when file doesn't exist)
 - Updated `run_iterative_loop()` to use helper functions consistently
-- All 19 integration tests pass (without config file)
+- Fixed inconsistent use of helper functions in `verify_baseline` section
+- Updated tests to use temporary HOME directory for tests that require no config file
+- All 19 integration tests pass consistently across 10+ runs
 
 ## Priority 3: FEATURE - Branch Cleanup
 **Status**: TODO

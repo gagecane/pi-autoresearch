@@ -40,10 +40,8 @@
   - Returns error when `--config PATH` is provided but file doesn't exist
 - ✅ Updated `run_iterative_loop()` signature to accept `config` parameter
 - ✅ Updated all calls to `run_iterative_loop()` to pass config
-- ✅ All 19 integration tests pass (tested without config file)
-- ✅ Manual testing confirms:
-  - Config file defaults are used when CLI doesn't specify values
-  - CLI arguments override config file values
-  - Missing explicit config file returns error
-- 🔄 Task marked as READY FOR REVIEW in tasks.md
+- ✅ Fixed inconsistent use of helper functions in `verify_baseline` section
+- ✅ Updated tests to use temporary HOME directory for tests that require no config file
+- ✅ All 19 integration tests pass consistently across 10+ runs
+- 🔄 Task marked as REVISE in tasks.md (implementing feedback)
 

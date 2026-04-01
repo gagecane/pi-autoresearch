@@ -8,6 +8,22 @@ fn get_cli_output(args: &[&str]) -> Output {
     cmd.output().unwrap()
 }
 
+fn get_cli_output_no_config(args: &[&str]) -> Output {
+    // Create a temporary directory without config file
+    let temp_dir = std::env::temp_dir().join(format!("pi-autoresearch-test-{}", std::process::id()));
+    let _ = std::fs::create_dir_all(&temp_dir);
+    
+    let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
+    cmd.args(args);
+    cmd.env("HOME", &temp_dir);
+    let output = cmd.output().unwrap();
+    
+    // Clean up
+    let _ = std::fs::remove_dir_all(&temp_dir);
+    
+    output
+}
+
 fn parse_json_output(output: &Output) -> Value {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let trimmed = stdout.trim();
@@ -254,16 +270,18 @@ fn test_iterative_loop_single_iteration() {
 
 #[test]
 fn test_baseline_verification_missing_metric() {
+    // Use temporary HOME directory without config file
     let args = vec!["--verify-baseline", "--measure", "echo 100.0"];
-    let output = get_cli_output(&args);
+    let output = get_cli_output_no_config(&args);
 
     assert!(!output.status.success());
 }
 
 #[test]
 fn test_baseline_verification_missing_measure() {
+    // Use temporary HOME directory without config file
     let args = vec!["--verify-baseline", "--metric", "test_metric"];
-    let output = get_cli_output(&args);
+    let output = get_cli_output_no_config(&args);
 
     assert!(!output.status.success());
 }

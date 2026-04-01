@@ -1630,13 +1630,20 @@ async fn run() -> Result<()> {
     }
 
     if cli.verify_baseline {
-        let metric = cli.metric.clone()
-            .or(config.as_ref().and_then(|c| c.metric.clone()))
-            .ok_or_else(|| anyhow::anyhow!("--metric is required for baseline verification (or set in config)"))?;
+        // Check if metric is provided (via CLI or config)
+        let metric_provided = cli.metric.is_some() || config.as_ref().and_then(|c| c.metric.clone()).is_some();
+        let measure_provided = cli.measure.is_some() || config.as_ref().and_then(|c| c.measure.clone()).is_some();
         
-        let measurement = cli.measure.clone()
-            .or(config.as_ref().and_then(|c| c.measure.clone()))
-            .ok_or_else(|| anyhow::anyhow!("--measure is required for baseline verification (or set in config)"))?;
+        if !metric_provided {
+            return Err(anyhow::anyhow!("--metric is required for baseline verification (or set in config)"));
+        }
+        if !measure_provided {
+            return Err(anyhow::anyhow!("--measure is required for baseline verification (or set in config)"));
+        }
+        
+        // Use helper functions consistently for metric and measure
+        let metric = get_metric(&cli, &config, "metric");
+        let measurement = get_measure(&cli, &config, "measure");
 
         let max_variance = get_max_variance(&cli, &config, 0.05);
         let session_file = get_session_file(&cli, &config);
