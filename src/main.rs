@@ -97,6 +97,18 @@ struct Cli {
     #[arg(long)]
     skip_git: bool,
 
+    /// List all autoresearch branches
+    #[arg(long)]
+    list_branches: bool,
+
+    /// Clean up old autoresearch branches
+    #[arg(long)]
+    cleanup_branches: bool,
+
+    /// Only remove branches older than N days (default: 7)
+    #[arg(long, default_value = "7")]
+    cleanup_days: usize,
+
     /// Path to config file (defaults to ~/.config/pi-autoresearch/config.json)
     #[arg(long, short = 'c')]
     config: Option<String>,
@@ -1395,6 +1407,31 @@ fn read_session_file(session_file: &str) -> Result<Vec<SessionRecord>> {
     Ok(records)
 }
 
+fn list_autoresearch_branches() -> Result<Vec<String>> {
+    let output = Command::new("git")
+        .args(["branch", "-a"])
+        .output()?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!("Failed to list git branches"));
+    }
+
+    let branches = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| line.contains("autoresearch/") && !line.starts_with("remotes/"))
+        .map(|line| {
+            line.trim()
+                .strip_prefix("*")
+                .unwrap_or(line.trim())
+                .strip_prefix("  ")
+                .unwrap_or(line.trim())
+                .to_string()
+        })
+        .collect();
+
+    Ok(branches)
+}
+
 fn list_history(session_file: &str) -> Result<()> {
     let records = read_session_file(session_file)?;
     
@@ -1437,6 +1474,87 @@ fn list_history(session_file: &str) -> Result<()> {
     println!("Use --resume <SESSION_ID> to continue a specific experiment");
 
     Ok(())
+}
+
+fn cleanup_autoresearch_branches(days: usize) -> Result<usize> {
+    let branches = list_autoresearch_branches()?;
+    
+    if branches.is_empty() {
+        println!("No autoresearch branches found.");
+        return Ok(0);
+    }
+
+    println!("\n=== Autoresearch Branches ===\n");
+    println!("Found {} autoresearch branch(es):\n", branches.len());
+
+    let now = Utc::now();
+    let mut deleted_count = 0;
+    let mut kept_count = 0;
+
+    for branch in &branches {
+        // Get the commit date for this branch
+        let date_output = Command::new("git")
+            .args(["log", "-1", "--format=%ai", branch])
+            .output();
+
+        let branch_age = if let Ok(output) = date_output {
+            if output.status.success() {
+                let date_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                // Try to parse the date in various formats
+                let commit_date = chrono::DateTime::parse_from_rfc3339(&date_str)
+                    .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S %z"))
+                    .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.f %z"));
+                
+                if let Ok(parsed_date) = commit_date {
+                    let duration = now.signed_duration_since(parsed_date);
+                    duration.num_days()
+                } else {
+                    -1 // Unknown age
+                }
+            } else {
+                -1 // Unknown age
+            }
+        } else {
+            -1 // Unknown age
+        };
+
+        let age_str = if branch_age >= 0 {
+            format!("{} days old", branch_age)
+        } else {
+            "unknown age".to_string()
+        };
+
+        println!("  {} - {}", branch, age_str);
+
+        // Delete if older than specified days
+        if branch_age >= days as i64 {
+            println!("    → Marked for deletion (older than {} days)", days);
+            
+            let delete_output = Command::new("git")
+                .args(["branch", "-d", branch])
+                .output();
+
+            if let Ok(output) = delete_output {
+                if output.status.success() {
+                    println!("    ✓ Deleted");
+                    deleted_count += 1;
+                } else {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    println!("    ✗ Failed to delete: {}", stderr.trim());
+                }
+            } else {
+                println!("    ✗ Failed to delete");
+            }
+        } else {
+            kept_count += 1;
+        }
+    }
+
+    println!("\n=== Cleanup Summary ===");
+    println!("Deleted: {} branches", deleted_count);
+    println!("Kept: {} branches", kept_count);
+
+    Ok(deleted_count)
 }
 
 fn find_session_by_id(session_file: &str, session_id: &str) -> Result<Option<ExperimentSession>> {
@@ -1512,6 +1630,58 @@ async fn run() -> Result<()> {
         } else {
             eprintln!("No config file found, using defaults");
         }
+    }
+
+    // Handle --list-branches flag
+    if cli.list_branches {
+        let branches = list_autoresearch_branches()?;
+        
+        if branches.is_empty() {
+            println!("No autoresearch branches found.");
+        } else {
+            println!("\n=== Autoresearch Branches ===\n");
+            println!("Found {} autoresearch branch(es):\n", branches.len());
+            
+            for branch in &branches {
+                // Get the commit date for this branch
+                let date_output = Command::new("git")
+                    .args(["log", "-1", "--format=%ai", branch])
+                    .output();
+
+                let branch_age = if let Ok(output) = date_output {
+                    if output.status.success() {
+                        let date_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                        // Try to parse the date in various formats
+                        let commit_date = chrono::DateTime::parse_from_rfc3339(&date_str)
+                            .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S %z"))
+                            .or_else(|_| chrono::DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.f %z"));
+                        
+                        if let Ok(parsed_date) = commit_date {
+                            let now = Utc::now();
+                            let duration = now.signed_duration_since(parsed_date);
+                            format!("{} days old", duration.num_days())
+                        } else {
+                            "unknown age".to_string()
+                        }
+                    } else {
+                        "unknown age".to_string()
+                    }
+                } else {
+                    "unknown age".to_string()
+                };
+
+                println!("  {} - {}", branch, branch_age);
+            }
+            
+            println!("\nUse --cleanup-branches to remove old branches");
+        }
+        return Ok(());
+    }
+
+    // Handle --cleanup-branches flag
+    if cli.cleanup_branches {
+        let _deleted = cleanup_autoresearch_branches(cli.cleanup_days)?;
+        return Ok(());
     }
 
     // Handle --history flag

@@ -30,9 +30,16 @@
 **Review**: Implementation verified correct - all helper functions properly implemented, config precedence correct (CLI > config > default), all code paths use helper functions consistently
 
 ## Priority 3: FEATURE - Branch Cleanup
-**Status**: TODO
+**Status**: READY FOR REVIEW
 **Description**: Add functionality to clean up autoresearch branches after completion
 **Rationale**: Prevents accumulation of autoresearch branches in git repository
+**Implementation**:
+- Added `--list-branches` flag to list all autoresearch branches with their ages
+- Added `--cleanup-branches` flag to remove old autoresearch branches
+- Added `--cleanup-days N` option (default: 7) to only remove branches older than N days
+- Filters out remote tracking branches (only cleans local branches)
+- Gracefully handles unmerged branches (git safety feature)
+- All 19 integration tests still pass
 
 ## Priority 4: FEATURE - Dry Run Mode
 **Status**: TODO
