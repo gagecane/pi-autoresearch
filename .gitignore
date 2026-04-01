@@ -8,3 +8,6 @@
 # Added by cargo
 
 /target
+
+# Coverage reports
+coverage_report/

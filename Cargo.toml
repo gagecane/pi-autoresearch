@@ -29,3 +29,8 @@ rand = "0.8"
 # Mutation testing support
 # Install with: cargo install cargo-mutest
 # Run with: cargo mutest test
+
+# Coverage testing support
+# Install with: cargo install cargo-llvm-cov
+# Run with: cargo llvm-cov --lcov --output-path coverage_report/lcov.info
+# Or use: ./scripts/run-coverage.sh
