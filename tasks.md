@@ -498,20 +498,39 @@
 **Review**: Implementation verified correct - read_session_file() properly handles both multi-line and compact JSON formats, helper functions work correctly, all 4 new integration tests pass, no regressions (105 total tests passing)
 
 ## Priority 27: FEATURE - Add Structured Logging
-**Status**: TODO 📝
-**Description**: Add structured logging using `tracing` or `env_logger` crate
+**Status**: READY FOR REVIEW 📝
+**Description**: Add structured logging using `tracing` crate
 **Rationale**: Current `eprintln!` usage is inconsistent and hard to configure
-**Implementation Plan**:
-- Add `tracing` crate as dependency
-- Replace `eprintln!` calls with `tracing::info!`, `tracing::debug!`, etc.
-- Add log level configuration via `--verbose` and `--quiet` flags
-- Add environment variable support for log level (RUST_LOG)
-- Ensure JSON output mode is not affected by logging
-**Acceptance Criteria**:
-- ✅ Structured logging implemented
-- ✅ Log levels configurable via CLI and environment
-- ✅ All existing tests still pass
-- ✅ JSON output mode works correctly
+**Implementation**:
+- Added `tracing` and `tracing-subscriber` crates as dependencies
+- Created `init_logging()` function that initializes tracing subscriber with proper configuration
+- Replaced 130+ `eprintln!` and `println!` calls with appropriate tracing macros:
+  - `info!` for user-facing messages
+  - `debug!` for verbose/debug information
+  - `warn!` for warnings
+  - `error!` for error messages
+- Log level configuration via CLI flags:
+  - `--quiet`: Only shows errors
+  - `--verbose`: Shows all logs including debug
+  - Default: Shows info and above
+- Environment variable support via `RUST_LOG` (when CLI flags not set)
+- Output goes to stderr for backward compatibility with existing tests
+- JSON output mode preserved (println! kept for API output)
+**Changes Made**:
+- Cargo.toml: Added tracing and tracing-subscriber dependencies
+- src/main.rs:
+  - Added tracing imports
+  - Created `init_logging()` function
+  - Replaced eprintln!/println! with tracing macros throughout the codebase
+  - Kept println! for JSON API output (baseline verification, design output)
+- tests/integration_tests.rs: Updated 5 tests to check stderr instead of stdout
+**Test Results**:
+- All 68 unit tests pass
+- All 37 integration tests pass
+- Total: 105 tests passing
+- No clippy warnings
+- Code compiles cleanly
+**Ready for Review**: Implementation complete, all tests pass
 
 ## Priority 28: FEATURE - Add Version Flag
 **Status**: TODO 📝

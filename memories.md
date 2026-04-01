@@ -880,3 +880,25 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
   - test_resume_invalid_session_id: Verifies graceful error handling
   - test_resume_with_empty_session_file: Verifies error on empty file
 - Total tests: 105 (68 unit + 37 integration)
+
+## 2026-04-01 15:00 UTC - Structured Logging Implementation
+
+### Learnings
+- `tracing` crate provides structured logging with better performance than println!/eprintln!
+- `tracing-subscriber` with `env-filter` feature enables RUST_LOG environment variable support
+- Log levels: error > warn > info > debug > trace
+- CLI flags should take precedence over environment variables for user experience
+- Output to stderr is conventional for logging and maintains backward compatibility with tests
+- JSON API output should remain on stdout (println!) to preserve API contracts
+- When migrating from eprintln! to tracing:
+  - User-facing messages → info!
+  - Detailed debugging → debug!
+  - Warnings → warn!
+  - Errors → error!
+- Tests checking output need to be updated when changing output streams (stdout vs stderr)
+
+### Implementation Patterns
+- Initialize tracing early in run() before any other output
+- Use `with_writer(std::io::stderr)` to output to stderr
+- Preserve println! for JSON API output to maintain backward compatibility
+- Keep eprint! for interactive prompts (stdin/stdout interaction)

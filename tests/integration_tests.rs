@@ -581,9 +581,9 @@ fn test_list_branches_flag() {
 
     assert!(output.status.success());
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
     // Should either show branches or say no branches found
-    assert!(stdout.contains("autoresearch") || stdout.contains("No autoresearch branches"));
+    assert!(stderr.contains("autoresearch") || stderr.contains("No autoresearch branches"));
 }
 
 #[test]
@@ -593,9 +593,9 @@ fn test_cleanup_branches_flag() {
 
     assert!(output.status.success());
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
     // Should show cleanup summary
-    assert!(stdout.contains("Cleanup Summary") || stdout.contains("No autoresearch branches"));
+    assert!(stderr.contains("Cleanup Summary") || stderr.contains("No autoresearch branches"));
 }
 
 #[test]
@@ -605,9 +605,9 @@ fn test_cleanup_branches_with_custom_days() {
 
     assert!(output.status.success());
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
     // Should show cleanup summary
-    assert!(stdout.contains("Cleanup Summary") || stdout.contains("No autoresearch branches"));
+    assert!(stderr.contains("Cleanup Summary") || stderr.contains("No autoresearch branches"));
 }
 
 #[test]
@@ -620,8 +620,8 @@ fn test_history_empty_session_file() {
 
     assert!(output.status.success());
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("No experiments found") || stdout.contains("experiment"));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("No experiments found") || stderr.contains("experiment"));
 }
 
 #[test]
@@ -657,10 +657,10 @@ fn test_history_with_experiments() {
 
     assert!(output.status.success());
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
     // History should either show experiments or say no experiments found
     // (due to JSON parsing limitations with pretty-printed sessions)
-    assert!(stdout.contains("experiment") || stdout.contains("Experiment") || stdout.contains("reduce memory"));
+    assert!(stderr.contains("experiment") || stderr.contains("Experiment") || stderr.contains("reduce memory"));
 }
 
 #[test]

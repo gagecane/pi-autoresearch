@@ -7,6 +7,8 @@ use chrono::Utc;
 use std::time::{Duration, Instant};
 use std::fs::OpenOptions;
 use std::path::PathBuf;
+use tracing::{info, debug, warn, error};
+use tracing_subscriber::EnvFilter;
 
 
 #[derive(Parser, Debug, Default)]
@@ -205,6 +207,35 @@ impl std::fmt::Display for ConfigValidationError {
 impl std::error::Error for ConfigValidationError {}
 
 /// Validate config file values
+/// Initialize structured logging based on CLI flags and environment variables
+fn init_logging(cli: &Cli) -> Result<()> {
+    // Build the filter
+    let filter = if cli.quiet {
+        // Quiet mode: only show errors
+        EnvFilter::new("error")
+    } else if cli.verbose {
+        // Verbose mode: show all logs including debug
+        EnvFilter::new("debug")
+    } else {
+        // Use RUST_LOG environment variable if set, otherwise default to info
+        EnvFilter::try_from_default_env()
+            .or_else(|_| EnvFilter::try_new("info"))
+            .unwrap()
+    };
+
+    // Initialize tracing subscriber with stderr output (for backward compatibility with tests)
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_target(true)
+        .with_thread_ids(false)
+        .with_file(false)
+        .with_line_number(false)
+        .with_writer(std::io::stderr)
+        .init();
+
+    Ok(())
+}
+
 fn validate_config(config: &Config) -> Result<()> {
     let mut errors = Vec::new();
 
@@ -661,10 +692,10 @@ fn verify_baseline(
     measurement_command: &str,
     max_variance: f64,
 ) -> Result<BaselineVerificationResult> {
-    eprintln!("Verifying baseline measurement...");
-    eprintln!("  Metric: {}", metric);
-    eprintln!("  Command: {}", measurement_command);
-    eprintln!("  Max variance: {:.1}%", max_variance * 100.0);
+    info!("Verifying baseline measurement...");
+    info!("  Metric: {}", metric);
+    info!("  Command: {}", measurement_command);
+    info!("  Max variance: {:.1}%", max_variance * 100.0);
 
     let git_commit = get_git_commit_hash()?;
     let timestamp = Utc::now().to_rfc3339();
@@ -677,11 +708,11 @@ fn verify_baseline(
 
         match execute_measurement(measurement_command) {
             Ok(value) => {
-                eprintln!("{:.2}", value);
+                info!("{:.2}", value);
                 runs.push(value);
             }
             Err(e) => {
-                eprintln!("FAILED");
+                error!("FAILED");
                 return Ok(BaselineVerificationResult {
                     success: false,
                     baseline_record: None,
@@ -715,13 +746,13 @@ fn verify_baseline(
     };
 
     if !within_threshold {
-        eprintln!(
-            "\nWARNING: Baseline variance {:.2}% exceeds threshold {:.2}%",
+        warn!(
+            "\nBaseline variance {:.2}% exceeds threshold {:.2}%",
             variance * 100.0,
             max_variance * 100.0
         );
-        eprintln!("  Run 1: {:.2}", runs[0]);
-        eprintln!("  Run 2: {:.2}", runs[1]);
+        info!("  Run 1: {:.2}", runs[0]);
+        info!("  Run 2: {:.2}", runs[1]);
 
         return Ok(BaselineVerificationResult {
             success: false,
@@ -733,10 +764,10 @@ fn verify_baseline(
         });
     }
 
-    eprintln!("\nBaseline verified successfully!");
-    eprintln!("  Value: {:.2}", baseline_value);
-    eprintln!("  Variance: {:.2}%", variance * 100.0);
-    eprintln!("  Git commit: {}", baseline_record.git_commit);
+    info!("\nBaseline verified successfully!");
+    info!("  Value: {:.2}", baseline_value);
+    info!("  Variance: {:.2}%", variance * 100.0);
+    info!("  Git commit: {}", baseline_record.git_commit);
 
     Ok(BaselineVerificationResult {
         success: true,
@@ -761,7 +792,7 @@ fn save_to_session_file(
     
     writeln!(file, "{}", json_line)?;
     
-    eprintln!("Baseline recorded to: {}", session_file);
+    debug!("Baseline recorded to: {}", session_file);
     Ok(())
 }
 
@@ -897,17 +928,17 @@ fn run_iterative_loop(
     let mut iterations = Vec::new();
     
     if !cli.quiet {
-        eprintln!("\nStarting iterative exploration loop...");
-        eprintln!("Max iterations: {}", max_iterations);
-        eprintln!("Baseline: {:.2}", baseline_value);
-        eprintln!();
+        info!("\nStarting iterative exploration loop...");
+        info!("Max iterations: {}", max_iterations);
+        info!("Baseline: {:.2}", baseline_value);
+        info!("");
     }
     
     while state.current_iteration < max_iterations {
         // Layer 3: Check total runtime limit
         if state.start_time.elapsed() >= total_timeout {
             if !cli.quiet {
-                eprintln!("\nTotal timeout reached ({:.0}s). Saving best result.", total_timeout.as_secs());
+                info!("\nTotal timeout reached ({:.0}s). Saving best result.", total_timeout.as_secs());
             }
             stuck_reason = Some(StuckReason::TotalTimeout);
             break;
@@ -917,7 +948,7 @@ fn run_iterative_loop(
         
         let display_status = |iter: usize, best: f64, stall: usize, elapsed: Duration| {
             let improvement_pct = (baseline_value - best) / baseline_value * 100.0;
-            eprintln!(
+            info!(
                 "[AutoResearch] Iter {}/{} | Best: {:.1} ({:+.1}%) | Stall: {}/{} | Time: {:.0}s/{:.0}s",
                 iter, max_iterations, best, improvement_pct, stall, stall_limit, 
                 elapsed.as_secs(), total_timeout.as_secs()
@@ -949,7 +980,7 @@ fn run_iterative_loop(
         
         if iteration_start.elapsed() > iteration_timeout {
             if !cli.quiet {
-                eprintln!("\nIteration {} exceeded timeout ({:.0}s). Marking as timeout.", 
+                info!("\nIteration {} exceeded timeout ({:.0}s). Marking as timeout.", 
                          state.current_iteration, iteration_timeout.as_secs());
             }
             stuck_reason = Some(StuckReason::IterationTimeout);
@@ -972,19 +1003,19 @@ fn run_iterative_loop(
                     state.consecutive_no_improvement = 0;
                     state.backoff_count = 0;
                     if !cli.quiet {
-                        eprintln!("  ✓ Kept - improvement: {:+.2}%", improvement * 100.0);
+                        info!("  ✓ Kept - improvement: {:+.2}%", improvement * 100.0);
                     }
                     if cli.verbose {
-                        eprintln!("    Metric value: {:.2}", metric_value);
-                        eprintln!("    Agent action: {}", agent_action.split('.').next().unwrap_or(&agent_action));
+                        debug!("    Metric value: {:.2}", metric_value);
+                        debug!("    Agent action: {}", agent_action.split('.').next().unwrap_or(&agent_action));
                     }
                 } else {
                     state.consecutive_no_improvement += 1;
                     if !cli.quiet {
-                        eprintln!("  ✗ Reverted - degradation: {:-.2}%", improvement * 100.0);
+                        info!("  ✗ Reverted - degradation: {:-.2}%", improvement * 100.0);
                     }
                     if cli.verbose {
-                        eprintln!("    Metric value: {:.2}", metric_value);
+                        debug!("    Metric value: {:.2}", metric_value);
                     }
                 }
                 
@@ -1009,7 +1040,7 @@ fn run_iterative_loop(
             }
             Err(e) => {
                 if !cli.quiet {
-                    eprintln!("  ✗ Iteration failed: {}", e);
+                    error!("  ✗ Iteration failed: {}", e);
                 }
                 state.consecutive_no_improvement += 1;
             }
@@ -1027,7 +1058,7 @@ fn run_iterative_loop(
             
             if variance.abs() < convergence_threshold {
                 if !cli.quiet {
-                    eprintln!("\nConvergence achieved! Variance {:.4} < threshold {:.4}", 
+                    info!("\nConvergence achieved! Variance {:.4} < threshold {:.4}", 
                              variance, convergence_threshold);
                 }
                 stuck_reason = Some(StuckReason::ConvergenceAchieved);
@@ -1040,13 +1071,13 @@ fn run_iterative_loop(
             state.backoff_count += 1;
             if state.backoff_count >= 2 {
                 if !cli.quiet {
-                    eprintln!("\nStall limit reached after {} backoffs. Aborting.", state.backoff_count);
+                    info!("\nStall limit reached after {} backoffs. Aborting.", state.backoff_count);
                 }
                 stuck_reason = Some(StuckReason::StallLimitReached);
                 break;
             }
             if !cli.quiet {
-                eprintln!("\nStall limit reached. Backing off (attempt {}/2)...", state.backoff_count);
+                info!("\nStall limit reached. Backing off (attempt {}/2)...", state.backoff_count);
             }
             state.consecutive_no_improvement = 0;
         }
@@ -1574,7 +1605,7 @@ impl BeadsIntegration {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("Warning: Failed to create bead issue: {}", stderr);
+            warn!("Failed to create bead issue: {}", stderr);
             self.enabled = false;
             return Ok(());
         }
@@ -1584,7 +1615,7 @@ impl BeadsIntegration {
             line.trim().strip_prefix("Created ").or_else(|| line.trim().strip_prefix("Created: "))
         }) {
             self.bead_id = Some(id.to_string());
-            eprintln!("Created bead issue: {}", id);
+            info!("Created bead issue: {}", id);
         }
 
         Ok(())
@@ -1613,7 +1644,7 @@ impl BeadsIntegration {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("Warning: Failed to update bead {}: {}", bead_id, stderr);
+            warn!("Failed to update bead {}: {}", bead_id, stderr);
         }
 
         Ok(())
@@ -1643,9 +1674,9 @@ impl BeadsIntegration {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("Warning: Failed to close bead {}: {}", bead_id, stderr);
+            warn!("Failed to close bead {}: {}", bead_id, stderr);
         } else {
-            eprintln!("Closed bead issue: {}", bead_id);
+            info!("Closed bead issue: {}", bead_id);
         }
 
         Ok(())
@@ -1825,12 +1856,12 @@ fn list_history(session_file: &str) -> Result<()> {
     }
 
     if experiments.is_empty() {
-        println!("No experiments found in {}", session_file);
+        info!("No experiments found in {}", session_file);
         return Ok(());
     }
 
-    println!("\n=== Experiment History ===\n");
-    println!("Found {} experiment(s)\n", experiments.len());
+    info!("\n=== Experiment History ===\n");
+    info!("Found {} experiment(s)\n", experiments.len());
 
     for (i, session) in experiments.iter().enumerate() {
         let improvement: f64 = session.iterations
@@ -1839,21 +1870,21 @@ fn list_history(session_file: &str) -> Result<()> {
             .map(|it| it.improvement)
             .fold(0.0, |a, b| a.max(b));
 
-        println!("[{}] Session: {}", i + 1, session.session_id);
-        println!("    Question: {}", session.question);
-        println!("    Metric: {}", session.design.metric);
-        println!("    Baseline: {:.2}", session.baseline_record.value);
-        println!("    Iterations: {}", session.iterations.len());
-        println!("    Best improvement: {:+.2}%", improvement * 100.0);
-        println!("    Status: {}", session.status);
-        println!("    Started: {}", session.start_time);
+        info!("[{}] Session: {}", i + 1, session.session_id);
+        info!("    Question: {}", session.question);
+        info!("    Metric: {}", session.design.metric);
+        info!("    Baseline: {:.2}", session.baseline_record.value);
+        info!("    Iterations: {}", session.iterations.len());
+        info!("    Best improvement: {:+.2}%", improvement * 100.0);
+        info!("    Status: {}", session.status);
+        info!("    Started: {}", session.start_time);
         if let Some(ref end) = session.end_time {
-            println!("    Ended: {}", end);
+            info!("    Ended: {}", end);
         }
-        println!();
+        info!("");
     }
 
-    println!("Use --resume <SESSION_ID> to continue a specific experiment");
+    info!("Use --resume <SESSION_ID> to continue a specific experiment");
 
     Ok(())
 }
@@ -1918,37 +1949,37 @@ fn display_experiment_comparison(e1: &ExperimentSession, e2: &ExperimentSession)
         "Tie"
     };
 
-    println!("\n=== Experiment Comparison ===\n");
-    println!("{} vs {}", e1.session_id, e2.session_id);
-    println!("Winner: {}\n", winner);
+    info!("\n=== Experiment Comparison ===\n");
+    info!("{} vs {}", e1.session_id, e2.session_id);
+    info!("Winner: {}\n", winner);
 
     // Side-by-side comparison table
-    println!("{:<15} {:<25} {:<25}", "Metric", e1.session_id, e2.session_id);
-    println!("{:-<65}", "");
-    println!("{:<15} {:<25} {:<25}", "Question", truncate_str(&e1.question, 22), truncate_str(&e2.question, 22));
-    println!("{:<15} {:<25} {:<25}", "Metric", e1.design.metric, e2.design.metric);
-    println!("{:<15} {:<25} {:<25}", "Baseline", format!("{:.2}", e1.baseline_record.value), format!("{:.2}", e2.baseline_record.value));
-    println!("{:<15} {:<25} {:<25}", "Iterations", e1.iterations.len().to_string(), e2.iterations.len().to_string());
-    println!("{:<15} {:<25} {:<25}", "Best Improvement", format!("{:+.2}%", improvement1 * 100.0), format!("{:+.2}%", improvement2 * 100.0));
-    println!("{:<15} {:<25} {:<25}", "Status", e1.status, e2.status);
-    println!("{:<15} {:<25} {:<25}", "Runtime", format_duration(runtime1), format_duration(runtime2));
-    println!("{:-<65}\n", "");
+    info!("{:<15} {:<25} {:<25}", "Metric", e1.session_id, e2.session_id);
+    info!("{:-<65}", "");
+    info!("{:<15} {:<25} {:<25}", "Question", truncate_str(&e1.question, 22), truncate_str(&e2.question, 22));
+    info!("{:<15} {:<25} {:<25}", "Metric", e1.design.metric, e2.design.metric);
+    info!("{:<15} {:<25} {:<25}", "Baseline", format!("{:.2}", e1.baseline_record.value), format!("{:.2}", e2.baseline_record.value));
+    info!("{:<15} {:<25} {:<25}", "Iterations", e1.iterations.len().to_string(), e2.iterations.len().to_string());
+    info!("{:<15} {:<25} {:<25}", "Best Improvement", format!("{:+.2}%", improvement1 * 100.0), format!("{:+.2}%", improvement2 * 100.0));
+    info!("{:<15} {:<25} {:<25}", "Status", e1.status, e2.status);
+    info!("{:<15} {:<25} {:<25}", "Runtime", format_duration(runtime1), format_duration(runtime2));
+    info!("{:-<65}\n", "");
 
     // Detailed iteration comparison
-    println!("=== Iteration Details ===\n");
+    info!("=== Iteration Details ===\n");
     
-    println!("Experiment 1 ({}):
+    info!("Experiment 1 ({}):
 ", e1.session_id);
     for (i, iteration) in e1.iterations.iter().enumerate() {
         let marker = if iteration.kept { "✓" } else { "✗" };
-        println!("  [{}] {} Improvement: {:+.2}%", i + 1, marker, iteration.improvement * 100.0);
+        info!("  [{}] {} Improvement: {:+.2}%", i + 1, marker, iteration.improvement * 100.0);
     }
     
-    println!("\nExperiment 2 ({}):
+    info!("\nExperiment 2 ({}):
 ", e2.session_id);
     for (i, iteration) in e2.iterations.iter().enumerate() {
         let marker = if iteration.kept { "✓" } else { "✗" };
-        println!("  [{}] {} Improvement: {:+.2}%", i + 1, marker, iteration.improvement * 100.0);
+        info!("  [{}] {} Improvement: {:+.2}%", i + 1, marker, iteration.improvement * 100.0);
     }
 
     Ok(())
@@ -1993,12 +2024,12 @@ fn cleanup_autoresearch_branches(days: usize) -> Result<usize> {
     let branches = list_autoresearch_branches()?;
     
     if branches.is_empty() {
-        println!("No autoresearch branches found.");
+        info!("No autoresearch branches found.");
         return Ok(0);
     }
 
-    println!("\n=== Autoresearch Branches ===\n");
-    println!("Found {} autoresearch branch(es):\n", branches.len());
+    info!("\n=== Autoresearch Branches ===\n");
+    info!("Found {} autoresearch branch(es):\n", branches.len());
 
     let mut deleted_count = 0;
     let mut kept_count = 0;
@@ -2008,11 +2039,11 @@ fn cleanup_autoresearch_branches(days: usize) -> Result<usize> {
         let branch_age = parse_branch_age_days(branch);
         let age_str = format_branch_age(branch_age);
 
-        println!("  {} - {}", branch, age_str);
+        info!("  {} - {}", branch, age_str);
 
         // Delete if older than specified days
         if branch_age >= days as i64 {
-            println!("    → Marked for deletion (older than {} days)", days);
+            info!("    → Marked for deletion (older than {} days)", days);
             
             let delete_output = Command::new("git")
                 .args(["branch", "-d", branch])
@@ -2020,23 +2051,23 @@ fn cleanup_autoresearch_branches(days: usize) -> Result<usize> {
 
             if let Ok(output) = delete_output {
                 if output.status.success() {
-                    println!("    ✓ Deleted");
+                    info!("    ✓ Deleted");
                     deleted_count += 1;
                 } else {
                     let stderr = String::from_utf8_lossy(&output.stderr);
-                    println!("    ✗ Failed to delete: {}", stderr.trim());
+                    warn!("    Failed to delete: {}", stderr.trim());
                 }
             } else {
-                println!("    ✗ Failed to delete");
+                warn!("    Failed to delete");
             }
         } else {
             kept_count += 1;
         }
     }
 
-    println!("\n=== Cleanup Summary ===");
-    println!("Deleted: {} branches", deleted_count);
-    println!("Kept: {} branches", kept_count);
+    info!("\n=== Cleanup Summary ===");
+    info!("Deleted: {} branches", deleted_count);
+    info!("Kept: {} branches", kept_count);
 
     Ok(deleted_count)
 }
@@ -2056,46 +2087,46 @@ fn find_session_by_id(session_file: &str, session_id: &str) -> Result<Option<Exp
 }
 
 fn print_failure_report(result: &FinalizationResult, target_improvement: f64) {
-    eprintln!("✗ Target improvement not met");
-    eprintln!();
+    info!("✗ Target improvement not met");
+    info!("");
     
     if let Some(ref report) = result.failure_report {
-        eprintln!("=== Failed Experiment Report ===");
-        eprintln!();
+        info!("=== Failed Experiment Report ===");
+        info!("");
         
-        eprintln!("Best Improvement Achieved:");
-        eprintln!("  Baseline: {:.2}", report.baseline);
+        info!("Best Improvement Achieved:");
+        info!("  Baseline: {:.2}", report.baseline);
         if let Some(best) = report.best_value {
-            eprintln!("  Best value: {:.2}", best);
-            eprintln!("  Improvement: {:+.2}%", report.best_improvement * 100.0);
+            info!("  Best value: {:.2}", best);
+            info!("  Improvement: {:+.2}%", report.best_improvement * 100.0);
         } else {
-            eprintln!("  No improvement achieved");
+            info!("  No improvement achieved");
         }
-        eprintln!("  Target: {:+.2}%", report.target_improvement * 100.0);
-        eprintln!("  Gap: {:.2}%", (report.target_improvement - report.best_improvement) * 100.0);
-        eprintln!();
+        info!("  Target: {:+.2}%", report.target_improvement * 100.0);
+        info!("  Gap: {:.2}%", (report.target_improvement - report.best_improvement) * 100.0);
+        info!("");
         
-        eprintln!("Exploration Summary:");
-        eprintln!("  Iterations completed: {}", report.iterations_completed);
+        info!("Exploration Summary:");
+        info!("  Iterations completed: {}", report.iterations_completed);
         if let Some(ref reason) = report.stuck_reason {
-            eprintln!("  Stuck reason: {}", reason);
+            info!("  Stuck reason: {}", reason);
         }
-        eprintln!();
+        info!("");
         
-        eprintln!("Recommendations for Retry:");
+        info!("Recommendations for Retry:");
         for (i, rec) in report.recommendations.iter().enumerate() {
-            eprintln!("  {}. {}", i + 1, rec);
+            info!("  {}. {}", i + 1, rec);
         }
-        eprintln!();
+        info!("");
         
-        eprintln!("Note: No changes were applied to the codebase.");
+        info!("Note: No changes were applied to the codebase.");
     } else {
-        eprintln!("  Target: {:.2}%, Achieved: {:+.2}%", target_improvement * 100.0, result.final_improvement * 100.0);
+        info!("  Target: {:.2}%, Achieved: {:+.2}%", target_improvement * 100.0, result.final_improvement * 100.0);
         if let Some(best) = result.best_value {
-            eprintln!("  Best value: {:.2}", best);
+            info!("  Best value: {:.2}", best);
         }
         if let Some(ref err) = result.error_message {
-            eprintln!("  Error: {}", err);
+            error!("  Error: {}", err);
         }
     }
 }
@@ -2103,11 +2134,14 @@ fn print_failure_report(result: &FinalizationResult, target_improvement: f64) {
 async fn run() -> Result<()> {
     let cli = Cli::parse();
 
+    // Initialize structured logging
+    init_logging(&cli)?;
+
     // Show dry-run mode message
     if cli.dry_run {
-        eprintln!("\n=== DRY RUN MODE ===");
-        eprintln!("No changes will be made to the codebase or git repository.");
-        eprintln!("======================\n");
+        info!("\n=== DRY RUN MODE ===");
+        info!("No changes will be made to the codebase or git repository.");
+        info!("======================\n");
     }
 
     // Load config file
@@ -2117,9 +2151,9 @@ async fn run() -> Result<()> {
     // Log config loading if verbose
     if cli.verbose {
         if config.is_some() {
-            eprintln!("Loaded config from: {:?}", cli.config);
+            debug!("Loaded config from: {:?}", cli.config);
         } else {
-            eprintln!("No config file found, using defaults");
+            debug!("No config file found, using defaults");
         }
     }
 
@@ -2128,20 +2162,20 @@ async fn run() -> Result<()> {
         let branches = list_autoresearch_branches()?;
         
         if branches.is_empty() {
-            println!("No autoresearch branches found.");
+            info!("No autoresearch branches found.");
         } else {
-            println!("\n=== Autoresearch Branches ===\n");
-            println!("Found {} autoresearch branch(es):\n", branches.len());
+            info!("\n=== Autoresearch Branches ===\n");
+            info!("Found {} autoresearch branch(es):\n", branches.len());
             
             for branch in &branches {
                 // Get the commit date for this branch
                 let branch_age = parse_branch_age_days(branch);
                 let age_str = format_branch_age(branch_age);
 
-                println!("  {} - {}", branch, age_str);
+                info!("  {} - {}", branch, age_str);
             }
             
-            println!("\nUse --cleanup-branches to remove old branches");
+            info!("\nUse --cleanup-branches to remove old branches");
         }
         return Ok(());
     }
@@ -2170,11 +2204,11 @@ async fn run() -> Result<()> {
     let session_file = get_session_file(&cli, &config);
     if let Some(ref session_id) = cli.resume {
         if let Ok(Some(session)) = find_session_by_id(&session_file, session_id) {
-            println!("Resuming session: {}", session_id);
-            println!("Question: {}", session.question);
-            println!("Current best iteration: {:?}", session.best_iteration);
-            println!("Iterations completed: {}", session.iterations.len());
-            println!();
+            info!("Resuming session: {}", session_id);
+            info!("Question: {}", session.question);
+            info!("Current best iteration: {:?}", session.best_iteration);
+            info!("Iterations completed: {}", session.iterations.len());
+            info!("");
 
             // Resume from the best iteration's metric value
             let resume_baseline = session.iterations
@@ -2183,8 +2217,8 @@ async fn run() -> Result<()> {
                 .map(|it| it.metric_value)
                 .fold(session.baseline_record.value, |min, val| min.min(val));
 
-            println!("Continuing from baseline: {:.2}", resume_baseline);
-            println!();
+            info!("Continuing from baseline: {:.2}", resume_baseline);
+            info!("");
 
             // Continue with the experiment using the resumed state
             let mut design_to_use = session.design.clone();
@@ -2236,12 +2270,12 @@ async fn run() -> Result<()> {
             };
 
             if !cli.quiet {
-                eprintln!("\n=== Resumed Experiment Complete ===");
-                eprintln!("Total iterations: {}", merged_session.iterations.len());
-                eprintln!("Best improvement: {:+.2}%", final_improvement * 100.0);
-                eprintln!("Session ID: {}", session_id);
+                info!("\n=== Resumed Experiment Complete ===");
+                info!("Total iterations: {}", merged_session.iterations.len());
+                info!("Best improvement: {:+.2}%", final_improvement * 100.0);
+                info!("Session ID: {}", session_id);
                 if let Some(reason) = &stuck_reason {
-                    eprintln!("Termination: {:?}", reason);
+                    info!("Termination: {:?}", reason);
                 }
             }
 
@@ -2258,11 +2292,11 @@ async fn run() -> Result<()> {
             let finalization_result = finalize_experiment(&merged_session, target_improvement, stuck_reason.as_ref(), cli.skip_git || cli.dry_run)?;
 
             if !cli.quiet {
-                eprintln!("\n=== Finalization ===");
+                info!("\n=== Finalization ===");
                 if finalization_result.success {
-                    eprintln!("✓ Target improvement achieved: {:+.2}%", finalization_result.final_improvement * 100.0);
+                    info!("✓ Target improvement achieved: {:+.2}%", finalization_result.final_improvement * 100.0);
                     if let Some(ref branch) = finalization_result.branch_name {
-                        eprintln!("✓ Created branch: {}", branch);
+                        info!("✓ Created branch: {}", branch);
                     }
                 } else {
                     print_failure_report(&finalization_result, target_improvement);
@@ -2275,7 +2309,7 @@ async fn run() -> Result<()> {
                 std::process::exit(1);
             }
         } else {
-            eprintln!("Session '{}' not found in {}", session_id, cli.session_file);
+            error!("Session '{}' not found in {}", session_id, cli.session_file);
             std::process::exit(1);
         }
     }
@@ -2315,12 +2349,12 @@ async fn run() -> Result<()> {
                 }
                 
                 if let Some(err) = result.error_message {
-                    eprintln!("Baseline verification failed: {}", err);
+                    error!("Baseline verification failed: {}", err);
                     std::process::exit(1);
                 }
             }
             Err(e) => {
-                eprintln!("Baseline verification error: {}", e);
+                error!("Baseline verification error: {}", e);
                 std::process::exit(1);
             }
         }
@@ -2351,7 +2385,7 @@ async fn run() -> Result<()> {
         io::stdin().read_line(&mut response)?;
         
         if response.trim().to_lowercase() != "y" && response.trim().to_lowercase() != "yes" {
-            println!("Design not approved. Exiting.");
+            info!("Design not approved. Exiting.");
             std::process::exit(1);
         }
     }
@@ -2386,7 +2420,7 @@ async fn run() -> Result<()> {
             
             if !baseline_result.success {
                 if let Some(err) = baseline_result.error_message {
-                    eprintln!("Baseline verification failed: {}", err);
+                    error!("Baseline verification failed: {}", err);
                     std::process::exit(1);
                 }
             }
@@ -2421,12 +2455,12 @@ async fn run() -> Result<()> {
         };
         
         if !cli.quiet {
-            eprintln!("\n=== Experiment Complete ===");
-            eprintln!("Iterations: {}", session.iterations.len());
-            eprintln!("Best improvement: {:+.2}%", final_improvement * 100.0);
-            eprintln!("Session ID: {}", session.session_id);
+            info!("\n=== Experiment Complete ===");
+            info!("Iterations: {}", session.iterations.len());
+            info!("Best improvement: {:+.2}%", final_improvement * 100.0);
+            info!("Session ID: {}", session.session_id);
             if let Some(reason) = &stuck_reason {
-                eprintln!("Termination: {:?}", reason);
+                info!("Termination: {:?}", reason);
             }
             
             if session.best_iteration.is_some() {
@@ -2434,11 +2468,11 @@ async fn run() -> Result<()> {
                     .iter()
                     .find(|i| i.iteration == session.best_iteration.unwrap());
                 if let Some(best) = best_iter {
-                    eprintln!("Best iteration: {} (metric: {:.2})", best.iteration, best.metric_value);
+                    info!("Best iteration: {} (metric: {:.2})", best.iteration, best.metric_value);
                 }
             }
         } else {
-            eprintln!("Final improvement: {:+.2}%", final_improvement * 100.0);
+            info!("Final improvement: {:+.2}%", final_improvement * 100.0);
         }
         
         if !cli.dry_run {
@@ -2463,14 +2497,14 @@ async fn run() -> Result<()> {
         }
         
         if !cli.quiet {
-            eprintln!("\n=== Finalization ===");
+            info!("\n=== Finalization ===");
             if finalization_result.success {
-                eprintln!("✓ Target improvement achieved: {:+.2}%", finalization_result.final_improvement * 100.0);
+                info!("✓ Target improvement achieved: {:+.2}%", finalization_result.final_improvement * 100.0);
                 if let Some(ref branch) = finalization_result.branch_name {
-                    eprintln!("✓ Created branch: {}", branch);
+                    info!("✓ Created branch: {}", branch);
                 }
                 if let Some(ref msg) = finalization_result.commit_message {
-                    eprintln!("\nCommit message:\n{}", msg);
+                    info!("\nCommit message:\n{}", msg);
                 }
             } else {
                 print_failure_report(&finalization_result, target_improvement);
