@@ -16,15 +16,14 @@ cargo test --test integration_tests test_name
 ```
 
 ### Mutation Tests (`mutation_tests.rs`)
-Mutation tests that verify test quality by introducing deliberate bugs and checking if existing tests catch them.
+Mutation-resistant tests that verify test quality. These tests are designed to follow mutation testing principles (they would fail if common bugs were introduced).
 
 ```bash
-# Run mutation tests
+# Run mutation-resistant tests
 cargo test --test mutation_tests
 
-# Run mutation analysis (requires cargo-mutagen)
-./test-mutation.sh
-```
+# Mutation testing framework (planned for future)
+# ./test-mutation.sh (requires cargo-mutagen)
 
 ## Running All Tests
 
@@ -43,51 +42,38 @@ cargo test --test mutation_tests
 
 The test suite includes:
 - **Unit Tests**: 68 tests for helper functions, validation, and utilities
-- **Integration Tests**: 37 tests for end-to-end workflows
-- **Mutation Tests**: 14 tests for test quality verification
+- **Integration Tests**: 60 tests for end-to-end workflows
+- **Mutation-Resistant Tests**: 13 tests for test quality verification
 - **Benchmarks**: 5 performance benchmarks
 
-### Total: 119 tests
+### Total: 141 tests
 
-## Mutation Testing
+## Mutation-Resistant Tests
 
-Mutation testing helps identify weak tests by introducing deliberate bugs (mutants) into the code and checking if existing tests catch them.
+Mutation-resistant tests are designed to follow mutation testing principles. These tests would fail if common bugs (mutations) were introduced into the code.
 
-### Setup
+### Current Implementation
+
+- ✅ 13 mutation-resistant tests implemented
+- ✅ Tests follow mutation testing principles
+- ✅ All tests pass consistently
+
+### Future Work
+
+A full mutation testing framework (e.g., cargo-mutagen or cargo-mutest) is planned for future work. This would provide:
+- Automated mutation generation
+- Mutation coverage reporting
+- Identification of weak tests
+
+### Setup (Future)
 
 ```bash
-# Install cargo-mutagen
+# Install cargo-mutagen (when implemented)
 cargo install cargo-mutagen
 
-# Or use the provided script
-./test-mutation.sh
-```
-
-### Running Mutation Tests
-
-```bash
 # Run mutation analysis
 cargo mutagen test
-
-# Generate HTML report
-cargo mutagen report --format html
-
-# View mutation coverage stats
-cargo mutagen stats
 ```
-
-### Mutation Coverage Goals
-
-- Target: 80% mutation coverage
-- Current: See `target/mutation-report/index.html`
-
-### Mutators Applied
-
-- **Arithmetic**: `+`, `-`, `*`, `/`, `%` operators
-- **Logical**: `&&`, `||`, `!` operators
-- **Conditional**: `if`, `match`, comparison operators
-- **Return Value**: Changed return values
-- **Remove Statement**: Removed statements
 
 ## Best Practices
 

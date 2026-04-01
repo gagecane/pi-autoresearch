@@ -54,6 +54,8 @@ Important learnings and context about the pi-autoresearch project.
 - Tests designed to catch common mutation types (operator flips, logic inversions, etc.)
 - NOT the same as a mutation testing framework (which would automatically introduce mutations)
 - Tests follow mutation testing principles but don't implement automated mutation generation
+- **What was implemented**: Mutation-resistant tests (tests designed to catch common mutations)
+- **What was NOT implemented**: Automated mutation generation and testing framework
 - Future work: Consider implementing cargo-mutagen or cargo-mutest for actual mutation testing
 
 ### Contract Tests
