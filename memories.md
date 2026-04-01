@@ -832,3 +832,51 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 - All 37 integration tests pass
 - Total: 105 tests passing
 - Task marked as READY FOR REVIEW
+## Priority 26: Resume Functionality Testing (2026-04-01)
+
+### Session File Format Handling
+- Session files can contain both compact JSONL (single-line) and pretty-printed JSON (multi-line)
+-  uses brace counting to extract complete JSON objects from multi-line text
+- Duplicate detection prevents double-parsing when both formats present
+- Key insight: ExperimentSession records have  field, IterationRecord has  and , BaselineRecord has 
+
+### Resume Testing Patterns
+- Integration tests for resume functionality require:
+  1. Creating initial session with known parameters
+  2. Extracting session_id from session file (handles both JSON formats)
+  3. Resuming with same session file
+  4. Verifying session data preservation (question, iterations, etc.)
+- Helper functions needed: , 
+
+### Test Coverage
+- 4 new integration tests added:
+  - : Verifies iterations increase after resume
+  - : Verifies original question preserved
+  - : Verifies graceful error handling
+  - : Verifies error on empty file
+- Total tests: 105 (68 unit + 37 integration)
+
+
+## Priority 26: Resume Functionality Testing (2026-04-01)
+
+### Session File Format Handling
+- Session files can contain both compact JSONL (single-line) and pretty-printed JSON (multi-line)
+- read_session_file() uses brace counting to extract complete JSON objects from multi-line text
+- Duplicate detection prevents double-parsing when both formats present
+- Key insight: ExperimentSession records have session_id field, IterationRecord has iteration and agent_action, BaselineRecord has verification_runs
+
+### Resume Testing Patterns
+- Integration tests for resume functionality require:
+  1. Creating initial session with known parameters
+  2. Extracting session_id from session file (handles both JSON formats)
+  3. Resuming with same session file
+  4. Verifying session data preservation (question, iterations, etc.)
+- Helper functions needed: extract_session_id_from_file(), count_iterations_in_file()
+
+### Test Coverage
+- 4 new integration tests added:
+  - test_resume_with_valid_session: Verifies iterations increase after resume
+  - test_resume_preserves_session_data: Verifies original question preserved
+  - test_resume_invalid_session_id: Verifies graceful error handling
+  - test_resume_with_empty_session_file: Verifies error on empty file
+- Total tests: 105 (68 unit + 37 integration)

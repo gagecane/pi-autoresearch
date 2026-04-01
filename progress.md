@@ -990,3 +990,22 @@
 - ✅ Total: 105 tests passing
 - ✅ Task marked as READY FOR REVIEW in tasks.md
 - ✅ Ready for review
+
+## 2026-04-01 12:30 UTC - REVIEW: Priority 26 - COMPLETE
+
+**Task**: TEST - Add Resume Functionality Integration Test
+**Status**: COMPLETE ✅
+**Review**: Reviewed implementation for correctness
+- read_session_file() properly handles both multi-line and compact JSON formats
+- Brace counting logic correctly extracts complete JSON objects
+- Duplicate detection prevents double-parsing of ExperimentSession records
+- Helper functions (extract_session_id_from_file, count_iterations_in_file) work correctly
+- All 4 new integration tests pass and cover success/failure cases
+- No regressions: 105 total tests passing (68 unit + 37 integration)
+
+**Changes**:
+- Updated tasks.md: Marked Priority 26 as COMPLETE
+- Updated memories.md: Added learnings about session file format handling and resume testing patterns
+- Updated progress.md: This entry
+
+**Next Task**: Priority 27 - FEATURE - Add Structured Logging (TODO)
