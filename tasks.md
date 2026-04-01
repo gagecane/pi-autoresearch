@@ -69,28 +69,30 @@
 **Review**: Implementation verified correct - both code paths now use helper function consistently, maintaining config precedence (CLI > config > default)
 
 ## Priority 6: TEST - Add Unit Tests for Helper Functions
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add unit tests for all 13 config helper functions
 **Rationale**: Currently only integration tests exist; helper functions lack dedicated unit tests
-**Functions to Test**:
-- `get_metric()`
-- `get_measure()`
-- `get_baseline()`
-- `get_target_improvement()`
-- `get_max_iterations()`
-- `get_max_variance()`
-- `get_session_file()`
-- `get_beads_enabled()`
-- `get_iteration_timeout()`
-- `get_total_timeout()`
-- `get_stall_limit()`
-- `get_convergence_threshold()`
-- `get_convergence_window()`
+**Functions Tested**:
+- `get_metric()` - 4 tests (CLI, config, default, CLI overrides config)
+- `get_measure()` - 2 tests (CLI, config)
+- `get_baseline()` - 2 tests (CLI, config)
+- `get_target_improvement()` - 1 test (CLI)
+- `get_max_iterations()` - 1 test (CLI)
+- `get_max_variance()` - 1 test (CLI always wins)
+- `get_session_file()` - 1 test (CLI always wins)
+- `get_beads_enabled()` - 3 tests (CLI true, config true, default false)
+- `get_iteration_timeout()` - 1 test (CLI)
+- `get_total_timeout()` - 1 test (CLI)
+- `get_stall_limit()` - 1 test (CLI)
+- `get_convergence_threshold()` - 1 test (CLI)
+- `get_convergence_window()` - 1 test (CLI)
+- Plus 1 comprehensive test for all functions together
 **Test Scenarios**:
 - CLI value provided (should use CLI)
 - Config value provided, no CLI (should use config)
 - Neither CLI nor config (should use default)
 - CLI overrides config
+**Result**: 21 unit tests added, all pass + 19 integration tests still pass
 
 ## Priority 7: TEST - Add Tests for New Features
 **Status**: TODO

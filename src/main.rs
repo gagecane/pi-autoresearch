@@ -9,7 +9,7 @@ use std::fs::OpenOptions;
 use std::path::PathBuf;
 
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Default)]
 #[command(name = "pi-autoresearch")]
 #[command(about = "Autonomous research experiment orchestrator")]
 struct Cli {
@@ -2036,6 +2036,285 @@ async fn run() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_metric_cli_provided() {
+        let cli = Cli {
+            metric: Some("custom_metric".to_string()),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_metric(&cli, &config, "default"), "custom_metric");
+    }
+
+    #[test]
+    fn test_get_metric_config_provided() {
+        let cli = Cli {
+            metric: None,
+            ..Default::default()
+        };
+        let config = Some(Config {
+            metric: Some("config_metric".to_string()),
+            ..Default::default()
+        });
+        assert_eq!(get_metric(&cli, &config, "default"), "config_metric");
+    }
+
+    #[test]
+    fn test_get_metric_default() {
+        let cli = Cli {
+            metric: None,
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_metric(&cli, &config, "default_metric"), "default_metric");
+    }
+
+    #[test]
+    fn test_get_metric_cli_overrides_config() {
+        let cli = Cli {
+            metric: Some("cli_metric".to_string()),
+            ..Default::default()
+        };
+        let config = Some(Config {
+            metric: Some("config_metric".to_string()),
+            ..Default::default()
+        });
+        assert_eq!(get_metric(&cli, &config, "default"), "cli_metric");
+    }
+
+    #[test]
+    fn test_get_measure_cli_provided() {
+        let cli = Cli {
+            measure: Some("echo 100".to_string()),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_measure(&cli, &config, "default"), "echo 100");
+    }
+
+    #[test]
+    fn test_get_measure_config_provided() {
+        let cli = Cli {
+            measure: None,
+            ..Default::default()
+        };
+        let config = Some(Config {
+            measure: Some("config_measure".to_string()),
+            ..Default::default()
+        });
+        assert_eq!(get_measure(&cli, &config, "default"), "config_measure");
+    }
+
+    #[test]
+    fn test_get_baseline_cli_provided() {
+        let cli = Cli {
+            baseline: Some(500.0),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_baseline(&cli, &config, 100.0), 500.0);
+    }
+
+    #[test]
+    fn test_get_baseline_config_provided() {
+        let cli = Cli {
+            baseline: None,
+            ..Default::default()
+        };
+        let config = Some(Config {
+            baseline: Some(250.0),
+            ..Default::default()
+        });
+        assert_eq!(get_baseline(&cli, &config, 100.0), 250.0);
+    }
+
+    #[test]
+    fn test_get_target_improvement_cli_provided() {
+        let cli = Cli {
+            target_improvement: Some(0.50),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_target_improvement(&cli, &config, 0.30), 0.50);
+    }
+
+    #[test]
+    fn test_get_max_iterations_cli_provided() {
+        let cli = Cli {
+            max_iterations: Some(50),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_max_iterations(&cli, &config, 20), 50);
+    }
+
+    #[test]
+    fn test_get_max_variance_always_cli() {
+        let cli = Cli {
+            max_variance: 0.10,
+            ..Default::default()
+        };
+        let config = Some(Config {
+            max_variance: Some(0.05),
+            ..Default::default()
+        });
+        // CLI always wins for max_variance
+        assert_eq!(get_max_variance(&cli, &config, 0.05), 0.10);
+    }
+
+    #[test]
+    fn test_get_session_file_always_cli() {
+        let cli = Cli {
+            session_file: "custom.jsonl".to_string(),
+            ..Default::default()
+        };
+        let config = Some(Config {
+            session_file: Some("config.jsonl".to_string()),
+            ..Default::default()
+        });
+        // CLI always wins for session_file
+        assert_eq!(get_session_file(&cli, &config), "custom.jsonl");
+    }
+
+    #[test]
+    fn test_get_beads_enabled_cli_true() {
+        let cli = Cli {
+            beads_enabled: true,
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert!(get_beads_enabled(&cli, &config));
+    }
+
+    #[test]
+    fn test_get_beads_enabled_config_true() {
+        let cli = Cli {
+            beads_enabled: false,
+            ..Default::default()
+        };
+        let config = Some(Config {
+            beads_enabled: Some(true),
+            ..Default::default()
+        });
+        assert!(get_beads_enabled(&cli, &config));
+    }
+
+    #[test]
+    fn test_get_beads_enabled_default_false() {
+        let cli = Cli {
+            beads_enabled: false,
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert!(!get_beads_enabled(&cli, &config));
+    }
+
+    #[test]
+    fn test_get_iteration_timeout_cli_provided() {
+        let cli = Cli {
+            iteration_timeout_minutes: Some(30),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_iteration_timeout(&cli, &config, 10), 30);
+    }
+
+    #[test]
+    fn test_get_total_timeout_cli_provided() {
+        let cli = Cli {
+            total_timeout_minutes: Some(180),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_total_timeout(&cli, &config, 120), 180);
+    }
+
+    #[test]
+    fn test_get_stall_limit_cli_provided() {
+        let cli = Cli {
+            stall_limit: Some(10),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_stall_limit(&cli, &config, 5), 10);
+    }
+
+    #[test]
+    fn test_get_convergence_threshold_cli_provided() {
+        let cli = Cli {
+            convergence_threshold: Some(0.001),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_convergence_threshold(&cli, &config, 0.01), 0.001);
+    }
+
+    #[test]
+    fn test_get_convergence_window_cli_provided() {
+        let cli = Cli {
+            convergence_window: Some(5),
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_convergence_window(&cli, &config, 3), 5);
+    }
+
+    #[test]
+    fn test_config_precedence_all_functions() {
+        // Test that CLI > config > default for all helper functions
+        let cli = Cli {
+            metric: Some("cli_metric".to_string()),
+            measure: Some("cli_measure".to_string()),
+            baseline: Some(100.0),
+            target_improvement: Some(0.50),
+            max_iterations: Some(30),
+            iteration_timeout_minutes: Some(15),
+            total_timeout_minutes: Some(90),
+            stall_limit: Some(8),
+            convergence_threshold: Some(0.005),
+            convergence_window: Some(4),
+            max_variance: 0.08,
+            session_file: "cli_session.jsonl".to_string(),
+            beads_enabled: true,
+            ..Default::default()
+        };
+        let config = Some(Config {
+            metric: Some("config_metric".to_string()),
+            measure: Some("config_measure".to_string()),
+            baseline: Some(200.0),
+            target_improvement: Some(0.30),
+            max_iterations: Some(20),
+            iteration_timeout_minutes: Some(10),
+            total_timeout_minutes: Some(60),
+            stall_limit: Some(5),
+            convergence_threshold: Some(0.01),
+            convergence_window: Some(3),
+            max_variance: Some(0.05),
+            session_file: Some("config_session.jsonl".to_string()),
+            beads_enabled: Some(false),
+        });
+
+        // All should use CLI values
+        assert_eq!(get_metric(&cli, &config, "default"), "cli_metric");
+        assert_eq!(get_measure(&cli, &config, "default"), "cli_measure");
+        assert_eq!(get_baseline(&cli, &config, 50.0), 100.0);
+        assert_eq!(get_target_improvement(&cli, &config, 0.25), 0.50);
+        assert_eq!(get_max_iterations(&cli, &config, 10), 30);
+        assert_eq!(get_iteration_timeout(&cli, &config, 5), 15);
+        assert_eq!(get_total_timeout(&cli, &config, 30), 90);
+        assert_eq!(get_stall_limit(&cli, &config, 3), 8);
+        assert_eq!(get_convergence_threshold(&cli, &config, 0.02), 0.005);
+        assert_eq!(get_convergence_window(&cli, &config, 2), 4);
+        assert_eq!(get_max_variance(&cli, &config, 0.05), 0.08);
+        assert_eq!(get_session_file(&cli, &config), "cli_session.jsonl");
+        assert!(get_beads_enabled(&cli, &config));
+    }
 }
 
 #[tokio::main]
