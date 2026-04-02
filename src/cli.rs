@@ -33,6 +33,21 @@ pub enum NotificationProvider {
     Email,
 }
 
+/// Audit log format for experiment compliance logging
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub enum AuditLogFormat {
+    /// JSON format for programmatic access
+    #[value(name = "json")]
+    #[default]
+    Json,
+    /// CSV format for spreadsheet analysis
+    #[value(name = "csv")]
+    Csv,
+    /// Text format for human-readable logs
+    #[value(name = "text")]
+    Text,
+}
+
 impl ExportFormat {
     /// Returns the file extension for this format
     pub fn extension(&self) -> &'static str {
@@ -77,6 +92,8 @@ pub struct Cli {
     #[arg(long, alias = "notify-url")] pub notify_url: Option<String>,
     #[arg(long, alias = "notify-email")] pub notify_email: Option<String>,
     #[arg(long, alias = "notify-milestone")] pub notify_milestone: Option<usize>,
+    #[arg(long, alias = "audit-log")] pub audit_log_path: Option<String>,
+    #[arg(long, alias = "audit-log-format", value_enum)] pub audit_log_format: Option<AuditLogFormat>,
 }
 
 impl Cli {
@@ -292,6 +309,54 @@ impl Cli {
     /// ```
     pub fn has_notifications_enabled(&self) -> bool {
         self.notify_provider.is_some()
+    }
+
+    /// Returns the audit log path if specified, otherwise None.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { audit_log_path: None, ..Default::default() };
+    /// assert!(cli.get_audit_log_path().is_none());
+    ///
+    /// let cli = Cli { audit_log_path: Some("audit.log".to_string()), ..Default::default() };
+    /// assert_eq!(cli.get_audit_log_path(), Some(&"audit.log".to_string()));
+    /// ```
+    pub fn get_audit_log_path(&self) -> Option<&String> {
+        self.audit_log_path.as_ref()
+    }
+
+    /// Returns the audit log format if specified, otherwise None.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, AuditLogFormat};
+    /// let cli = Cli { audit_log_format: None, ..Default::default() };
+    /// assert!(cli.get_audit_log_format().is_none());
+    ///
+    /// let cli = Cli { audit_log_format: Some(AuditLogFormat::Csv), ..Default::default() };
+    /// assert_eq!(cli.get_audit_log_format(), Some(&AuditLogFormat::Csv));
+    /// ```
+    pub fn get_audit_log_format(&self) -> Option<&AuditLogFormat> {
+        self.audit_log_format.as_ref()
+    }
+
+    /// Returns true if audit logging is configured (path is specified).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { audit_log_path: None, ..Default::default() };
+    /// assert!(!cli.has_audit_logging_enabled());
+    ///
+    /// let cli = Cli { audit_log_path: Some("audit.log".to_string()), ..Default::default() };
+    /// assert!(cli.has_audit_logging_enabled());
+    /// ```
+    pub fn has_audit_logging_enabled(&self) -> bool {
+        self.audit_log_path.is_some()
     }
 }
 
@@ -756,5 +821,116 @@ mod tests {
         // Test notify-milestone alias
         let cli = Cli::parse_from(["test", "--notify-milestone", "7"]);
         assert_eq!(cli.notify_milestone, Some(7));
+    }
+
+    #[test]
+    fn test_audit_log_format_default() {
+        assert_eq!(AuditLogFormat::default(), AuditLogFormat::Json);
+    }
+
+    #[test]
+    fn test_audit_log_format_variants() {
+        let formats = vec![
+            AuditLogFormat::Json,
+            AuditLogFormat::Csv,
+            AuditLogFormat::Text,
+        ];
+        assert_eq!(formats.len(), 3);
+    }
+
+    #[test]
+    fn test_cli_parse_audit_log_path() {
+        let cli = Cli::parse_from(["test", "--audit-log-path", "audit.log"]);
+        assert_eq!(cli.audit_log_path, Some("audit.log".to_string()));
+
+        let cli = Cli::parse_from(["test", "--audit-log", "custom_audit.log"]);
+        assert_eq!(cli.audit_log_path, Some("custom_audit.log".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_audit_log_format() {
+        let cli = Cli::parse_from(["test", "--audit-log-format", "json"]);
+        assert_eq!(cli.audit_log_format, Some(AuditLogFormat::Json));
+
+        let cli = Cli::parse_from(["test", "--audit-log-format", "csv"]);
+        assert_eq!(cli.audit_log_format, Some(AuditLogFormat::Csv));
+
+        let cli = Cli::parse_from(["test", "--audit-log-format", "text"]);
+        assert_eq!(cli.audit_log_format, Some(AuditLogFormat::Text));
+    }
+
+    #[test]
+    fn test_get_audit_log_path_none() {
+        let cli = Cli { audit_log_path: None, ..Default::default() };
+        assert!(cli.get_audit_log_path().is_none());
+    }
+
+    #[test]
+    fn test_get_audit_log_path_some() {
+        let cli = Cli { audit_log_path: Some("audit.log".to_string()), ..Default::default() };
+        assert_eq!(cli.get_audit_log_path(), Some(&"audit.log".to_string()));
+    }
+
+    #[test]
+    fn test_get_audit_log_format_none() {
+        let cli = Cli { audit_log_format: None, ..Default::default() };
+        assert!(cli.get_audit_log_format().is_none());
+    }
+
+    #[test]
+    fn test_get_audit_log_format_some() {
+        let cli = Cli { audit_log_format: Some(AuditLogFormat::Csv), ..Default::default() };
+        assert_eq!(cli.get_audit_log_format(), Some(&AuditLogFormat::Csv));
+    }
+
+    #[test]
+    fn test_has_audit_logging_enabled_none() {
+        let cli = Cli { audit_log_path: None, ..Default::default() };
+        assert!(!cli.has_audit_logging_enabled());
+    }
+
+    #[test]
+    fn test_has_audit_logging_enabled_some() {
+        let cli = Cli { audit_log_path: Some("audit.log".to_string()), ..Default::default() };
+        assert!(cli.has_audit_logging_enabled());
+    }
+
+    #[test]
+    fn test_cli_parse_audit_log_path_and_format() {
+        let cli = Cli::parse_from([
+            "test",
+            "--audit-log-path", "audit.log",
+            "--audit-log-format", "csv"
+        ]);
+        assert_eq!(cli.audit_log_path, Some("audit.log".to_string()));
+        assert_eq!(cli.audit_log_format, Some(AuditLogFormat::Csv));
+    }
+
+    #[test]
+    fn test_cli_parse_audit_log_alias() {
+        // Test --audit-log alias
+        let cli = Cli::parse_from(["test", "--audit-log", "compliance.log"]);
+        assert_eq!(cli.audit_log_path, Some("compliance.log".to_string()));
+
+        // Test --audit-log-format alias
+        let cli = Cli::parse_from(["test", "--audit-log-format", "text"]);
+        assert_eq!(cli.audit_log_format, Some(AuditLogFormat::Text));
+    }
+
+    #[test]
+    fn test_cli_parse_audit_log_with_other_options() {
+        let cli = Cli::parse_from([
+            "test",
+            "--question", "Test question",
+            "--audit-log-path", "audit.log",
+            "--audit-log-format", "json",
+            "--export", "csv",
+            "--notify-provider", "webhook"
+        ]);
+        assert_eq!(cli.question, Some("Test question".to_string()));
+        assert_eq!(cli.audit_log_path, Some("audit.log".to_string()));
+        assert_eq!(cli.audit_log_format, Some(AuditLogFormat::Json));
+        assert_eq!(cli.export, Some(ExportFormat::Csv));
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Webhook));
     }
 }

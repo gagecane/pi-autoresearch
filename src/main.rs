@@ -11,7 +11,7 @@ use tracing::{info, debug, warn, error};
 use tracing_subscriber::EnvFilter;
 use indicatif::{ProgressBar, ProgressStyle};
 use colored::Colorize;
-use pi_autoresearch::cli::{ExportFormat, NotificationProvider};
+use pi_autoresearch::cli::{ExportFormat, NotificationProvider, AuditLogFormat};
 use pi_autoresearch::export::export;
 use pi_autoresearch::session::ExperimentSession as LibraryExperimentSession;
 use pi_autoresearch::phase1_design::{ExperimentDesign as LibraryExperimentDesign, BaselineRecord as LibraryBaselineRecord};
@@ -158,6 +158,14 @@ struct Cli {
     /// Send notifications every N iterations (milestone notifications)
     #[arg(long, alias = "notify-milestone")]
     notify_milestone: Option<usize>,
+
+    /// Audit log file path for compliance logging
+    #[arg(long, alias = "audit-log")]
+    audit_log_path: Option<String>,
+
+    /// Audit log format (json, csv, text)
+    #[arg(long, alias = "audit-log-format", value_enum)]
+    audit_log_format: Option<AuditLogFormat>,
 }
 
 /// Configuration loaded from config file
