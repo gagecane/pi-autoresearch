@@ -1,5 +1,27 @@
 # Progress
 
+## Session: 2026-04-02 13:53 UTC - REVISE COMPLETE (Priority 92.1)
+
+### Revision Complete
+- ✅ **Priority 92.1: CLI - Add Export Flags** - REVISE COMPLETE
+  - **Changes Made**:
+    - ✅ Removed duplicate `ExportFormat` enum from main.rs (lines 16-42)
+    - ✅ Removed unused standalone functions from main.rs:
+      - `get_export_format()` (line 985)
+      - `get_export_path()` (line 1009)
+    - ✅ Updated imports in main.rs:
+      - Added `use pi_autoresearch::cli::ExportFormat;`
+      - Removed `ValueEnum` from clap imports (no longer needed)
+    - ✅ Updated lib.rs to export `ExportFormat`:
+      - Changed `pub use cli::Cli;` to `pub use cli::{Cli, ExportFormat};`
+  - **Verification**:
+    - ✅ `cargo build` completes with no warnings
+    - ✅ `cargo clippy` completes with no warnings
+    - ✅ All 174 lib tests pass
+    - ✅ All 103 main.rs tests pass
+  - **Status**: Task marked as READY FOR REVIEW in tasks.md
+  - **Feedback**: Cleared feedback.md (no feedback)
+
 ## Session: 2026-04-02 14:30 UTC - REVIEW WITH FEEDBACK (Priority 92.1)
 
 ### Review Completed

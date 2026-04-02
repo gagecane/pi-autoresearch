@@ -2,6 +2,30 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 13:53 UTC: Export Flags Revision (Priority 92.1)
+
+**Priority 92.1: CLI - Add Export Flags** - REVISE COMPLETE
+
+**Changes Made**:
+- Removed duplicate `ExportFormat` enum from main.rs
+- Removed unused standalone functions `get_export_format()` and `get_export_path()` from main.rs
+- Updated lib.rs to export `ExportFormat` alongside `Cli`
+- main.rs now imports `ExportFormat` from `pi_autoresearch::cli`
+- Removed unused `ValueEnum` import from main.rs
+
+**Code Quality Improvements**:
+- ✅ Eliminated code duplication (DRY principle)
+- ✅ Eliminated compiler warnings about unused functions
+- ✅ Better separation of concerns: library code in cli.rs, binary imports from library
+- ✅ All tests pass (174 lib + 103 main.rs)
+- ✅ Zero warnings from cargo build and cargo clippy
+
+**Lesson Learned**:
+- When a type is used by both library and binary, define it in the library module
+- Export it from lib.rs so binary can import it
+- Avoid duplicating type definitions across modules
+- Remove unused helper functions to keep codebase clean
+
 ## 2026-04-02 14:30 UTC: Export Flags Review (Priority 92.1)
 
 **Priority 92.1: CLI - Add Export Flags** - REVIEW WITH FEEDBACK

@@ -95,7 +95,7 @@
 - Priority 92.6: TEST - Add Export Integration Tests
 
 ## Priority 92.1: CLI - Add Export Flags
-**Status**: REVISE ⚠️
+**Status**: READY FOR REVIEW ✅
 **Description**: Add CLI flags for export functionality
 **Rationale**: Users need CLI interface to request experiment result exports
 **Implementation**:
@@ -130,6 +130,14 @@
   - `--export <EXPORT>` with possible values: csv, json, pdf, markdown
   - `--export-path <EXPORT_PATH>` with default description
 **Review**: READY FOR REVIEW - Export flags properly implemented in both cli.rs and main.rs, comprehensive tests added, all tests pass, help output shows new options correctly
+**Revised**: Fixed code duplication issues:
+- ✅ Removed duplicate `ExportFormat` enum from main.rs (now imported from cli.rs)
+- ✅ Removed unused standalone functions `get_export_format()` and `get_export_path()` from main.rs
+- ✅ Updated lib.rs to export `ExportFormat` for use in main.rs
+- ✅ All 174 lib tests pass
+- ✅ All 103 main.rs tests pass
+- ✅ `cargo build` completes with no warnings
+- ✅ `cargo clippy` completes with no warnings
 
 ## Priority 92.2: EXPORT - Implement JSON Export
 **Status**: TODO
