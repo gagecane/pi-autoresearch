@@ -4116,3 +4116,487 @@ fn test_notification_provider_slack_with_export() {
     let _: Result<_, _> = std::env::set_current_dir(&original_dir);
     let _: Result<_, _> = temp_dir.close();
 }
+
+// ==================== Audit Log Integration Tests ====================
+
+#[test]
+fn test_audit_log_file_creation() {
+    // Test that audit log file is created when --audit-log-path is specified
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit.log");
+    let args = vec![
+        "--question",
+        "test audit log creation",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete (may fail if target not met, but that's ok)
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Audit log test should complete"
+    );
+    
+    // Verify audit log file was created
+    assert!(
+        audit_path.exists(),
+        "Audit log file should be created"
+    );
+    
+    // Verify audit log is not empty
+    let content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(!content.is_empty(), "Audit log should not be empty");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_audit_log_experiment_start_logged() {
+    // Test audit log with experiment start event
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit_start.log");
+    let args = vec![
+        "--question",
+        "test experiment start",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete (may fail if target not met, but that's ok)
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Experiment start test should complete"
+    );
+    
+    // Verify audit log contains experiment_started event
+    let content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(content.contains("experiment_started"), "Audit log should contain experiment_started");
+    assert!(content.contains("test experiment start"), "Audit log should contain the question");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_audit_log_json_format() {
+    // Test audit log JSON format - verify the audit log contains valid JSON
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit_json.log");
+    let args = vec![
+        "--question",
+        "test json format",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "JSON format test should complete"
+    );
+    
+    // Verify audit log is not empty
+    let content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(!content.is_empty(), "Audit log should not be empty");
+    
+    // Verify audit log contains JSON-like content (at least opening brace)
+    assert!(content.contains("{"), "Audit log should contain JSON content");
+    assert!(content.contains("event_type"), "Audit log should contain event_type field");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_audit_log_contains_required_fields() {
+    // Test that audit log entries contain required fields
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit_fields.log");
+    let args = vec![
+        "--question",
+        "test required fields",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Required fields test should complete"
+    );
+    
+    // Verify audit log contains required fields
+    let content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(content.contains("timestamp"), "Audit log should have timestamp");
+    assert!(content.contains("event_type"), "Audit log should have event_type");
+    assert!(content.contains("session_id"), "Audit log should have session_id");
+    assert!(content.contains("user_info"), "Audit log should have user_info");
+    assert!(content.contains("action"), "Audit log should have action");
+    assert!(content.contains("details"), "Audit log should have details");
+    
+    // Check user_info fields
+    assert!(content.contains("username"), "user_info should have username");
+    assert!(content.contains("cwd"), "user_info should have cwd");
+    assert!(content.contains("hostname"), "user_info should have hostname");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_audit_log_append_only() {
+    // Test that audit log is append-only (immutable)
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit_append.log");
+    
+    // First run
+    let args1 = vec![
+        "--question",
+        "test append only first",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output1 = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args1)
+        .output()
+        .unwrap();
+    
+    assert!(
+        output1.status.success() || output1.status.code() == Some(1),
+        "First run should complete"
+    );
+    
+    let content1 = std::fs::read_to_string(&audit_path).unwrap();
+    let lines1: Vec<&str> = content1.lines().filter(|l| !l.trim().is_empty()).collect();
+    let count1 = lines1.len();
+    
+    // Second run (same audit log path)
+    let args2 = vec![
+        "--question",
+        "test append only second",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output2 = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args2)
+        .output()
+        .unwrap();
+    
+    assert!(
+        output2.status.success() || output2.status.code() == Some(1),
+        "Second run should complete"
+    );
+    
+    let content2 = std::fs::read_to_string(&audit_path).unwrap();
+    let lines2: Vec<&str> = content2.lines().filter(|l| !l.trim().is_empty()).collect();
+    let count2 = lines2.len();
+    
+    // Verify that new entries were appended (not overwritten)
+    assert!(count2 > count1, "Second run should append entries, not overwrite");
+    
+    // Verify first run's entries are still present
+    assert!(content2.contains("test append only first"), "First run's entries should still be present");
+    assert!(content2.contains("test append only second"), "Second run's entries should be present");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_audit_log_with_export() {
+    // Test audit log combined with export flags
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit_combined.log");
+    let export_path = temp_dir.path().join("export.json");
+    
+    let args = vec![
+        "--question",
+        "test combined features",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+        "--export",
+        "json",
+        "--export-path",
+        export_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Combined features test should complete"
+    );
+    
+    // Verify audit log was created
+    assert!(
+        audit_path.exists(),
+        "Audit log file should be created"
+    );
+    
+    // Verify export was created
+    assert!(
+        export_path.exists(),
+        "Export file should be created"
+    );
+    
+    // Verify audit log contains expected content
+    let audit_content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(!audit_content.is_empty(), "Audit log should not be empty");
+    assert!(audit_content.contains("experiment_started"), "Audit log should contain experiment_started");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_audit_log_session_id_present() {
+    // Test that audit log contains session ID
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit_session.log");
+    let args = vec![
+        "--question",
+        "test session tracking",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Session tracking test should complete"
+    );
+    
+    // Verify audit log contains session_id field
+    let content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(content.contains("session_id"), "Audit log should contain session_id");
+    assert!(content.contains("pre-session"), "Audit log should have a session_id value");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_audit_log_timestamp_present() {
+    // Test that audit log contains timestamp
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let audit_path = temp_dir.path().join("audit_timestamp.log");
+    let args = vec![
+        "--question",
+        "test timestamp format",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Timestamp format test should complete"
+    );
+    
+    // Verify audit log contains timestamp field
+    let content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(content.contains("timestamp"), "Audit log should contain timestamp");
+    
+    // Verify timestamp looks like RFC3339 (contains T and timezone offset)
+    assert!(content.contains("T"), "Timestamp should contain T separator");
+    assert!(content.contains("+00:00") || content.contains("Z"), "Timestamp should contain timezone");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
