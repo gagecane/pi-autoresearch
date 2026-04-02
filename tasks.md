@@ -1788,7 +1788,7 @@
 - Priority 81: TEST - Add Doc Tests for cli.rs ✅
 - Priority 82: TEST - Add Doc Tests for phase1_design.rs ✅
 - Priority 83: TEST - Add Doc Tests for phase2_iterate.rs ✅
-- Priority 84: TEST - Add Doc Tests for stuck_detector.rs
+- Priority 84: TEST - Add Doc Tests for stuck_detector.rs ✅
 - Priority 85: TEST - Add Doc Tests for metric_evaluator.rs
 - Priority 86: TEST - Add Doc Tests for pi_agent.rs
 - Priority 87: TEST - Add Doc Tests for session.rs
@@ -1885,14 +1885,38 @@
 **Next Task**: Priority 84 - TEST - Add Doc Tests for stuck_detector.rs
 
 ## Priority 84: TEST - Add Doc Tests for stuck_detector.rs
-**Status**: TODO
+**Status**: READY FOR REVIEW
 **Description**: Add doc tests for stuck_detector.rs module functions
 **Rationale**: Doc tests verify that code examples in documentation work correctly
-**Functions to Document**:
-- `StuckReason` enum
-- `IterationState` methods
-- `StuckDetectorConfig`
-- `StuckDetector` methods
+**Functions Documented**:
+- `StuckReason` enum - 2 doc tests (timeout display, comparison)
+- `IterationState` struct - 2 doc tests (new state, record improvements)
+- `IterationState::new()` - 1 doc test
+- `IterationState::record_improvement()` - 1 doc test
+- `IterationState::record_no_improvement()` - 1 doc test
+- `IterationState::apply_backoff()` - 1 doc test
+- `IterationState::elapsed()` - 1 doc test
+- `StuckDetectorConfig` struct - 2 doc tests (default config, custom config)
+- `StuckDetectorConfig::default()` - 1 doc test verifying all default values
+- `StuckDetector` struct - 2 doc tests (default config, custom config)
+- `StuckDetector::new()` - 1 doc test
+- `StuckDetector::check_total_timeout()` - 1 doc test
+- `StuckDetector::check_iteration_timeout()` - 1 doc test
+- `StuckDetector::check_max_iterations()` - 1 doc test
+- `StuckDetector::check_convergence()` - 1 doc test
+- `StuckDetector::check_stall_limit()` - 1 doc test
+- `StuckDetector::should_backoff()` - 1 doc test
+**Test Results**:
+- 21 new doc tests added (58 total doc tests now)
+- All 58 doc tests passing
+- All 162 lib tests passing
+- All 103 main.rs tests passing
+- All 84 of 89 integration tests passing (5 pre-existing failures unrelated to this change)
+- Zero clippy warnings
+- Zero compiler warnings
+**Changes Made**:
+- src/stuck_detector.rs: Added comprehensive doc comments with examples to all public structs, enums, and functions
+**Next Task**: Priority 85 - TEST - Add Doc Tests for metric_evaluator.rs
 
 ## Priority 85: TEST - Add Doc Tests for metric_evaluator.rs
 **Status**: TODO

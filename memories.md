@@ -2,6 +2,46 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 23:59 UTC: Task Ready for Review (Priority 84)
+
+**Priority 84: TEST - Add Doc Tests for stuck_detector.rs** - READY FOR REVIEW
+
+**Changes Made**:
+- Added 21 doc tests for stuck_detector.rs module
+- Documented all public structs, enums, and functions with comprehensive doc comments:
+  - `StuckReason` enum - 2 doc tests (timeout display, comparison)
+  - `IterationState` struct - 2 doc tests (new state, record improvements)
+  - `IterationState::new()` - 1 doc test
+  - `IterationState::record_improvement()` - 1 doc test
+  - `IterationState::record_no_improvement()` - 1 doc test
+  - `IterationState::apply_backoff()` - 1 doc test
+  - `IterationState::elapsed()` - 1 doc test
+  - `StuckDetectorConfig` struct - 2 doc tests (default config, custom config)
+  - `StuckDetectorConfig::default()` - 1 doc test verifying all default values
+  - `StuckDetector` struct - 2 doc tests (default config, custom config)
+  - `StuckDetector::new()` - 1 doc test
+  - `StuckDetector::check_total_timeout()` - 1 doc test
+  - `StuckDetector::check_iteration_timeout()` - 1 doc test
+  - `StuckDetector::check_max_iterations()` - 1 doc test
+  - `StuckDetector::check_convergence()` - 1 doc test
+  - `StuckDetector::check_stall_limit()` - 1 doc test
+  - `StuckDetector::should_backoff()` - 1 doc test
+- Each doc comment includes Examples section with runnable code
+- Doc tests verify both basic usage and edge cases
+
+**Test Results**:
+- 21 new doc tests added (58 total doc tests now)
+- All 58 doc tests passing
+- All 162 lib tests passing
+- All 103 main.rs tests passing
+- All 84 of 89 integration tests passing (5 pre-existing failures unrelated to this change)
+- Zero clippy warnings
+- Zero compiler warnings
+
+**Key Learnings**:
+- StuckDetector has multiple check methods that need clear examples showing both success and failure cases
+- The should_backoff method has specific logic (stall limit reached but less than 2 backoffs)
+
 ## 2026-04-02 23:59 UTC: Task Complete (Priority 83)
 
 **Priority 83: TEST - Add Doc Tests for phase2_iterate.rs** - COMPLETE
