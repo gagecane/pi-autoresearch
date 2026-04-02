@@ -133,7 +133,7 @@ pub fn send_webhook(url: &str, session: &ExperimentSession, target_achieved: boo
     send_webhook_raw(url, &payload)
 }
 
-/// Sends an iteration milestone notification
+/// Sends an iteration milestone notification via webhook
 ///
 /// # Arguments
 ///
@@ -154,6 +154,424 @@ pub fn send_webhook(url: &str, session: &ExperimentSession, target_achieved: boo
 pub fn send_milestone_notification(url: &str, session: &ExperimentSession, current_iteration: usize) -> Result<()> {
     let payload = WebhookPayload::new_milestone(session, current_iteration);
     send_webhook_raw(url, &payload)
+}
+
+/// Sends a Slack milestone notification via webhook
+///
+/// # Arguments
+///
+/// * `webhook_url` - The Slack webhook URL to send the notification to
+/// * `session` - The experiment session containing the current state
+/// * `current_iteration` - The current iteration number
+///
+/// # Examples
+///
+/// ```ignore
+/// use pi_autoresearch::notification::send_slack_milestone;
+/// use pi_autoresearch::session::ExperimentSession;
+///
+/// let session = ExperimentSession::new(/* ... */);
+/// let result = send_slack_milestone("https://hooks.slack.com/services/xxx", &session, 5);
+/// assert!(result.is_ok());
+/// ```
+///
+/// # Notes
+///
+/// - Uses Slack's blocks API for rich formatting
+/// - Shows progress update with current iteration and best improvement
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The webhook URL is invalid
+/// - The HTTP request fails
+/// - Slack returns an error response
+pub fn send_slack_milestone(webhook_url: &str, session: &ExperimentSession, current_iteration: usize) -> Result<()> {
+    // Validate URL
+    if webhook_url.is_empty() {
+        anyhow::bail!("Slack webhook URL cannot be empty");
+    }
+    
+    // Calculate metrics
+    let best_improvement = session.calculate_final_improvement() * 100.0;
+    let runtime_seconds = WebhookPayload::calculate_runtime(&session.start_time, &session.end_time);
+    let runtime_formatted = format_duration(runtime_seconds);
+    
+    // Build Slack blocks message for milestone
+    let blocks = vec![
+        // Header block
+        serde_json::json!({
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "🔄 Experiment Progress Update",
+                "emoji": true
+            }
+        }),
+        // Context block
+        serde_json::json!({
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Session:* {} | *Metric:* {}", session.session_id, session.design.metric)
+                }
+            ]
+        }),
+        // Section block with summary
+        serde_json::json!({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": format!("*Question:* {}\n*Hypothesis:* {}", session.question, session.design.hypothesis)
+            }
+        }),
+        // Divider
+        serde_json::json!({
+            "type": "divider"
+        }),
+        // Metrics block
+        serde_json::json!({
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Baseline*\n{}", session.baseline_record.value)
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Best Improvement*\n{:+.1}%", best_improvement)
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Current Iteration*\n{}/?", current_iteration)
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Runtime So Far*\n{}", runtime_formatted)
+                }
+            ]
+        }),
+        // Progress block
+        serde_json::json!({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": format!("*📊 Progress:* Milestone reached at iteration {}. Best improvement so far: {:+.1}%", current_iteration, best_improvement)
+            }
+        }),
+    ];
+    
+    // Create Slack message payload
+    let slack_payload = serde_json::json!({
+        "channel": "#experiments",
+        "username": "pi-autoresearch",
+        "icon_emoji": "🔬",
+        "blocks": blocks
+    });
+    
+    // Serialize to JSON
+    let json = serde_json::to_string(&slack_payload)?;
+    
+    // Send to Slack
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(webhook_url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .header("User-Agent", "pi-autoresearch")
+        .body(json)
+        .send()?;
+    
+    // Check response status
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().unwrap_or_default();
+        anyhow::bail!("Slack webhook request failed with status {}: {}", status, body);
+    }
+    
+    Ok(())
+}
+
+/// Sends an email milestone notification
+///
+/// # Arguments
+///
+/// * `to` - The recipient email address
+/// * `config` - Email configuration including SMTP settings
+/// * `session` - The experiment session containing the current state
+/// * `current_iteration` - The current iteration number
+///
+/// # Examples
+///
+/// ```ignore
+/// use pi_autoresearch::notification::{send_email_milestone, EmailConfig};
+/// use pi_autoresearch::session::ExperimentSession;
+///
+/// let session = ExperimentSession::new(/* ... */);
+/// let config = EmailConfig::new("smtp.example.com".to_string(), "noreply@example.com".to_string())
+///     .with_credentials("user".to_string(), "pass".to_string());
+/// let result = send_email_milestone("recipient@example.com", &config, &session, 5);
+/// assert!(result.is_ok());
+/// ```
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The recipient email is invalid
+/// - SMTP connection fails
+/// - Email sending fails
+pub fn send_email_milestone(
+    to: &str,
+    config: &EmailConfig,
+    session: &ExperimentSession,
+    current_iteration: usize,
+) -> Result<()> {
+    // Validate recipient
+    if to.is_empty() {
+        anyhow::bail!("Recipient email address cannot be empty");
+    }
+
+    // Calculate metrics
+    let best_improvement = session.calculate_final_improvement() * 100.0;
+    let runtime_seconds = WebhookPayload::calculate_runtime(&session.start_time, &session.end_time);
+    let runtime_formatted = format_duration(runtime_seconds);
+
+    // Build HTML email body for milestone
+    let html_body = build_email_milestone_html(
+        session,
+        current_iteration,
+        best_improvement,
+        runtime_formatted.clone(),
+    );
+
+    // Build plain text body for milestone
+    let text_body = build_email_milestone_text(
+        session,
+        current_iteration,
+        best_improvement,
+        runtime_formatted,
+    );
+
+    // Create email subject
+    let subject = format!(
+        "[PROGRESS] Experiment {} - Iteration {} Milestone",
+        session.session_id,
+        current_iteration
+    );
+
+    // Build email using lettre
+    let text_part = lettre::message::SinglePart::builder()
+        .header(lettre::message::header::ContentType::TEXT_PLAIN)
+        .body(text_body);
+    
+    let html_part = lettre::message::SinglePart::builder()
+        .header(lettre::message::header::ContentType::TEXT_HTML)
+        .body(html_body);
+    
+    let alternative = lettre::message::MultiPart::alternative()
+        .singlepart(text_part)
+        .singlepart(html_part);
+    
+    let email = lettre::message::Message::builder()
+        .from(config.from_address.parse()?)
+        .to(to.parse()?)
+        .subject(subject)
+        .multipart(alternative)?;
+
+    // Build SMTP transport
+    let mut transport_builder = lettre::transport::smtp::SmtpTransport::relay(&config.smtp_host)?;
+    transport_builder = transport_builder.port(config.smtp_port);
+    
+    // Add credentials if provided
+    if let (Some(username), Some(password)) = (&config.username, &config.password) {
+        let credentials = Credentials::new(username.clone(), password.clone());
+        transport_builder = transport_builder.credentials(credentials);
+    }
+    
+    let transport = transport_builder.build();
+
+    // Send the email
+    transport.send(&email)?;
+
+    Ok(())
+}
+
+/// Builds HTML email body for milestone notifications
+fn build_email_milestone_html(
+    session: &ExperimentSession,
+    current_iteration: usize,
+    best_improvement: f64,
+    runtime_formatted: String,
+) -> String {
+    let iterations_html: String = session.iterations.iter().map(|iter| {
+        let status_icon = if iter.kept { "✅" } else { "❌" };
+        format!(
+            "<tr><td>{}</td><td>{}</td><td>{:.2}</td><td>{:+.2}%</td><td>{}</td></tr>",
+            iter.iteration,
+            iter.timestamp,
+            iter.metric_value,
+            iter.improvement,
+            status_icon
+        )
+    }).collect();
+
+    let improvement_color = if best_improvement > 0.0 { "#2ecc71" } else { "#e74c3c" };
+
+    format!(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+        .container {{ max-width: 800px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .header {{ background-color: #3498db; color: white; padding: 20px; text-align: center; }}
+        .header h1 {{ margin: 0; font-size: 24px; }}
+        .content {{ padding: 20px; }}
+        .section {{ margin-bottom: 20px; }}
+        .section h2 {{ color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }}
+        .metrics {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 0; }}
+        .metric-card {{ background-color: #f9f9f9; border-radius: 6px; padding: 15px; text-align: center; }}
+        .metric-card .value {{ font-size: 28px; font-weight: bold; color: #333; }}
+        .metric-card .label {{ color: #666; font-size: 14px; margin-top: 5px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+        th {{ background-color: #f5f5f5; text-align: left; padding: 12px; border-bottom: 2px solid #ddd; }}
+        td {{ padding: 10px 12px; border-bottom: 1px solid #eee; }}
+        .footer {{ background-color: #f5f5f5; padding: 15px; text-align: center; color: #666; font-size: 12px; }}
+        .status {{ font-size: 32px; margin-bottom: 10px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="status">🔄</div>
+            <h1>Experiment Progress Update</h1>
+        </div>
+        <div class="content">
+            <div class="section">
+                <h2>📋 Overview</h2>
+                <p><strong>Session ID:</strong> {session_id}</p>
+                <p><strong>Question:</strong> {question}</p>
+                <p><strong>Hypothesis:</strong> {hypothesis}</p>
+                <p><strong>Metric:</strong> {metric}</p>
+            </div>
+            <div class="section">
+                <h2>📊 Current Progress</h2>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="value">{baseline}</div>
+                        <div class="label">Baseline Value</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value" style="color: {improvement_color}">{improvement:+.1}%</div>
+                        <div class="label">Best Improvement</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value">{current}/{total}</div>
+                        <div class="label">Iterations Complete</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value">{runtime}</div>
+                        <div class="label">Runtime So Far</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>🔄 Iteration Timeline</h2>
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Timestamp</th><th>Value</th><th>Improvement</th><th>Kept</th></tr>
+                    </thead>
+                    <tbody>
+                        {iterations_html}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="footer">
+            <p>Generated by pi-autoresearch v{version}</p>
+            <p>{timestamp}</p>
+        </div>
+    </div>
+</body>
+</html>"#,
+        session_id = session.session_id,
+        question = session.question,
+        hypothesis = session.design.hypothesis,
+        metric = session.design.metric,
+        baseline = session.baseline_record.value,
+        improvement = best_improvement,
+        current = current_iteration,
+        total = session.iterations.len(),
+        runtime = runtime_formatted,
+        iterations_html = if iterations_html.is_empty() { "<tr><td colspan='5' style='text-align: center; color: #999;'>No iterations yet</td></tr>".to_string() } else { iterations_html },
+        version = env!("CARGO_PKG_VERSION"),
+        timestamp = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+    )
+}
+
+/// Builds plain text email body for milestone notifications
+fn build_email_milestone_text(
+    session: &ExperimentSession,
+    current_iteration: usize,
+    best_improvement: f64,
+    runtime_formatted: String,
+) -> String {
+    let mut text = String::new();
+    
+    text.push_str(&"=".repeat(60));
+    text.push('\n');
+    text.push_str(&format!("[PROGRESS] Experiment {}\n", session.session_id));
+    text.push_str(&"=".repeat(60));
+    text.push_str("\n\n");
+
+    text.push_str(&format!("Question: {}\n", session.question));
+    text.push_str(&format!("Hypothesis: {}\n\n", session.design.hypothesis));
+
+    text.push_str(&"-".repeat(60));
+    text.push('\n');
+    text.push_str("CURRENT PROGRESS\n");
+    text.push_str(&"-".repeat(60));
+    text.push('\n');
+    text.push_str(&format!("Baseline Value:   {}\n", session.baseline_record.value));
+    text.push_str(&format!("Best Improvement: {:+.1}%\n", best_improvement));
+    text.push_str(&format!("Iterations:       {}/{}\n", current_iteration, session.iterations.len()));
+    text.push_str(&format!("Runtime So Far:   {}\n\n", runtime_formatted));
+
+    if !session.iterations.is_empty() {
+        text.push_str(&"-".repeat(60));
+        text.push('\n');
+        text.push_str("ITERATION TIMELINE\n");
+        text.push_str(&"-".repeat(60));
+        text.push('\n');
+        text.push_str(&format!("{:>4}  {:24}  {:>10}  {:>12}  {:>8}\n", "#", "Timestamp", "Value", "Improvement", "Kept"));
+        text.push_str(&"-".repeat(60));
+        text.push('\n');
+
+        for iter in &session.iterations {
+            let status_icon = if iter.kept { "✅" } else { "❌" };
+            text.push_str(&format!(
+                "{:>4}  {:24}  {:>10.2}  {:>+12.2}%  {:>8}\n",
+                iter.iteration,
+                iter.timestamp,
+                iter.metric_value,
+                iter.improvement,
+                status_icon
+            ));
+        }
+        text.push('\n');
+    }
+
+    text.push('\n');
+    text.push_str(&"=".repeat(60));
+    text.push('\n');
+    text.push_str(&format!(
+        "Generated by pi-autoresearch v{} | {}\n",
+        env!("CARGO_PKG_VERSION"),
+        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+    ));
+
+    text
 }
 
 /// Sends a Slack notification via webhook
@@ -1112,5 +1530,161 @@ mod tests {
         
         // Should contain version info
         assert!(text.contains(env!("CARGO_PKG_VERSION")));
+    }
+
+    // Milestone notification tests
+
+    #[test]
+    fn test_send_slack_milestone_empty_url() {
+        let session = create_test_session();
+        
+        let result = send_slack_milestone("", &session, 5);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("empty"));
+    }
+
+    #[test]
+    fn test_send_slack_milestone_invalid_url() {
+        let session = create_test_session();
+        
+        // This should fail because the URL is not reachable
+        let result = send_slack_milestone("http://localhost:59993/slack", &session, 5);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_slack_milestone_message_format() {
+        // Test that Slack milestone message can be constructed
+        let session = create_test_session();
+        
+        let result = send_slack_milestone("http://localhost:59992/slack", &session, 5);
+        // Should fail with connection error, not panic
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_send_email_milestone_empty_recipient() {
+        let session = create_test_session();
+        let config = EmailConfig::new("smtp.example.com".to_string(), "noreply@example.com".to_string());
+        
+        let result = send_email_milestone("", &config, &session, 5);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("empty"));
+    }
+
+    #[test]
+    fn test_send_email_milestone_invalid_smtp() {
+        let session = create_test_session();
+        let config = EmailConfig::new("localhost".to_string(), "noreply@example.com".to_string())
+            .with_port(59999); // Invalid port
+        
+        let result = send_email_milestone("recipient@example.com", &config, &session, 5);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_build_email_milestone_html_structure() {
+        let session = create_test_session();
+        let current_iteration = 5;
+        let best_improvement = 10.0;
+        let runtime_formatted = "1m".to_string();
+        
+        let html = build_email_milestone_html(&session, current_iteration, best_improvement, runtime_formatted);
+        
+        // Verify HTML structure
+        assert!(html.contains("<!DOCTYPE html"));
+        assert!(html.contains("<html>"));
+        assert!(html.contains("test_session_123"));
+        assert!(html.contains("How can I optimize performance?"));
+        assert!(html.contains("Iteration Timeline"));
+        assert!(html.contains("Current Progress"));
+    }
+
+    #[test]
+    fn test_build_email_milestone_html_with_iterations() {
+        let mut session = create_test_session();
+        
+        // Add test iterations
+        use crate::phase2_iterate::IterationRecord;
+        let iteration1 = IterationRecord::new(1, "Test 1".to_string(), 90.0, -10.0, true);
+        let iteration2 = IterationRecord::new(2, "Test 2".to_string(), 85.0, -5.0, true);
+        session.iterations.push(iteration1);
+        session.iterations.push(iteration2);
+        
+        let html = build_email_milestone_html(&session, 5, 15.0, "2m".to_string());
+        
+        // Verify iterations are included
+        assert!(html.contains("<tr>"));
+        assert!(html.contains("<td>1</td>"));
+        assert!(html.contains("<td>2</td>"));
+    }
+
+    #[test]
+    fn test_build_email_milestone_text_structure() {
+        let session = create_test_session();
+        
+        let text = build_email_milestone_text(&session, 5, 10.0, "1m".to_string());
+        
+        // Verify text structure
+        assert!(text.contains("test_session_123"));
+        assert!(text.contains("How can I optimize performance?"));
+        assert!(text.contains("CURRENT PROGRESS"));
+        assert!(text.contains("Baseline Value"));
+        assert!(text.contains("Best Improvement"));
+        assert!(text.contains("Iterations:"));
+        assert!(text.contains("Runtime So Far"));
+    }
+
+    #[test]
+    fn test_build_email_milestone_text_with_iterations() {
+        let mut session = create_test_session();
+        
+        // Add test iterations
+        use crate::phase2_iterate::IterationRecord;
+        let iteration1 = IterationRecord::new(1, "Test 1".to_string(), 90.0, -10.0, true);
+        session.iterations.push(iteration1);
+        
+        let text = build_email_milestone_text(&session, 5, 10.0, "1m".to_string());
+        
+        // Verify iterations are included
+        assert!(text.contains("ITERATION TIMELINE"));
+        assert!(text.contains("Timestamp"));
+        assert!(text.contains("Value"));
+        assert!(text.contains("Improvement"));
+    }
+
+    #[test]
+    fn test_build_email_milestone_text_empty_iterations() {
+        let session = create_test_session();
+        
+        let text = build_email_milestone_text(&session, 5, 0.0, "0s".to_string());
+        
+        // Should not have iteration timeline when no iterations
+        assert!(!text.contains("ITERATION TIMELINE"));
+    }
+
+    #[test]
+    fn test_milestone_notification_with_iterations() {
+        // Test milestone notification with iterations in session
+        let mut session = create_test_session();
+        
+        // Add a test iteration
+        use crate::phase2_iterate::IterationRecord;
+        let iteration = IterationRecord::new(
+            1,
+            "Test changes".to_string(),
+            90.0,
+            -10.0,
+            true,
+        );
+        session.iterations.push(iteration);
+        
+        // Test webhook milestone notification
+        let result = send_milestone_notification("http://localhost:59991/webhook", &session, 5);
+        assert!(result.is_err()); // Should fail with connection error, not panic
+        
+        // Test Slack milestone notification
+        let result = send_slack_milestone("http://localhost:59990/slack", &session, 5);
+        assert!(result.is_err()); // Should fail with connection error, not panic
     }
 }

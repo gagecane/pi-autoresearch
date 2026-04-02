@@ -9,12 +9,12 @@ pub mod export;
 pub mod notification;
 
 pub use cli::{Cli, ExportFormat, NotificationProvider};
-pub use phase1_design::{ExperimentDesign, generate_design};
+pub use phase1_design::{ExperimentDesign, BaselineRecord, generate_design};
 pub use phase2_iterate::IterationRecord;
 pub use stuck_detector::{StuckReason, StuckDetector, StuckDetectorConfig, IterationState};
 pub use session::{ExperimentSession, SessionManager, SessionRecord, generate_session_id};
 pub use pi_agent::{PiAgent, BranchManager, generate_uuid};
-pub use notification::{send_webhook, send_milestone_notification, send_slack, send_email, WebhookPayload, EmailConfig};
+pub use notification::{send_webhook, send_milestone_notification, send_slack, send_slack_milestone, send_email, send_email_milestone, WebhookPayload, EmailConfig};
 
 #[cfg(test)]
 mod tests {

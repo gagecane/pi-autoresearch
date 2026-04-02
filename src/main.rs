@@ -1508,6 +1508,10 @@ fn run_iterative_loop(
     config: &Option<Config>,
     beads: &mut Option<BeadsIntegration>,
     dry_run: bool,
+    notify_provider: Option<NotificationProvider>,
+    notify_url: Option<String>,
+    _notify_email: Option<String>,
+    notify_milestone: Option<usize>,
 ) -> Result<(ExperimentSession, Option<StuckReason>)> {
     let max_iterations = get_max_iterations(cli, config, 20);
     let baseline_value = baseline_record.value;
@@ -1540,6 +1544,10 @@ fn run_iterative_loop(
     
     // Create progress bar for iterations
     let pb = create_progress_bar("Exploring solutions", max_iterations as u64);
+    
+    // Milestone notification tracking
+    let milestone_interval = notify_milestone;
+    let mut last_milestone_notified: Option<usize> = None;
     
     while state.current_iteration < max_iterations {
         // Layer 3: Check total runtime limit
@@ -1643,6 +1651,81 @@ fn run_iterative_loop(
                         improvement,
                         kept,
                     );
+                }
+                
+                // Send milestone notification if configured
+                if let Some(milestone) = milestone_interval {
+                    if state.current_iteration % milestone == 0 {
+                        if last_milestone_notified.map_or(true, |last| last < state.current_iteration) {
+                            // Convert local session types to library types for notification
+                            let lib_design = pi_autoresearch::ExperimentDesign {
+                                hypothesis: design.hypothesis.clone(),
+                                metric: design.metric.clone(),
+                                measurement: design.measurement.clone(),
+                                baseline: design.baseline,
+                                target_improvement: design.target_improvement,
+                            };
+                            let lib_baseline = pi_autoresearch::BaselineRecord {
+                                timestamp: baseline_record.timestamp.clone(),
+                                git_commit: baseline_record.git_commit.clone(),
+                                metric: baseline_record.metric.clone(),
+                                measurement_command: baseline_record.measurement_command.clone(),
+                                value: baseline_record.value,
+                                verification_runs: baseline_record.verification_runs.clone(),
+                                variance: baseline_record.variance,
+                                within_threshold: baseline_record.within_threshold,
+                            };
+                            let lib_iterations: Vec<pi_autoresearch::IterationRecord> = iterations.iter().map(|it| {
+                                pi_autoresearch::IterationRecord::new(
+                                    it.iteration,
+                                    it.agent_action.clone(),
+                                    it.metric_value,
+                                    it.improvement,
+                                    it.kept,
+                                )
+                            }).collect();
+                            
+                            let lib_session = pi_autoresearch::ExperimentSession {
+                                session_id: uuid_generate(),
+                                question: question.to_string(),
+                                design: lib_design,
+                                baseline_record: lib_baseline,
+                                iterations: lib_iterations,
+                                best_iteration: if state.best_iteration > 0 { Some(state.best_iteration) } else { None },
+                                start_time: chrono::Utc::now().to_rfc3339(),
+                                end_time: None,
+                                status: "in_progress".to_string(),
+                            };
+                            
+                            // Send notification based on provider
+                            if let Some(provider) = &notify_provider {
+                                match provider {
+                                    NotificationProvider::Webhook => {
+                                        if let Some(ref url) = notify_url {
+                                            let _ = pi_autoresearch::notification::send_milestone_notification(
+                                                url, &lib_session, state.current_iteration
+                                            );
+                                        }
+                                    }
+                                    NotificationProvider::Slack => {
+                                        if let Some(ref url) = notify_url {
+                                            let _ = pi_autoresearch::notification::send_slack_milestone(
+                                                url, &lib_session, state.current_iteration
+                                            );
+                                        }
+                                    }
+                                    NotificationProvider::Email => {
+                                        // Email notifications require SMTP config which is not available here
+                                        // Skip for milestone notifications
+                                        if !cli.quiet {
+                                            debug!("Skipping email milestone notification (SMTP config required)");
+                                        }
+                                    }
+                                }
+                            }
+                            last_milestone_notified = Some(state.current_iteration);
+                        }
+                    }
                 }
             }
             Err(e) => {
@@ -3021,6 +3104,10 @@ async fn run() -> Result<()> {
                 &config,
                 &mut beads_resume,
                 cli.dry_run,
+                cli.notify_provider.clone(),
+                cli.notify_url.clone(),
+                cli.notify_email.clone(),
+                cli.notify_milestone,
             )?;
 
             // Merge the new iterations with the old session
@@ -3286,7 +3373,13 @@ async fn run() -> Result<()> {
         design_to_use.baseline = baseline_to_use;
         
         let mut beads_opt = Some(beads);
-        let (session, stuck_reason) = run_iterative_loop(&question, &design_to_use, &baseline_record, &cli, &config, &mut beads_opt, cli.dry_run)?;
+        let (session, stuck_reason) = run_iterative_loop(
+            &question, &design_to_use, &baseline_record, &cli, &config, &mut beads_opt, cli.dry_run,
+            cli.notify_provider.clone(),
+            cli.notify_url.clone(),
+            cli.notify_email.clone(),
+            cli.notify_milestone,
+        )?;
         let mut beads = beads_opt;
         
         let best_kept_value: Option<f64> = session.iterations
@@ -3405,6 +3498,78 @@ async fn run() -> Result<()> {
             };
             if let Err(e) = export(&lib_session, export_format.clone(), &export_path) {
                 warn!("Failed to export results: {}", e);
+            }
+        }
+        
+        // Send completion notification if configured (only if export was requested, since lib_session is only created there)
+        if let Some(ref _export_format) = cli.export {
+            if let Some(provider) = &cli.notify_provider {
+                let target_achieved = finalization_result.success;
+                
+                // Convert local session to library session for notification
+                let lib_design = LibraryExperimentDesign {
+                    hypothesis: session.design.hypothesis.clone(),
+                    metric: session.design.metric.clone(),
+                    measurement: session.design.measurement.clone(),
+                    baseline: session.design.baseline,
+                    target_improvement: session.design.target_improvement,
+                };
+                let lib_baseline = LibraryBaselineRecord {
+                    timestamp: session.baseline_record.timestamp.clone(),
+                    git_commit: session.baseline_record.git_commit.clone(),
+                    metric: session.baseline_record.metric.clone(),
+                    measurement_command: session.baseline_record.measurement_command.clone(),
+                    value: session.baseline_record.value,
+                    verification_runs: session.baseline_record.verification_runs.clone(),
+                    variance: session.baseline_record.variance,
+                    within_threshold: session.baseline_record.within_threshold,
+                };
+                let lib_iterations: Vec<LibraryIterationRecord> = session.iterations.iter().map(|it| {
+                    LibraryIterationRecord::new(
+                        it.iteration,
+                        it.agent_action.clone(),
+                        it.metric_value,
+                        it.improvement,
+                        it.kept,
+                    )
+                }).collect();
+                let lib_session = LibraryExperimentSession {
+                    session_id: session.session_id.clone(),
+                    question: session.question.clone(),
+                    design: lib_design,
+                    baseline_record: lib_baseline,
+                    iterations: lib_iterations,
+                    best_iteration: session.best_iteration,
+                    start_time: session.start_time.clone(),
+                    end_time: session.end_time.clone(),
+                    status: session.status.clone(),
+                };
+                
+                match provider {
+                    NotificationProvider::Webhook => {
+                        if let Some(ref url) = cli.notify_url {
+                            if let Err(e) = pi_autoresearch::notification::send_webhook(url, &lib_session, target_achieved) {
+                                warn!("Failed to send webhook notification: {}", e);
+                            }
+                        }
+                    }
+                    NotificationProvider::Slack => {
+                        if let Some(ref url) = cli.notify_url {
+                            if let Err(e) = pi_autoresearch::notification::send_slack(url, &lib_session, target_achieved) {
+                                warn!("Failed to send Slack notification: {}", e);
+                            }
+                        }
+                    }
+                    NotificationProvider::Email => {
+                        if let Some(ref _email) = cli.notify_email {
+                            // Email requires SMTP config which would need to come from environment or config file
+                            // For now, we'll skip with a warning
+                            if !cli.quiet {
+                                warn!("Email notification requested but SMTP configuration not available. Use environment variables or config file.");
+                            }
+                        }
+                    }
+                }
             }
         }
         
