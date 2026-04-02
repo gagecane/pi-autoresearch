@@ -1,0 +1,15 @@
+# Build artifacts
+target/
+
+# Corpus (optional - you may want to commit initial corpus)
+# corpus/
+
+# Artifacts (crashes, hangs, etc.)
+artifacts/
+
+# Fuzzing stats
+*.stat
+
+# Debug symbols
+*.dSYM/
+
