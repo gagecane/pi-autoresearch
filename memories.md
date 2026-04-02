@@ -1956,3 +1956,33 @@ Created 8 new actionable tasks:
 - Separate fuzz-report job for summary generation
 - Notify job for failure alerts
 
+
+## 2026-04-02 12:00:00 UTC - Task Decomposition
+
+### Decomposition Learnings
+- Priority 48 (Add End-to-End Beads Tests) was too abstract as a single task
+- Task decomposition follows PROMPT.md instruction: "If the task you selected is too abstract, your task is to decompose it to smaller tasks. Then your task is done."
+- Decomposed into 5 smaller, more actionable subtasks:
+  1. Unit tests for BeadsIntegration struct (defensive testing when disabled)
+  2. Integration test for task creation workflow
+  3. Integration test for progress updates during iterations
+  4. Integration test for task completion at experiment end
+  5. Full end-to-end workflow test
+
+### Beads Integration Understanding
+- BeadsIntegration struct has 3 main methods:
+  - `create_experiment_bead()`: Creates bead issue with question and design
+  - `update_bead_progress()`: Adds notes during each iteration
+  - `close_bead()`: Closes bead with success/failure reason
+- Beads integration is optional (--beads-enabled flag)
+- When disabled, all methods return Ok(()) immediately
+- When enabled but bead_id not set, methods also return Ok(())
+- Error handling is graceful - warns but doesn't fail the experiment
+
+### Task Workflow Understanding
+- REVIEW tasks take highest priority (check feedback.md)
+- REVISE tasks take second highest priority (implement feedback)
+- TODO tasks are next (select highest priority)
+- If task is too abstract, decompose it and mark as done
+- Always update tasks.md, progress.md, and memories.md
+- Commit changes but do NOT push (per PROMPT.md)

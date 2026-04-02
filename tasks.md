@@ -1182,16 +1182,60 @@
 - Create fuzz targets for JSON parsing
 - Create fuzz targets for session file parsing
 - Run fuzzing tests regularly
-
 ## Priority 48: TEST - Add End-to-End Beads Tests
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add end-to-end integration tests for beads workflow
 **Rationale**: Beads integration is critical for issue tracking but lacks e2e tests
+**Decomposed Into**:
+- Priority 48.1: TEST - Add Unit Tests for BeadsIntegration Struct
+- Priority 48.2: TEST - Add Integration Test for Beads Task Creation
+- Priority 48.3: TEST - Add Integration Test for Beads Progress Updates
+- Priority 48.4: TEST - Add Integration Test for Beads Task Completion
+- Priority 48.5: TEST - Add Integration Test for Full Beads Workflow
+**Note**: Task is too abstract - decomposed into smaller, more actionable subtasks
+
+## Priority 48.1: TEST - Add Unit Tests for BeadsIntegration Struct
+**Status**: TODO
+**Description**: Add unit tests for BeadsIntegration struct methods
+**Rationale**: BeadsIntegration is critical but lacks dedicated unit tests
+**Functions to Test**:
+- `BeadsIntegration::new()` - constructor
+- `create_experiment_bead()` - when disabled
+- `update_bead_progress()` - when disabled or no bead_id
+- `close_bead()` - when disabled or no bead_id
+
+## Priority 48.2: TEST - Add Integration Test for Beads Task Creation
+**Status**: TODO
+**Description**: Add integration test for beads task creation workflow
+**Rationale**: Verify beads task creation works end-to-end
 **Tests to Add**:
-- Test beads task creation workflow
-- Test beads task update workflow
-- Test beads task completion workflow
-- Test beads integration with experiments
+- Test successful bead creation with --beads-enabled
+- Test beads disabled by default
+
+## Priority 48.3: TEST - Add Integration Test for Beads Progress Updates
+**Status**: TODO
+**Description**: Add integration test for beads progress update workflow
+**Rationale**: Verify beads progress updates work during iterations
+**Tests to Add**:
+- Test progress update when changes kept
+- Test progress update when changes reverted
+
+## Priority 48.4: TEST - Add Integration Test for Beads Task Completion
+**Status**: TODO
+**Description**: Add integration test for beads task completion workflow
+**Rationale**: Verify beads task completion works at experiment end
+**Tests to Add**:
+- Test successful bead closure
+- Test bead closure when target not met
+
+## Priority 48.5: TEST - Add Integration Test for Full Beads Workflow
+**Status**: TODO
+**Description**: Add integration test for complete beads workflow end-to-end
+**Rationale**: Verify entire beads workflow works from creation to completion
+**Tests to Add**:
+- Test complete workflow with successful experiment
+- Test workflow with multiple iterations
+- Test error handling in beads workflow
 
 ## Priority 49: FEATURE - Add Progress Bars
 **Status**: TODO
