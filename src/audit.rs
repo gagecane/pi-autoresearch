@@ -1024,7 +1024,6 @@ impl AuditLogger {
         // Open file in append mode, creating if it doesn't exist
         let file = OpenOptions::new()
             .create(true)
-            .write(true)
             .append(true)
             .open(path)?;
         
