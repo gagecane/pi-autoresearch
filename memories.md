@@ -1986,3 +1986,15 @@ Created 8 new actionable tasks:
 - If task is too abstract, decompose it and mark as done
 - Always update tasks.md, progress.md, and memories.md
 - Commit changes but do NOT push (per PROMPT.md)
+
+## 2026-04-02 02:51:56 UTC - BeadsIntegration Unit Tests
+
+### Learnings
+- BeadsIntegration struct provides a clean abstraction for beads workflow integration
+- The struct uses early returns when disabled, which makes it easy to test the disabled state
+- All methods return Result<()>, allowing graceful error handling without failing the entire experiment
+- The bead_id is stored as Option<String>, requiring None checks before operations
+- Testing disabled state is important to verify the integration doesn't interfere when not enabled
+- The create_experiment_bead method parses multiple output formats from the bd command
+- Integration tests already exist for beads workflow (test_beads_integration_creates_issue, test_beads_integration_closes_issue_on_success, test_beads_integration_handles_failure)
+- Unit tests complement integration tests by testing the disabled/None states without requiring actual bd command execution
