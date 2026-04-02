@@ -2,6 +2,83 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 19:00 UTC: Webhook Notifications Implementation Complete (Priority 93.2)
+
+**Priority 93.2: NOTIFICATION - Implement Webhook Notifications** - COMPLETE
+
+**Implementation Summary**:
+- Created `src/notification.rs` module with comprehensive webhook functionality
+- Implemented `WebhookPayload` struct with all experiment metadata
+- Added three public functions: `send_webhook`, `send_milestone_notification`, `send_webhook_raw`
+- Added runtime calculation from RFC3339 timestamps
+- Added `reqwest` dependency with blocking and json features
+
+**Key Design Decisions**:
+1. **WebhookPayload Structure**: Includes all essential experiment data
+   - notification_type: distinguishes between "experiment_complete" and "iteration_milestone"
+   - session_id, question, metric: experiment identification
+   - baseline, best_improvement: performance metrics
+   - iterations, runtime_seconds: experiment progress
+   - target_achieved: success/failure indicator
+   - metadata: version, timestamps, and other context
+
+2. **Runtime Calculation**: Automatically calculated from start_time and end_time
+   - Uses chrono to parse RFC3339 timestamps
+   - Falls back to current time if end_time is None
+   - Returns 0.0 for invalid timestamps
+
+3. **Error Handling**:
+   - Empty URL validation before making request
+   - HTTP status code checking (only 2xx codes are success)
+   - Returns descriptive error messages with status and body
+
+4. **Two Notification Types**:
+   - `send_webhook`: For experiment completion (with target_achieved flag)
+   - `send_milestone_notification`: For iteration milestones (every N iterations)
+
+5. **Low-Level Access**: `send_webhook_raw` allows custom payloads for future extensions
+
+**Public API**:
+```rust
+pub fn send_webhook(url: &str, session: &ExperimentSession, target_achieved: bool) -> Result<()>
+pub fn send_milestone_notification(url: &str, session: &ExperimentSession, current_iteration: usize) -> Result<()>
+pub fn send_webhook_raw(url: &str, payload: &WebhookPayload) -> Result<()>
+```
+
+**Test Coverage**:
+- 8 comprehensive tests covering:
+  - Payload structure for completion and milestone notifications
+  - JSON serialization/deserialization round-trip
+  - URL validation (empty URL error)
+  - Network error handling (unreachable URL)
+  - Runtime calculation in various scenarios
+  - Invalid timestamp handling
+
+**Integration with ExperimentSession**:
+- Uses `session.design.metric` for metric name
+- Uses `session.baseline_record.value` for baseline
+- Uses `session.calculate_final_improvement()` for best improvement
+- Uses `session.iterations.len()` for iteration count
+- Uses `session.start_time` and `session.end_time` for runtime
+
+**Files Modified**:
+- `src/notification.rs`: Created new module (500+ lines, 8 tests)
+- `src/lib.rs`: Added `pub mod notification` and exports
+- `Cargo.toml`: Added `reqwest = { version = "0.11", features = ["blocking", "json"] }`
+- `tasks.md`: Updated Priority 93.2 as COMPLETE
+
+**Test Results**:
+- All 8 notification-specific tests pass
+- All 215 lib tests pass
+- Zero clippy warnings
+- Zero compiler warnings
+
+**Next Steps**:
+- Priority 93.3: Implement Slack notification provider (builds on webhook)
+- Priority 93.4: Implement Email notification provider
+- Priority 93.5: Add iteration milestone notifications (integration)
+- Priority 93.6: Add notification integration tests
+
 ## 2026-04-02 18:30 UTC: Notification Flags Implementation Complete (Priority 93.1)
 
 **Priority 93.1: CLI - Add Notification Flags** - COMPLETE
