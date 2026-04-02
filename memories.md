@@ -2,6 +2,64 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 18:30 UTC: Notification Flags Implementation Complete (Priority 93.1)
+
+**Priority 93.1: CLI - Add Notification Flags** - COMPLETE
+
+**Implementation Summary**:
+- Added `NotificationProvider` enum with 3 variants (Webhook, Slack, Email)
+- Default provider is Webhook (most flexible for custom integrations)
+- Added 4 CLI flags for notification configuration
+- Added 5 helper methods on Cli struct for clean abstraction
+- Exported `NotificationProvider` from lib.rs for use in main.rs
+
+**Key Design Decisions**:
+1. **Default Provider**: Webhook chosen as default since it's the most flexible
+2. **Separate URL and Email**: Different providers need different configuration
+   - Webhook/Slack use `--notify-url`
+   - Email uses `--notify-email`
+3. **Milestone Notifications**: `--notify-milestone N` enables progress updates every N iterations
+4. **Helper Methods**: Each configuration option has a getter method for clean access
+5. **has_notifications_enabled()**: Single method to check if notifications are configured
+
+**CLI Flags**:
+- `--notify-provider PROVIDER` - webhook, slack, or email
+- `--notify-url URL` - webhook or Slack URL (alias: `notify_url`)
+- `--notify-email EMAIL` - email recipient (alias: `notify_email`)
+- `--notify-milestone N` - send notifications every N iterations (alias: `notify_milestone`)
+
+**Helper Methods**:
+- `get_notify_provider()` - Returns `Option<&NotificationProvider>`
+- `get_notify_url()` - Returns `Option<&String>`
+- `get_notify_email()` - Returns `Option<&String>`
+- `get_notify_milestone()` - Returns `Option<&usize>`
+- `has_notifications_enabled()` - Returns `bool`
+
+**Test Coverage**:
+- 24 comprehensive tests covering all functionality
+- Tests verify enum variants, CLI parsing, helper methods, and combined usage
+- All tests pass with zero warnings
+
+**Files Modified**:
+- `src/cli.rs`: +`NotificationProvider` enum, +4 fields, +5 methods, +24 tests
+- `src/lib.rs`: Added `NotificationProvider` to exports
+- `src/main.rs`: +`NotificationProvider` import, +4 fields
+
+**Next Steps**:
+- Priority 93.2: Implement webhook notification provider
+- Priority 93.3: Implement Slack notification provider
+- Priority 93.4: Implement email notification provider
+- Priority 93.5: Add iteration milestone notifications
+- Priority 93.6: Add notification integration tests
+
+**Implementation Pattern**:
+- Follows the same pattern as `ExportFormat` enum
+- Define enum in cli.rs with ValueEnum derive
+- Export from lib.rs for use in main.rs
+- Import in main.rs from library
+- Add helper methods on Cli struct for clean abstraction
+- Comprehensive tests for all functionality
+
 ## 2026-04-02 15:30 UTC: Export Implementation Complete (Priority 92.2)
 
 **Priority 92.2: EXPORT - Implement JSON Export** - COMPLETE

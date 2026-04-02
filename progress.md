@@ -1,4 +1,51 @@
 # Progress
+## Session: 2026-04-02 18:30 UTC - COMPLETE (Priority 93.1)
+
+### Tasks Complete
+- ✅ **Priority 93.1: CLI - Add Notification Flags** - COMPLETE
+  - ✅ Added `NotificationProvider` enum with 3 variants (Webhook, Slack, Email)
+  - ✅ Default provider is Webhook
+  - ✅ Added 4 CLI flags:
+    - `--notify-provider PROVIDER` (webhook, slack, email)
+    - `--notify-url URL` for webhook/Slack URL
+    - `--notify-email EMAIL` for email recipient
+    - `--notify-milestone N` for iteration milestone notifications
+  - ✅ Added 5 helper methods on Cli struct:
+    - `get_notify_provider()` - Returns provider if specified
+    - `get_notify_url()` - Returns URL if specified
+    - `get_notify_email()` - Returns email if specified
+    - `get_notify_milestone()` - Returns milestone if specified
+    - `has_notifications_enabled()` - Returns true if provider is specified
+  - ✅ Exported `NotificationProvider` from `src/lib.rs`
+  - ✅ Updated `src/main.rs` with notification fields
+  - **Tests Added**: 24 comprehensive tests covering:
+    - Enum variant parsing and defaults
+    - CLI flag parsing for all options
+    - Helper method functionality
+    - Combined flag usage
+    - Alias functionality
+  - **Test Results**:
+    - All 24 notification-specific tests pass
+    - All 207 lib tests pass
+    - All 103 main.rs tests pass
+    - Zero clippy warnings
+    - Zero compiler warnings
+  - **Files Modified**:
+    - `src/cli.rs`: Added `NotificationProvider` enum, 4 CLI fields, 5 helper methods, 24 tests
+    - `src/lib.rs`: Added `NotificationProvider` to exports
+    - `src/main.rs`: Added `NotificationProvider` import, 4 CLI fields
+    - `tasks.md`: Updated Priority 93.1 as COMPLETE
+
+### Summary
+- Notification CLI flags properly implemented following the same pattern as export flags
+- All notification options can be combined (provider + url + email + milestone)
+- Aliases work correctly for all flags (notify-url, notify-email, notify-milestone)
+- Helper methods provide clean abstraction for notification settings
+- All tests pass with zero warnings
+
+### Next Task
+- Priority 93.2: NOTIFICATION - Implement Webhook Notifications
+
 ## Session: 2026-04-02 17:15 UTC - COMPLETE (Priority 92.3, 92.4, 92.5, 92.6)
 
 ### Tasks Complete
