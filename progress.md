@@ -21,17 +21,17 @@
     - Log experiment start with configuration details
     - Audit logger is optional (only created when `--audit-log-path` is provided)
   - ✅ Added comprehensive doc tests for all helper methods
-  - ✅ Added 14 unit tests covering all action logging functions
+  - ✅ Added 13 unit tests covering all action logging functions
   - ✅ Added integration workflow test simulating complete experiment lifecycle
-  - **Tests Added**: 14 comprehensive tests covering:
+  - **Tests Added**: 13 comprehensive tests covering:
     - Experiment start/end logging (success and failure)
     - Iteration start/end logging (kept and reverted changes)
     - Git operation logging (branch created, commit created, branch merged, branch deleted, branch checked out)
     - Configuration change logging
     - Complete workflow test simulating full experiment lifecycle
   - **Test Results**:
-    - All 14 action logging tests pass
-    - All 309 lib tests pass (295 + 14 new)
+    - All 13 action logging tests pass
+    - All 295 lib tests pass
     - All 103 main.rs tests pass
     - `cargo build` completes with no warnings
     - `cargo clippy` completes with no warnings

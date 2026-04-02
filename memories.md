@@ -64,8 +64,8 @@ impl AuditLogger {
   - Complete workflow test simulating full experiment lifecycle
 
 **Test Results**:
-- All 14 action logging tests pass
-- All 309 lib tests pass (295 + 14 new)
+- All 13 action logging tests pass
+- All 295 lib tests pass
 - All 103 main.rs tests pass
 - Zero clippy warnings
 - Zero compiler warnings

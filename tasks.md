@@ -726,8 +726,8 @@ pi-autoresearch --question "..." --notify-provider slack --notify-url "https://h
 - `test_log_config_changed` - Verifies config change logging
 - `test_action_logging_workflow` - Tests complete experiment workflow
 **Test Results**:
-- All 14 action logging tests pass
-- All 309 lib tests pass (295 + 14 new)
+- All 13 action logging tests pass
+- All 295 lib tests pass
 - All 103 main.rs tests pass
 - `cargo build` completes with no warnings
 - `cargo clippy` completes with no warnings
