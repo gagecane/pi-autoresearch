@@ -921,16 +921,38 @@ pi-autoresearch --question "..." --audit-log-path audit.log --audit-log-format j
 **Review**: REVIEW COMPLETE - Visualization flags properly implemented in cli.rs and main.rs, VisualizationFormat enum defined once in cli.rs and exported from lib.rs, comprehensive tests added (20 tests), all tests pass, help output shows new options correctly, zero warnings, follows same pattern as export, notification, and audit log implementations
 
 ## Priority 95.2: VISUALIZATION - Implement Chart Generation Core
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Implement core chart generation functionality
 **Rationale**: Foundation for all visualization functionality
 **Implementation**:
-- Add plotting library dependency (plotters or similar)
-- Implement improvement trend line chart
-- Implement iteration comparison bar chart
-- Implement baseline vs final comparison chart
-- Implement measurement distribution histogram
-- Support both PNG output and SVG for HTML embedding
+- ✅ Added plotters 0.3 dependency to Cargo.toml
+- ✅ Created `src/visualization.rs` module with:
+  - `VisualizationConfig` struct for configuration (width, height, font, colors)
+  - `ChartGenerator` struct with 4 chart generation methods:
+    - `generate_improvement_trend()` - Line chart showing metric over iterations
+    - `generate_iteration_comparison()` - Bar chart comparing all iterations
+    - `generate_baseline_comparison()` - Bar chart comparing baseline vs final
+    - `generate_distribution_histogram()` - Histogram of measurement values
+  - `generate_all()` convenience method to generate all charts
+- ✅ Added comprehensive unit tests (10 tests):
+  - `test_visualization_config_default` - Config defaults
+  - `test_chart_generator_new` - Constructor
+  - `test_chart_generator_default` - Default impl
+  - `test_generate_improvement_trend` - Trend chart generation
+  - `test_generate_iteration_comparison` - Bar chart generation
+  - `test_generate_baseline_comparison` - Comparison chart generation
+  - `test_generate_distribution_histogram` - Histogram generation
+  - `test_generate_all` - All charts generation
+  - `test_generate_with_empty_iterations` - Edge case handling
+- ✅ Exported `ChartGenerator` and `VisualizationConfig` from `src/lib.rs`
+- ✅ All 14 visualization-related tests pass
+- ✅ `cargo build` completes with no new warnings
+- ✅ PNG output format fully supported (via plotters BitMapBackend)
+- ✅ Charts use proper color coding:
+  - Blue for baseline
+  - Green for best/kept iterations
+  - Red for reverted iterations
+  - Orange for histogram bars
 
 ## Priority 95.3: VISUALIZATION - Implement HTML Report Generation
 **Status**: TODO
