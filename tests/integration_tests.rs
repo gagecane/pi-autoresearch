@@ -2898,3 +2898,513 @@ fn test_auto_approve_beads_complete_workflow() {
     let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use
 }
 
+
+// ============================================================================
+// Export Integration Tests
+// ============================================================================
+
+#[test]
+fn test_export_json_integration() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test json export",
+        "--auto-approve",
+        "--metric",
+        "performance",
+        "--measure",
+        "echo 100",
+        "--baseline",
+        "100",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "2",
+        "--skip-git",
+        "--export",
+        "json",
+        "--export-path",
+        "export_test.json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete (export may succeed even if experiment doesn't meet target)
+    assert!(
+        output.status.success() || stderr.contains("Exported JSON"),
+        "Export should succeed. stderr: {}", stderr
+    );
+    
+    // Verify export file was created
+    assert!(
+        temp_dir.path().join("export_test.json").exists(),
+        "Export file should exist"
+    );
+    
+    // Verify JSON is valid and contains expected fields
+    let contents = std::fs::read_to_string(temp_dir.path().join("export_test.json")).unwrap();
+    let parsed: Value = serde_json::from_str(&contents).unwrap();
+    
+    assert!(parsed["session_id"].is_string());
+    assert_eq!(parsed["question"].as_str().unwrap(), "test json export");
+    assert_eq!(parsed["design"]["metric"].as_str().unwrap(), "performance");
+    assert!(parsed["iterations"].is_array());
+    assert!(parsed["baseline_record"]["value"].is_number());
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_export_csv_integration() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test csv export",
+        "--auto-approve",
+        "--metric",
+        "latency_ms",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.20",
+        "--max-iterations",
+        "3",
+        "--skip-git",
+        "--export",
+        "csv",
+        "--export-path",
+        "export_test.csv",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete (export may succeed even if experiment doesn't meet target)
+    assert!(
+        output.status.success() || stderr.contains("Exported CSV"),
+        "Export should succeed. stderr: {}", stderr
+    );
+    
+    // Verify export file was created
+    assert!(
+        temp_dir.path().join("export_test.csv").exists(),
+        "Export file should exist"
+    );
+    
+    // Verify CSV has correct structure
+    let contents = std::fs::read_to_string(temp_dir.path().join("export_test.csv")).unwrap();
+    
+    // Check for metadata comments
+    assert!(contents.contains("# Experiment Session:"));
+    assert!(contents.contains("# Question: test csv export"));
+    assert!(contents.contains("# Metric: latency_ms"));
+    
+    // Check for CSV header
+    assert!(contents.contains("iteration,timestamp,metric_value,improvement,kept"));
+    
+    // Check for baseline row (iteration 0)
+    assert!(contents.lines().any(|line| line.starts_with("0,")));
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_export_markdown_integration() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test markdown export",
+        "--auto-approve",
+        "--metric",
+        "throughput",
+        "--measure",
+        "echo 1000",
+        "--baseline",
+        "1000",
+        "--target-improvement",
+        "0.15",
+        "--max-iterations",
+        "2",
+        "--skip-git",
+        "--export",
+        "markdown",
+        "--export-path",
+        "export_test.md",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete (export may succeed even if experiment doesn't meet target)
+    assert!(
+        output.status.success() || stderr.contains("Exported Markdown"),
+        "Export should succeed. stderr: {}", stderr
+    );
+    
+    // Verify export file was created
+    assert!(
+        temp_dir.path().join("export_test.md").exists(),
+        "Export file should exist"
+    );
+    
+    // Verify Markdown has correct structure
+    let contents = std::fs::read_to_string(temp_dir.path().join("export_test.md")).unwrap();
+    
+    // Check for title
+    assert!(contents.contains("# Experiment Results: test markdown export"));
+    
+    // Check for sections
+    assert!(contents.contains("## Summary"));
+    assert!(contents.contains("## Iteration Timeline"));
+    assert!(contents.contains("## Details"));
+    
+    // Check for markdown tables
+    assert!(contents.contains("| Property | Value |"));
+    assert!(contents.contains("| Iteration | Timestamp | Value | Improvement | Status |"));
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_export_pdf_integration() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test pdf export",
+        "--auto-approve",
+        "--metric",
+        "error_rate",
+        "--measure",
+        "echo 0.01",
+        "--baseline",
+        "0.01",
+        "--target-improvement",
+        "0.50",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--export",
+        "pdf",
+        "--export-path",
+        "export_test.pdf",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete (export may succeed even if experiment doesn't meet target)
+    assert!(
+        output.status.success() || stderr.contains("Exported PDF"),
+        "Export should succeed. stderr: {}", stderr
+    );
+    
+    // Verify export file was created
+    assert!(
+        temp_dir.path().join("export_test.pdf").exists(),
+        "Export file should exist"
+    );
+    
+    // Verify PDF (text format) has correct structure
+    let contents = std::fs::read_to_string(temp_dir.path().join("export_test.pdf")).unwrap();
+    
+    assert!(contents.contains("EXPERIMENT RESULTS"));
+    assert!(contents.contains("SUMMARY"));
+    assert!(contents.contains("ITERATIONS"));
+    assert!(contents.contains("Question: test pdf export"));
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_export_default_path_integration() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Run without --export-path to test default path generation
+    let args = vec![
+        "--question",
+        "test default export path",
+        "--auto-approve",
+        "--metric",
+        "size_bytes",
+        "--measure",
+        "echo 1024",
+        "--baseline",
+        "1024",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--export",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete (export may succeed even if experiment doesn't meet target)
+    assert!(
+        output.status.success() || stderr.contains("Exported JSON"),
+        "Export should succeed. stderr: {}", stderr
+    );
+    
+    // Verify default export file was created (export_{session_id}_json.json)
+    let export_files: Vec<_> = std::fs::read_dir(&temp_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "json"))
+        .collect();
+    
+    assert!(
+        !export_files.is_empty(),
+        "Default export file should exist"
+    );
+    
+    // Verify the file name matches the pattern
+    let export_file = &export_files[0];
+    let file_name_os = export_file.file_name();
+    let file_name = file_name_os.to_string_lossy().to_string();
+    assert!(file_name.starts_with("export_"));
+    assert!(file_name.contains("_json.json"));
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_export_with_multiple_iterations() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test export multiple iterations",
+        "--auto-approve",
+        "--metric",
+        "performance",
+        "--measure",
+        "echo 100",
+        "--baseline",
+        "100",
+        "--target-improvement",
+        "0.05",
+        "--max-iterations",
+        "5",
+        "--skip-git",
+        "--export",
+        "json",
+        "--export-path",
+        "multi_iter.json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete (export may succeed even if experiment doesn't meet target)
+    assert!(
+        output.status.success() || stderr.contains("Exported JSON"),
+        "Export should succeed. stderr: {}", stderr
+    );
+    
+    // Verify export file was created
+    let contents = std::fs::read_to_string(temp_dir.path().join("multi_iter.json")).unwrap();
+    let parsed: Value = serde_json::from_str(&contents).unwrap();
+    
+    // Verify all iterations are exported
+    let iterations = parsed["iterations"].as_array().unwrap();
+    assert!(iterations.len() > 0, "Should have at least one iteration");
+    
+    // Verify each iteration has required fields
+    for iter in iterations {
+        assert!(iter["iteration"].is_number());
+        assert!(iter["metric_value"].is_number());
+        assert!(iter["improvement"].is_number());
+        assert!(iter["kept"].is_boolean());
+    }
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_export_csv_parseable() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test csv parseable",
+        "--auto-approve",
+        "--metric",
+        "latency",
+        "--measure",
+        "echo 25",
+        "--baseline",
+        "25",
+        "--target-improvement",
+        "0.20",
+        "--max-iterations",
+        "3",
+        "--skip-git",
+        "--export",
+        "csv",
+        "--export-path",
+        "parseable.csv",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete (export may succeed even if experiment doesn't meet target)
+    assert!(
+        output.status.success() || stderr.contains("Exported CSV"),
+        "Export should succeed. stderr: {}", stderr
+    );
+    
+    // Read and parse CSV (excluding comment lines)
+    let contents = std::fs::read_to_string(temp_dir.path().join("parseable.csv")).unwrap();
+    let data_lines: Vec<&str> = contents.lines().filter(|l| !l.starts_with('#')).collect();
+    
+    // Should have header + baseline + iterations
+    assert!(data_lines.len() >= 2, "Should have header and at least baseline row");
+    
+    // Verify header
+    let header = data_lines[0].split(',').collect::<Vec<_>>();
+    assert_eq!(header[0], "iteration");
+    assert_eq!(header[1], "timestamp");
+    assert_eq!(header[2], "metric_value");
+    assert_eq!(header[3], "improvement");
+    assert_eq!(header[4], "kept");
+    
+    // Verify baseline row
+    let baseline = data_lines[1].split(',').collect::<Vec<_>>();
+    assert_eq!(baseline[0], "0");
+    assert_eq!(baseline[4], "baseline");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_export_all_formats_sequentially() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Test all export formats in sequence
+    let formats = ["json", "csv", "markdown", "pdf"];
+    
+    for format in &formats {
+        let question = format!("test {} format", format);
+        let export_path = format!("test_{}.{}", format, format);
+        let args = vec![
+            "--question",
+            &question,
+            "--auto-approve",
+            "--metric",
+            "test_metric",
+            "--measure",
+            "echo 50",
+            "--baseline",
+            "50",
+            "--target-improvement",
+            "0.10",
+            "--max-iterations",
+            "1",
+            "--skip-git",
+            "--export",
+            format,
+            "--export-path",
+            &export_path,
+        ];
+        
+        let output = Command::cargo_bin("pi-autoresearch")
+            .unwrap()
+            .args(&args)
+            .output()
+            .unwrap();
+        
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        
+        // Should complete (export may succeed even if experiment doesn't meet target)
+        assert!(
+            output.status.success() || stderr.contains("Exported"),
+            "Export to {} should succeed. stderr: {}", format, stderr
+        );
+        
+        // Verify file was created
+        let expected_path = temp_dir.path().join(format!("test_{}.{}", format, format));
+        assert!(
+            expected_path.exists(),
+            "Export file for {} should exist", format
+        );
+        
+        // Verify file is not empty
+        let metadata = std::fs::metadata(&expected_path).unwrap();
+        assert!(
+            metadata.len() > 0,
+            "Export file for {} should not be empty", format
+        );
+    }
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
