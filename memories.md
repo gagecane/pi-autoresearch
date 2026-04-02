@@ -2,6 +2,66 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 24:30 UTC: Audit Log Flags Implementation Complete (Priority 94.1)
+
+**Priority 94.1: CLI - Add Audit Log Flags** - COMPLETE
+
+**Implementation Summary**:
+- Added `AuditLogFormat` enum with 3 variants (Json, Csv, Text)
+- Default format is Json (most common for programmatic access)
+- Added 2 CLI flags for audit logging configuration
+- Added 3 helper methods on Cli struct for clean abstraction
+- Exported `AuditLogFormat` from lib.rs for use in main.rs
+
+**Key Design Decisions**:
+1. **Default Format**: Json chosen as default since it provides complete data structure for programmatic access and is human-readable
+2. **Separate Path and Format**: Different options for flexible configuration
+   - `--audit-log-path PATH` for file location
+   - `--audit-log-format FORMAT` for format selection (optional)
+3. **Helper Methods**: Each configuration option has a getter method for clean access
+4. **has_audit_logging_enabled()**: Single method to check if audit logging is configured
+5. **Alias Support**: Both flags have aliases for backward compatibility and consistency
+
+**CLI Flags**:
+- `--audit-log-path PATH` - audit log file location (alias: `audit_log_path`)
+- `--audit-log-format FORMAT` - json, csv, or text (alias: `audit_log_format`)
+
+**Helper Methods**:
+- `get_audit_log_path()` - Returns `Option<&String>`
+- `get_audit_log_format()` - Returns `Option<&AuditLogFormat>`
+- `has_audit_logging_enabled()` - Returns `bool`
+
+**Test Coverage**:
+- 13 comprehensive tests covering all functionality
+- Tests verify enum variants, CLI parsing, helper methods, and combined usage
+- All tests pass with zero warnings
+
+**Files Modified**:
+- `src/cli.rs`: +`AuditLogFormat` enum, +2 fields, +3 methods, +13 tests
+- `src/lib.rs`: Added `AuditLogFormat` to exports
+- `src/main.rs`: +`AuditLogFormat` import, +2 fields
+
+**Implementation Pattern**:
+- Follows the same pattern as `ExportFormat` and `NotificationProvider` enums
+- Define enum in cli.rs with ValueEnum derive
+- Export from lib.rs for use in main.rs
+- Import in main.rs from library
+- Add helper methods on Cli struct for clean abstraction
+- Comprehensive tests for all functionality
+
+**Next Steps**:
+- Priority 94.2: Implement audit log core infrastructure (src/audit.rs)
+- Priority 94.3: Implement action logging (experiment actions, git operations)
+- Priority 94.4: Implement decision logging (why changes kept/reverted)
+- Priority 94.5: Implement measurement logging (all measurement data)
+- Priority 94.6: Add audit log integration tests
+
+**Future Considerations**:
+- Audit log should be append-only for compliance
+- Consider adding audit log rotation for long-running experiments
+- Consider adding audit log encryption for sensitive data
+- Consider adding audit log export/import for archival
+
 ## 2026-04-02 22:00 UTC: Milestone Notifications Implementation Complete (Priority 93.5)
 
 **Priority 93.5: NOTIFICATION - Add Iteration Milestone Notifications** - COMPLETE

@@ -580,16 +580,48 @@ pi-autoresearch --question "..." --notify-provider slack --notify-url "https://h
 - Priority 94.6: TEST - Add Audit Log Integration Tests
 
 ## Priority 94.1: CLI - Add Audit Log Flags
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add CLI flags for audit logging functionality
 **Rationale**: Users need CLI interface to configure audit logging
 **Implementation**:
-- Add `--audit-log PATH` flag for audit log file location
-- Add `--audit-log-format FORMAT` flag (json, csv, text) - optional
-- Add helper methods on Cli struct:
+- ✅ Added `AuditLogFormat` enum with 3 variants: Json, Csv, Text
+  - Added to `src/cli.rs` (for library usage)
+  - Exported from `src/lib.rs` for use in main.rs
+  - Default format is Json
+- ✅ Added `--audit-log-path PATH` flag for audit log file location (with alias `audit_log_path`)
+- ✅ Added `--audit-log-format FORMAT` flag (json, csv, text) (with alias `audit_log_format`)
+- ✅ Added helper methods on Cli struct:
   - `get_audit_log_path()` - Returns audit log path if specified
   - `get_audit_log_format()` - Returns audit log format if specified
-  - `has_audit_logging_enabled()` - Returns true if audit log is specified
+  - `has_audit_logging_enabled()` - Returns true if audit log path is specified
+**Tests Added**:
+- `test_audit_log_format_default` - Verifies Json is default
+- `test_audit_log_format_variants` - Verifies all 3 variants exist
+- `test_cli_parse_audit_log_path` - Verifies path parsing with both flag names
+- `test_cli_parse_audit_log_format` - Verifies all formats can be parsed from CLI
+- `test_get_audit_log_path_none` - Verifies None when no path specified
+- `test_get_audit_log_path_some` - Verifies path retrieval when specified
+- `test_get_audit_log_format_none` - Verifies None when no format specified
+- `test_get_audit_log_format_some` - Verifies format retrieval when specified
+- `test_has_audit_logging_enabled_none` - Verifies false when no path
+- `test_has_audit_logging_enabled_some` - Verifies true for any path
+- `test_cli_parse_audit_log_path_and_format` - Verifies both flags work together
+- `test_cli_parse_audit_log_alias` - Verifies aliases work correctly
+- `test_cli_parse_audit_log_with_other_options` - Verifies integration with export and notification flags
+**Test Results**:
+- All 13 audit log-specific tests pass
+- All 258 lib tests pass
+- All 103 main.rs tests pass
+- `cargo build` completes with no warnings
+- `cargo clippy` completes with no new warnings
+- `--help` shows new flags correctly:
+  - `--audit-log-path <AUDIT_LOG_PATH>` for audit log file path
+  - `--audit-log-format <AUDIT_LOG_FORMAT>` with possible values: json, csv, text
+**Files Modified**:
+- `src/cli.rs`: Added `AuditLogFormat` enum, 2 CLI fields, 3 helper methods, 13 tests
+- `src/lib.rs`: Added `AuditLogFormat` to exports
+- `src/main.rs`: Added `AuditLogFormat` import, 2 CLI fields
+**Review**: REVIEW COMPLETE - Audit log flags properly implemented following the same pattern as export and notification flags, comprehensive tests added, all tests pass, zero warnings, help output shows new options correctly
 
 ## Priority 94.2: AUDIT - Implement Audit Log Core
 **Status**: TODO

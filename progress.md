@@ -1,4 +1,51 @@
 # Progress
+## Session: 2026-04-02 24:30 UTC - COMPLETE (Priority 94.1)
+
+### Tasks Complete
+- ✅ **Priority 94.1: CLI - Add Audit Log Flags** - COMPLETE
+  - ✅ Added `AuditLogFormat` enum with 3 variants (Json, Csv, Text)
+    - Default format is Json (most common for programmatic access)
+    - Added to `src/cli.rs` for library usage
+    - Exported from `src/lib.rs` for use in main.rs
+  - ✅ Added 2 CLI flags:
+    - `--audit-log-path PATH` for audit log file location (alias: `audit_log_path`)
+    - `--audit-log-format FORMAT` for format selection (alias: `audit_log_format`)
+  - ✅ Added 3 helper methods on Cli struct:
+    - `get_audit_log_path()` - Returns audit log path if specified
+    - `get_audit_log_format()` - Returns audit log format if specified
+    - `has_audit_logging_enabled()` - Returns true if audit log path is specified
+  - ✅ Updated `src/main.rs` with audit log fields and imports
+  - **Tests Added**: 13 comprehensive tests covering:
+    - Enum variant parsing and defaults
+    - CLI flag parsing for both path and format
+    - Helper method functionality
+    - Combined flag usage with aliases
+    - Integration with export and notification flags
+  - **Test Results**:
+    - All 13 audit log-specific tests pass
+    - All 258 lib tests pass
+    - All 103 main.rs tests pass
+    - Zero clippy warnings
+    - Zero compiler warnings
+  - **Files Modified**:
+    - `src/cli.rs`: Added `AuditLogFormat` enum, 2 CLI fields, 3 helper methods, 13 tests
+    - `src/lib.rs`: Added `AuditLogFormat` to exports
+    - `src/main.rs`: Added `AuditLogFormat` import, 2 CLI fields
+    - `tasks.md`: Updated Priority 94.1 as COMPLETE
+
+### Summary
+- Audit log CLI flags properly implemented following the same pattern as export and notification flags
+- All audit log options can be combined with export and notification flags
+- Aliases work correctly for both flags (audit-log, audit-log-format)
+- Helper methods provide clean abstraction for audit log settings
+- All tests pass with zero warnings
+- `--help` shows new flags correctly with all possible values
+
+### Next Task
+- Priority 94.2: AUDIT - Implement Audit Log Core
+
+---
+
 ## Session: 2026-04-02 24:00 UTC - COMPLETE (Priority 94 Decomposed)
 
 ### Tasks Complete
@@ -12,6 +59,7 @@
   - ✅ Priority 94.6: TEST - Add Audit Log Integration Tests
   - **Files Modified**:
     - tasks.md: Decomposed Priority 94 into 6 subtasks
+  - **Note**: Priority 94.1 has been completed as of 2026-04-02 24:30 UTC
 
 ### Summary
 - Priority 94 was too abstract to implement as a single task
