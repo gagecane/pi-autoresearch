@@ -1,0 +1,4 @@
+{"timestamp":"2024-01-01T00:00:00Z","git_commit":"abc123","metric":"latency","measurement_command":"echo 100","value":100.0,"verification_runs":[100.0,101.0],"variance":0.01,"within_threshold":true}
+{"iteration":1,"timestamp":"2024-01-01T00:00:01Z","agent_action":"Optimized query","metric_value":95.0,"improvement":0.05,"kept":true}
+{"iteration":2,"timestamp":"2024-01-01T00:00:02Z","agent_action":"Refactored code","metric_value":90.0,"improvement":0.10,"kept":true}
+{"iteration":3,"timestamp":"2024-01-01T00:00:03Z","agent_action":"Added caching","metric_value":85.0,"improvement":0.15,"kept":true}

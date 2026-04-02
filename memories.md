@@ -1934,3 +1934,25 @@ Created 8 new actionable tasks:
   4. Full session file (JSONL format)
 - CI/CD integration ensures fuzzing runs regularly
 
+
+## 2026-04-02 - Fuzzing CI/CD Integration
+
+**Learnings**:
+- GitHub Actions workflow for fuzzing requires nightly Rust toolchain
+- cargo-fuzz needs to be installed before running fuzz targets
+- Fuzzing duration should be configurable via workflow_dispatch input
+- Timeout handling in workflows requires special handling (exit code 124)
+- Artifact uploads should use if-no-files-found: ignore to avoid failures
+- Corpus files help seed the fuzzer with valid inputs
+- Crash artifacts need 30-day retention for investigation
+- Workflow should run on push, PR, schedule, and manual trigger
+- Need to check for crashes after fuzzing completes
+- Multiple fuzz targets should run sequentially in CI
+
+**Best Practices**:
+- Cache cargo registry and fuzz targets for faster CI runs
+- Use fail-fast: false to capture all fuzz failures
+- Upload corpus artifacts even on success for future use
+- Separate fuzz-report job for summary generation
+- Notify job for failure alerts
+

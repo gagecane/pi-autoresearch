@@ -1,0 +1,27 @@
+{
+  "session_id": "test-123",
+  "question": "How to optimize?",
+  "design": {
+    "question": "How to optimize?",
+    "metric": "latency",
+    "measurement_command": "echo 100",
+    "baseline": 100.0,
+    "target_improvement": 0.20,
+    "max_iterations": 10
+  },
+  "baseline_record": {
+    "timestamp": "2024-01-01T00:00:00Z",
+    "git_commit": "abc123",
+    "metric": "latency",
+    "measurement_command": "echo 100",
+    "value": 100.0,
+    "verification_runs": [100.0, 101.0],
+    "variance": 0.01,
+    "within_threshold": true
+  },
+  "iterations": [],
+  "best_iteration": null,
+  "start_time": "2024-01-01T00:00:00Z",
+  "end_time": null,
+  "status": "running"
+}
