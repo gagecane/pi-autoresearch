@@ -14,7 +14,7 @@ pub use phase2_iterate::IterationRecord;
 pub use stuck_detector::{StuckReason, StuckDetector, StuckDetectorConfig, IterationState};
 pub use session::{ExperimentSession, SessionManager, SessionRecord, generate_session_id};
 pub use pi_agent::{PiAgent, BranchManager, generate_uuid};
-pub use notification::{send_webhook, send_milestone_notification, WebhookPayload};
+pub use notification::{send_webhook, send_milestone_notification, send_slack, send_email, WebhookPayload, EmailConfig};
 
 #[cfg(test)]
 mod tests {
