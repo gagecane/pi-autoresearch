@@ -2,6 +2,30 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 14:30 UTC: Export Flags Review (Priority 92.1)
+
+**Priority 92.1: CLI - Add Export Flags** - REVIEW WITH FEEDBACK
+
+**Review Findings**:
+- Implementation is functionally correct and all tests pass
+- **Issue 1**: Code duplication - ExportFormat enum defined in both cli.rs and main.rs
+  - This violates DRY principle
+  - Should be defined once in cli.rs and imported where needed
+- **Issue 2**: Unused functions in main.rs - get_export_format() and get_export_path() generate compiler warnings
+  - These duplicate Cli methods already available in cli.rs
+  - Should either be used in export workflow or removed
+
+**Code Organization Lessons**:
+- When creating enums for CLI, define them in cli.rs (library) and export via lib.rs
+- Binary (main.rs) should import from library, not duplicate definitions
+- Helper functions should only exist if they're actually used
+- Compiler warnings about unused code should be addressed before marking tasks complete
+
+**Action Required**:
+- Remove ExportFormat from main.rs, import from pi_autoresearch::cli
+- Remove unused get_export_format() and get_export_path() from main.rs
+- Use cli.get_export_format() and cli.get_export_path() methods instead
+
 ## 2026-04-02 13:44 UTC: Export Flags Implementation (Priority 92.1)
 
 **Priority 92.1: CLI - Add Export Flags** - COMPLETE
