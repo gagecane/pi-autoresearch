@@ -2,7 +2,7 @@
 pub struct PiAgent { _simulated: bool }
 
 impl PiAgent {
-    pub fn new(_simulated: bool) -> Self { Self { _simulated: _simulated } }
+    pub fn new(_simulated: bool) -> Self { Self { _simulated } }
     pub fn propose_change(&self, question: &str, current_state: &str, metric_feedback: &str) -> String {
         format!("Proposed change for '{}': Based on current state '{}' and metric feedback '{}', I propose implementing incremental optimization.", question, current_state, metric_feedback)
     }

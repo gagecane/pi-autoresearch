@@ -33,7 +33,7 @@ impl ExperimentSession {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
-pub enum SessionRecord { Baseline(BaselineRecord), Iteration(IterationRecord), Experiment(ExperimentSession) }
+pub enum SessionRecord { Baseline(BaselineRecord), Iteration(IterationRecord), Experiment(Box<ExperimentSession>) }
 
 pub struct SessionManager { session_file: String }
 
@@ -67,7 +67,7 @@ impl SessionManager {
         for line in contents.lines() {
             if line.trim().is_empty() { continue; }
             let trimmed = line.trim();
-            if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) { records.push(SessionRecord::Experiment(session)); }
+            if let Ok(session) = serde_json::from_str::<ExperimentSession>(trimmed) { records.push(SessionRecord::Experiment(Box::new(session))); }
             else if let Ok(iteration) = serde_json::from_str::<IterationRecord>(trimmed) { records.push(SessionRecord::Iteration(iteration)); }
             else if let Ok(baseline) = serde_json::from_str::<BaselineRecord>(trimmed) { records.push(SessionRecord::Baseline(baseline)); }
         }
@@ -75,13 +75,13 @@ impl SessionManager {
     }
     pub fn find_session(&self, session_id: &str) -> Result<Option<ExperimentSession>> {
         for record in &self.read_all()? {
-            if let SessionRecord::Experiment(ref session) = record { if session.session_id == session_id { return Ok(Some(session.clone())); } }
+            if let SessionRecord::Experiment(ref session) = record { if session.session_id == session_id { return Ok(Some(*session.clone())); } }
         }
         Ok(None)
     }
     pub fn list_history(&self) -> Result<String> {
         let records = self.read_all()?;
-        let experiments: Vec<&ExperimentSession> = records.iter().filter_map(|r| if let SessionRecord::Experiment(ref s) = r { Some(s) } else { None }).collect();
+        let experiments: Vec<&ExperimentSession> = records.iter().filter_map(|r| if let SessionRecord::Experiment(ref s) = r { Some(&**s) } else { None }).collect();
         if experiments.is_empty() { return Ok(format!("No experiments found in {}", self.session_file)); }
         let mut output = String::from("\n=== Experiment History ===\n\n");
         output.push_str(&format!("Found {} experiment(s)\n\n", experiments.len()));
@@ -281,7 +281,7 @@ mod tests {
             create_test_design(),
             create_test_baseline(),
         );
-        let record = SessionRecord::Experiment(session);
+        let record = SessionRecord::Experiment(Box::new(session));
 
         match record {
             SessionRecord::Experiment(s) => assert_eq!(s.session_id, "test"),

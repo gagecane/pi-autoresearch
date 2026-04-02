@@ -28,8 +28,72 @@ pub struct BaselineRecord {
 }
 
 impl BaselineRecord {
+    pub fn builder() -> BaselineRecordBuilder {
+        BaselineRecordBuilder::default()
+    }
+    
+    #[allow(clippy::too_many_arguments)]
     pub fn new(timestamp: String, git_commit: String, metric: String, measurement_command: String, value: f64, verification_runs: Vec<f64>, variance: f64, within_threshold: bool) -> Self {
         Self { timestamp, git_commit, metric, measurement_command, value, verification_runs, variance, within_threshold }
+    }
+}
+
+#[derive(Default)]
+pub struct BaselineRecordBuilder {
+    timestamp: Option<String>,
+    git_commit: Option<String>,
+    metric: Option<String>,
+    measurement_command: Option<String>,
+    value: Option<f64>,
+    verification_runs: Option<Vec<f64>>,
+    variance: Option<f64>,
+    within_threshold: Option<bool>,
+}
+
+impl BaselineRecordBuilder {
+    pub fn timestamp(mut self, timestamp: String) -> Self {
+        self.timestamp = Some(timestamp);
+        self
+    }
+    pub fn git_commit(mut self, git_commit: String) -> Self {
+        self.git_commit = Some(git_commit);
+        self
+    }
+    pub fn metric(mut self, metric: String) -> Self {
+        self.metric = Some(metric);
+        self
+    }
+    pub fn measurement_command(mut self, measurement_command: String) -> Self {
+        self.measurement_command = Some(measurement_command);
+        self
+    }
+    pub fn value(mut self, value: f64) -> Self {
+        self.value = Some(value);
+        self
+    }
+    pub fn verification_runs(mut self, verification_runs: Vec<f64>) -> Self {
+        self.verification_runs = Some(verification_runs);
+        self
+    }
+    pub fn variance(mut self, variance: f64) -> Self {
+        self.variance = Some(variance);
+        self
+    }
+    pub fn within_threshold(mut self, within_threshold: bool) -> Self {
+        self.within_threshold = Some(within_threshold);
+        self
+    }
+    pub fn build(self) -> BaselineRecord {
+        BaselineRecord {
+            timestamp: self.timestamp.expect("timestamp is required"),
+            git_commit: self.git_commit.expect("git_commit is required"),
+            metric: self.metric.expect("metric is required"),
+            measurement_command: self.measurement_command.expect("measurement_command is required"),
+            value: self.value.expect("value is required"),
+            verification_runs: self.verification_runs.expect("verification_runs is required"),
+            variance: self.variance.expect("variance is required"),
+            within_threshold: self.within_threshold.expect("within_threshold is required"),
+        }
     }
 }
 
