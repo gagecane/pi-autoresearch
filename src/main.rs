@@ -274,8 +274,38 @@ impl std::fmt::Display for ConfigValidationError {
 
 impl std::error::Error for ConfigValidationError {}
 
-/// Validate config file values
 /// Initialize structured logging based on CLI flags and environment variables
+/// 
+/// Configures the tracing subscriber with appropriate log levels:
+/// - Quiet mode (cli.quiet): Only shows errors
+/// - Verbose mode (cli.verbose): Shows all logs including debug
+/// - Normal mode: Uses RUST_LOG environment variable or defaults to info level
+/// 
+/// # Arguments
+/// 
+/// * `cli` - CLI configuration with quiet and verbose flags
+/// 
+/// # Returns
+/// 
+/// `Ok(())` on success, `Err` if logging initialization fails.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{init_logging, Cli};
+/// 
+/// // Initialize with quiet mode
+/// let cli = Cli { quiet: true, ..Default::default() };
+/// init_logging(&cli)?;
+/// 
+/// // Initialize with verbose mode
+/// let cli = Cli { verbose: true, ..Default::default() };
+/// init_logging(&cli)?;
+/// 
+/// // Initialize with default mode (uses RUST_LOG env var)
+/// let cli = Cli::default();
+/// init_logging(&cli)?;
+/// ```
 fn init_logging(cli: &Cli) -> Result<()> {
     // Build the filter
     let filter = if cli.quiet {
@@ -305,6 +335,34 @@ fn init_logging(cli: &Cli) -> Result<()> {
 }
 
 /// Create a progress bar with a custom message and total iterations
+/// 
+/// Creates a new progress bar with a standard format including spinner,
+/// message, bar visualization, current/total count, and ETA.
+/// 
+/// # Arguments
+/// 
+/// * `message` - The message to display with the progress bar
+/// * `total` - The total number of iterations for the progress bar
+/// 
+/// # Returns
+/// 
+/// A configured `ProgressBar` ready to use.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::create_progress_bar;
+/// 
+/// // Create a progress bar for 100 iterations
+/// let pb = create_progress_bar("Processing", 100);
+/// pb.inc(1); // Advance by 1
+/// pb.finish(); // Complete the progress bar
+/// 
+/// // Create a progress bar for baseline verification
+/// let pb = create_progress_bar("Verifying baseline", 2);
+/// pb.set_message("Run 1/2...");
+/// pb.inc(1);
+/// ```
 fn create_progress_bar(message: &str, total: u64) -> ProgressBar {
     let pb = ProgressBar::new(total);
     pb.set_style(
@@ -317,6 +375,47 @@ fn create_progress_bar(message: &str, total: u64) -> ProgressBar {
     pb
 }
 
+/// Validate config file values
+/// 
+/// Checks all configurable values for validity:
+/// - max_variance: must be between 0.0 and 1.0
+/// - target_improvement: must be positive
+/// - max_iterations: must be positive
+/// - iteration_timeout_minutes: must be positive
+/// - total_timeout_minutes: must be positive
+/// - stall_limit: must be positive
+/// - convergence_window: must be positive
+/// - session_file: must be a valid writable path
+/// 
+/// # Arguments
+/// 
+/// * `config` - The configuration to validate
+/// 
+/// # Returns
+/// 
+/// `Ok(())` if all values are valid, `Err` with detailed error messages otherwise.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{validate_config, Config};
+/// 
+/// // Valid config
+/// let config = Config {
+///     max_variance: Some(0.05),
+///     target_improvement: Some(0.20),
+///     max_iterations: Some(20),
+///     ..Default::default()
+/// };
+/// assert!(validate_config(&config).is_ok());
+/// 
+/// // Invalid config (max_variance out of range)
+/// let config = Config {
+///     max_variance: Some(1.5),
+///     ..Default::default()
+/// };
+/// assert!(validate_config(&config).is_err());
+/// ```
 fn validate_config(config: &Config) -> Result<()> {
     let mut errors = Vec::new();
 
@@ -385,7 +484,33 @@ fn validate_config(config: &Config) -> Result<()> {
 }
 
 /// Check if a session file path is valid and writable
-/// This function is non-destructive - it does not create directories or modify files
+/// 
+/// This function is non-destructive - it does not create directories or modify files.
+/// It verifies that the parent directory exists and is writable by attempting
+/// to create a temporary file.
+/// 
+/// # Arguments
+/// 
+/// * `path` - The session file path to validate
+/// 
+/// # Returns
+/// 
+/// `true` if the path is valid and writable, `false` otherwise.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::is_valid_session_path;
+/// 
+/// // Valid path in current directory
+/// assert!(is_valid_session_path("autoresearch.jsonl"));
+/// 
+/// // Valid path in existing directory
+/// assert!(is_valid_session_path("./sessions/autoresearch.jsonl"));
+/// 
+/// // Invalid path in non-existent directory
+/// assert!(!is_valid_session_path("/nonexistent/dir/file.jsonl"));
+/// ```
 fn is_valid_session_path(path: &str) -> bool {
     let path = std::path::Path::new(path);
     
@@ -415,6 +540,38 @@ fn is_valid_session_path(path: &str) -> bool {
     }
 }
 
+/// Load configuration from a config file
+/// 
+/// Attempts to load configuration from the specified path, or from the default
+/// location (~/.config/pi-autoresearch/config.json) if no path is provided.
+/// Validates the configuration after loading.
+/// 
+/// # Arguments
+/// 
+/// * `config_path` - Optional path to the config file. If None, uses default location.
+/// * `explicit_config` - If true, returns an error when config file is not found.
+///   If false, returns Ok(None) when config file is not found.
+/// 
+/// # Returns
+/// 
+/// `Ok(Some(Config))` if config was loaded successfully.
+/// `Ok(None)` if config file doesn't exist and explicit_config is false.
+/// `Err` if config file doesn't exist and explicit_config is true, or if validation fails.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::load_config;
+/// 
+/// // Load from default location (returns None if not found)
+/// let config = load_config(None, false)?;
+/// 
+/// // Load from explicit path (returns error if not found)
+/// let config = load_config(Some("/path/to/config.json"), true)?;
+/// 
+/// // Load from explicit path (returns None if not found)
+/// let config = load_config(Some("/path/to/config.json"), false)?;
+/// ```
 fn load_config(config_path: Option<&str>, explicit_config: bool) -> Result<Option<Config>> {
     let path = if let Some(p) = config_path {
         PathBuf::from(p)
@@ -449,6 +606,28 @@ fn load_config(config_path: Option<&str>, explicit_config: bool) -> Result<Optio
 }
 
 /// Get effective metric value from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_metric};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { metric: Some("my_metric".to_string()), ..Default::default() };
+/// let config = Some(Config { metric: Some("config_metric".to_string()), ..Default::default() });
+/// assert_eq!(get_metric(&cli, &config, "default"), "my_metric");
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { metric: None, ..Default::default() };
+/// assert_eq!(get_metric(&cli, &config, "default"), "config_metric");
+/// 
+/// // Default used when both CLI and config are None
+/// let cli = Cli { metric: None, ..Default::default() };
+/// let config = None;
+/// assert_eq!(get_metric(&cli, &config, "default"), "default");
+/// ```
 fn get_metric(cli: &Cli, config: &Option<Config>, default: &str) -> String {
     cli.metric.clone()
         .or(config.as_ref().and_then(|c| c.metric.clone()))
@@ -456,6 +635,23 @@ fn get_metric(cli: &Cli, config: &Option<Config>, default: &str) -> String {
 }
 
 /// Get effective measure value from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_measure};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { measure: Some("echo 100".to_string()), ..Default::default() };
+/// let config = Some(Config { measure: Some("echo 200".to_string()), ..Default::default() });
+/// assert_eq!(get_measure(&cli, &config, "default"), "echo 100");
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { measure: None, ..Default::default() };
+/// assert_eq!(get_measure(&cli, &config, "default"), "echo 200");
+/// ```
 fn get_measure(cli: &Cli, config: &Option<Config>, default: &str) -> String {
     cli.measure.clone()
         .or(config.as_ref().and_then(|c| c.measure.clone()))
@@ -463,6 +659,28 @@ fn get_measure(cli: &Cli, config: &Option<Config>, default: &str) -> String {
 }
 
 /// Get effective baseline value from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_baseline};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { baseline: Some(100.0), ..Default::default() };
+/// let config = Some(Config { baseline: Some(200.0), ..Default::default() });
+/// assert_eq!(get_baseline(&cli, &config, 0.0), 100.0);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { baseline: None, ..Default::default() };
+/// assert_eq!(get_baseline(&cli, &config, 0.0), 200.0);
+/// 
+/// // Default used when both are None
+/// let cli = Cli { baseline: None, ..Default::default() };
+/// let config = None;
+/// assert_eq!(get_baseline(&cli, &config, 50.0), 50.0);
+/// ```
 fn get_baseline(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
     cli.baseline
         .or(config.as_ref().and_then(|c| c.baseline))
@@ -470,6 +688,23 @@ fn get_baseline(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
 }
 
 /// Get effective target improvement from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_target_improvement};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { target_improvement: Some(0.30), ..Default::default() };
+/// let config = Some(Config { target_improvement: Some(0.20), ..Default::default() });
+/// assert_eq!(get_target_improvement(&cli, &config, 0.10), 0.30);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { target_improvement: None, ..Default::default() };
+/// assert_eq!(get_target_improvement(&cli, &config, 0.10), 0.20);
+/// ```
 fn get_target_improvement(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
     cli.target_improvement
         .or(config.as_ref().and_then(|c| c.target_improvement))
@@ -477,6 +712,28 @@ fn get_target_improvement(cli: &Cli, config: &Option<Config>, default: f64) -> f
 }
 
 /// Get effective max iterations from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_max_iterations};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { max_iterations: Some(50), ..Default::default() };
+/// let config = Some(Config { max_iterations: Some(30), ..Default::default() });
+/// assert_eq!(get_max_iterations(&cli, &config, 20), 50);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { max_iterations: None, ..Default::default() };
+/// assert_eq!(get_max_iterations(&cli, &config, 20), 30);
+/// 
+/// // Default used when both are None
+/// let cli = Cli { max_iterations: None, ..Default::default() };
+/// let config = None;
+/// assert_eq!(get_max_iterations(&cli, &config, 20), 20);
+/// ```
 fn get_max_iterations(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
     cli.max_iterations
         .or(config.as_ref().and_then(|c| c.max_iterations))
@@ -484,18 +741,65 @@ fn get_max_iterations(cli: &Cli, config: &Option<Config>, default: usize) -> usi
 }
 
 /// Get effective max variance from CLI or config
-/// CLI always takes precedence, then config, then default
+/// 
+/// CLI always takes precedence. Config and default parameters are currently unused.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_max_variance};
+/// 
+/// // CLI value is always used
+/// let cli = Cli { max_variance: 0.10, ..Default::default() };
+/// let config = Some(Config { max_variance: Some(0.05), ..Default::default() });
+/// assert_eq!(get_max_variance(&cli, &config, 0.05), 0.10);
+/// ```
 fn get_max_variance(cli: &Cli, _config: &Option<Config>, _default: f64) -> f64 {
     cli.max_variance
 }
 
 /// Get effective session file from CLI or config
-/// CLI always takes precedence, then config, then default
+/// 
+/// CLI always takes precedence. Config parameter is currently unused.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_session_file};
+/// 
+/// // CLI value is always used
+/// let cli = Cli { session_file: "custom.jsonl".to_string(), ..Default::default() };
+/// let config = Some(Config { session_file: Some("config.jsonl".to_string()), ..Default::default() });
+/// assert_eq!(get_session_file(&cli, &config), "custom.jsonl");
+/// ```
 fn get_session_file(cli: &Cli, _config: &Option<Config>) -> String {
     cli.session_file.clone()
 }
 
 /// Get effective beads enabled from CLI or config
+/// 
+/// CLI takes precedence over config. Returns false if both are disabled/not set.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_beads_enabled};
+/// 
+/// // CLI takes precedence (enabled)
+/// let cli = Cli { beads_enabled: true, ..Default::default() };
+/// let config = Some(Config { beads_enabled: Some(false), ..Default::default() });
+/// assert!(get_beads_enabled(&cli, &config));
+/// 
+/// // Config used when CLI is false
+/// let cli = Cli { beads_enabled: false, ..Default::default() };
+/// let config = Some(Config { beads_enabled: Some(true), ..Default::default() });
+/// assert!(get_beads_enabled(&cli, &config));
+/// 
+/// // Returns false when both are false/not set
+/// let cli = Cli { beads_enabled: false, ..Default::default() };
+/// let config = None;
+/// assert!(!get_beads_enabled(&cli, &config));
+/// ```
 fn get_beads_enabled(cli: &Cli, config: &Option<Config>) -> bool {
     if cli.beads_enabled {
         true
@@ -507,6 +811,24 @@ fn get_beads_enabled(cli: &Cli, config: &Option<Config>) -> bool {
 }
 
 /// Get effective iteration timeout from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// Returns timeout in minutes.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_iteration_timeout};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { iteration_timeout_minutes: Some(30), ..Default::default() };
+/// let config = Some(Config { iteration_timeout_minutes: Some(20), ..Default::default() });
+/// assert_eq!(get_iteration_timeout(&cli, &config, 10), 30);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { iteration_timeout_minutes: None, ..Default::default() };
+/// assert_eq!(get_iteration_timeout(&cli, &config, 10), 20);
+/// ```
 fn get_iteration_timeout(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
     cli.iteration_timeout_minutes
         .or(config.as_ref().and_then(|c| c.iteration_timeout_minutes))
@@ -514,6 +836,24 @@ fn get_iteration_timeout(cli: &Cli, config: &Option<Config>, default: usize) -> 
 }
 
 /// Get effective total timeout from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// Returns timeout in minutes.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_total_timeout};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { total_timeout_minutes: Some(240), ..Default::default() };
+/// let config = Some(Config { total_timeout_minutes: Some(120), ..Default::default() });
+/// assert_eq!(get_total_timeout(&cli, &config, 60), 240);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { total_timeout_minutes: None, ..Default::default() };
+/// assert_eq!(get_total_timeout(&cli, &config, 60), 120);
+/// ```
 fn get_total_timeout(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
     cli.total_timeout_minutes
         .or(config.as_ref().and_then(|c| c.total_timeout_minutes))
@@ -521,6 +861,23 @@ fn get_total_timeout(cli: &Cli, config: &Option<Config>, default: usize) -> usiz
 }
 
 /// Get effective stall limit from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_stall_limit};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { stall_limit: Some(10), ..Default::default() };
+/// let config = Some(Config { stall_limit: Some(5), ..Default::default() });
+/// assert_eq!(get_stall_limit(&cli, &config, 3), 10);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { stall_limit: None, ..Default::default() };
+/// assert_eq!(get_stall_limit(&cli, &config, 3), 5);
+/// ```
 fn get_stall_limit(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
     cli.stall_limit
         .or(config.as_ref().and_then(|c| c.stall_limit))
@@ -528,6 +885,23 @@ fn get_stall_limit(cli: &Cli, config: &Option<Config>, default: usize) -> usize 
 }
 
 /// Get effective convergence threshold from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_convergence_threshold};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { convergence_threshold: Some(0.05), ..Default::default() };
+/// let config = Some(Config { convergence_threshold: Some(0.02), ..Default::default() });
+/// assert_eq!(get_convergence_threshold(&cli, &config, 0.01), 0.05);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { convergence_threshold: None, ..Default::default() };
+/// assert_eq!(get_convergence_threshold(&cli, &config, 0.01), 0.02);
+/// ```
 fn get_convergence_threshold(cli: &Cli, config: &Option<Config>, default: f64) -> f64 {
     cli.convergence_threshold
         .or(config.as_ref().and_then(|c| c.convergence_threshold))
@@ -535,6 +909,23 @@ fn get_convergence_threshold(cli: &Cli, config: &Option<Config>, default: f64) -
 }
 
 /// Get effective convergence window from CLI or config
+/// 
+/// CLI takes precedence over config, which takes precedence over default.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{Cli, Config, get_convergence_window};
+/// 
+/// // CLI takes precedence
+/// let cli = Cli { convergence_window: Some(5), ..Default::default() };
+/// let config = Some(Config { convergence_window: Some(3), ..Default::default() });
+/// assert_eq!(get_convergence_window(&cli, &config, 3), 5);
+/// 
+/// // Config used when CLI is None
+/// let cli = Cli { convergence_window: None, ..Default::default() };
+/// assert_eq!(get_convergence_window(&cli, &config, 3), 3);
+/// ```
 fn get_convergence_window(cli: &Cli, config: &Option<Config>, default: usize) -> usize {
     cli.convergence_window
         .or(config.as_ref().and_then(|c| c.convergence_window))
@@ -637,6 +1028,44 @@ impl std::fmt::Display for BaselineError {
 
 impl std::error::Error for BaselineError {}
 
+/// Generate an experiment design based on a research question
+/// 
+/// Analyzes the question to determine appropriate metric, measurement command,
+/// and baseline value. Supports memory, speed/performance, and accuracy optimization.
+/// 
+/// # Arguments
+/// 
+/// * `question` - The research question to analyze
+/// 
+/// # Returns
+/// 
+/// An `ExperimentDesign` with appropriate defaults based on the question
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{generate_design, ExperimentDesign};
+/// 
+/// // Memory optimization
+/// let design = generate_design("How can I reduce memory usage?");
+/// assert_eq!(design.metric, "peak_memory_mb");
+/// assert_eq!(design.baseline, 512.0);
+/// 
+/// // Speed optimization
+/// let design = generate_design("How can I improve speed?");
+/// assert_eq!(design.metric, "execution_time_ms");
+/// assert_eq!(design.baseline, 1000.0);
+/// 
+/// // Accuracy optimization
+/// let design = generate_design("How can I improve accuracy?");
+/// assert_eq!(design.metric, "accuracy_percent");
+/// assert_eq!(design.baseline, 85.0);
+/// 
+/// // Default for unknown metric
+/// let design = generate_design("How can I optimize this?");
+/// assert_eq!(design.metric, "metric_value");
+/// assert_eq!(design.baseline, 100.0);
+/// ```
 fn generate_design(question: &str) -> ExperimentDesign {
     let lower_question = question.to_lowercase();
     
@@ -730,7 +1159,32 @@ fn get_git_commit_hash() -> Result<String> {
 }
 
 /// Parse branch age from git commit date
-/// Returns number of days since commit, or -1 if unknown
+/// 
+/// Returns number of days since the branch's last commit, or -1 if unknown.
+/// Attempts to parse dates in RFC3339 format and other common git date formats.
+/// 
+/// # Arguments
+/// 
+/// * `branch` - The branch name to check
+/// 
+/// # Returns
+/// 
+/// Number of days since the last commit on the branch, or -1 if the branch
+/// doesn't exist or the date can't be parsed.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::parse_branch_age_days;
+/// 
+/// // Returns days since last commit for existing branch
+/// let days = parse_branch_age_days("main");
+/// assert!(days >= -1); // -1 if branch doesn't exist or date unknown
+/// 
+/// // Returns -1 for non-existent branch
+/// let days = parse_branch_age_days("nonexistent-branch-12345");
+/// assert_eq!(days, -1);
+/// ```
 fn parse_branch_age_days(branch: &str) -> i64 {
     let date_output = Command::new("git")
         .args(["log", "-1", "--format=%ai", branch])
@@ -760,6 +1214,30 @@ fn parse_branch_age_days(branch: &str) -> i64 {
 }
 
 /// Format branch age as a human-readable string
+/// 
+/// Converts a branch age in days to a readable format.
+/// Returns "unknown age" for negative values.
+/// 
+/// # Arguments
+/// 
+/// * `days` - Number of days since the branch's last commit
+/// 
+/// # Returns
+/// 
+/// A formatted string describing the branch age
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::format_branch_age;
+/// 
+/// // Positive days
+/// assert_eq!(format_branch_age(7), "7 days old");
+/// assert_eq!(format_branch_age(0), "0 days old");
+/// 
+/// // Unknown age (negative value)
+/// assert_eq!(format_branch_age(-1), "unknown age");
+/// ```
 fn format_branch_age(days: i64) -> String {
     if days >= 0 {
         format!("{} days old", days)
@@ -1289,6 +1767,37 @@ fn generate_failure_recommendations(
 }
 
 /// Calculate the final improvement from baseline to best kept value
+/// 
+/// Computes the improvement ratio from the baseline to the best kept iteration.
+/// Returns both the improvement ratio and the best kept value (if any).
+/// 
+/// # Arguments
+/// 
+/// * `session` - The experiment session to analyze
+/// 
+/// # Returns
+/// 
+/// A tuple of `(improvement_ratio, best_kept_value)` where:
+/// - `improvement_ratio`: The ratio of improvement (positive means improvement)
+/// - `best_kept_value`: The best metric value from kept iterations, or None if no iterations were kept
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{calculate_final_improvement, ExperimentSession};
+/// 
+/// // Session with improvements
+/// let session = ExperimentSession { /* ... */ };
+/// let (improvement, best_value) = calculate_final_improvement(&session);
+/// assert!(improvement > 0.0); // Positive improvement
+/// assert!(best_value.is_some());
+/// 
+/// // Session with no kept iterations
+/// let session = ExperimentSession { iterations: vec![], /* ... */ };
+/// let (improvement, best_value) = calculate_final_improvement(&session);
+/// assert_eq!(improvement, 0.0);
+/// assert!(best_value.is_none());
+/// ```
 fn calculate_final_improvement(
     session: &ExperimentSession,
 ) -> (f64, Option<f64>) {
@@ -1342,6 +1851,33 @@ fn extract_key_changes(
 }
 
 /// Extract a short summary from agent action string
+/// 
+/// Parses an agent action string to extract a concise summary of the proposed change.
+/// Handles various formats by splitting on colons and periods.
+/// 
+/// # Arguments
+/// 
+/// * `agent_action` - The full agent action string to summarize
+/// 
+/// # Returns
+/// 
+/// A trimmed string containing the key change description.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::extract_change_summary;
+/// 
+/// // Extract summary from detailed action
+/// let action = "Proposed change for 'optimize memory': Implement caching. This should help.";
+/// let summary = extract_change_summary(action);
+/// assert!(summary.contains("Implement caching"));
+/// 
+/// // Handle simple action
+/// let action = "Simple change";
+/// let summary = extract_change_summary(action);
+/// assert_eq!(summary, "Simple change");
+/// ```
 fn extract_change_summary(agent_action: &str) -> String {
     agent_action
         .split(':')
@@ -1356,6 +1892,34 @@ fn extract_change_summary(agent_action: &str) -> String {
 }
 
 /// Generate commit message for successful experiment
+/// 
+/// Creates a detailed commit message summarizing the experiment results,
+/// including the metric improved, improvement percentage, iterations,
+/// runtime, and key changes made.
+/// 
+/// # Arguments
+/// 
+/// * `session` - The completed experiment session
+/// * `final_improvement` - The final improvement ratio achieved
+/// * `baseline` - The baseline metric value
+/// * `best_value` - The best metric value achieved
+/// 
+/// # Returns
+/// 
+/// A formatted commit message string.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{generate_commit_message, ExperimentSession};
+/// 
+/// let session = ExperimentSession { /* ... */ };
+/// let message = generate_commit_message(&session, 0.20, 100.0, 80.0);
+/// 
+/// assert!(message.contains("[autoresearch]"));
+/// assert!(message.contains("Iterations:"));
+/// assert!(message.contains("Key changes:"));
+/// ```
 fn generate_commit_message(
     session: &ExperimentSession,
     final_improvement: f64,
@@ -1405,6 +1969,32 @@ fn generate_commit_message(
 }
 
 /// Calculate runtime in seconds from session timestamps
+/// 
+/// Parses the start and end timestamps from an experiment session
+/// and calculates the total runtime in seconds.
+/// 
+/// # Arguments
+/// 
+/// * `session` - The experiment session with start_time and end_time
+/// 
+/// # Returns
+/// 
+/// The runtime in seconds, or 0 if timestamps can't be parsed.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::{calculate_runtime_seconds, ExperimentSession};
+/// use chrono::Utc;
+/// 
+/// let session = ExperimentSession {
+///     start_time: Utc::now().to_rfc3339(),
+///     end_time: Some(Utc::now().to_rfc3339()),
+///     /* ... */
+/// };
+/// let runtime = calculate_runtime_seconds(&session);
+/// assert!(runtime >= 0);
+/// ```
 fn calculate_runtime_seconds(session: &ExperimentSession) -> i64 {
     session.start_time
         .parse::<chrono::DateTime<Utc>>()
@@ -1420,6 +2010,25 @@ fn calculate_runtime_seconds(session: &ExperimentSession) -> i64 {
 }
 
 /// Generate branch name with timestamp and unique ID
+/// 
+/// Creates a unique branch name for the experiment results in the format:
+/// `autoresearch/{timestamp}-{unique_id}` where timestamp is YYYYMMDD-HHMMSS.
+/// 
+/// # Returns
+/// 
+/// A unique branch name string.
+/// 
+/// # Examples
+/// 
+/// ```ignore
+/// use pi_autoresearch::main::generate_branch_name;
+/// 
+/// let branch1 = generate_branch_name();
+/// let branch2 = generate_branch_name();
+/// 
+/// assert!(branch1.starts_with("autoresearch/"));
+/// assert_ne!(branch1, branch2); // Unique IDs ensure different names
+/// ```
 fn generate_branch_name() -> String {
     let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
     let unique_id = uuid_generate();
