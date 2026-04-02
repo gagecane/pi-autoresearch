@@ -1,6 +1,21 @@
 # Progress
 
-## Session: 2026-04-02 23:55 UTC - REVIEW COMPLETE (Priority 69)
+## Session: 2026-04-02 23:58 UTC - REVISE COMPLETE (Priority 69)
+
+### Revise Completed
+- ✅ **Priority 69: TEST - Add End-to-End Auto-Approve with Beads Test** - REVISE COMPLETE
+  - Fixed duplicate comment on line 2710 in `tests/integration_tests.rs`:
+    - Removed duplicate `// Ignore errors if directory is in use` comment
+  - Verified all 6 tests still pass:
+    1. `test_auto_approve_with_beads_end_to_end` - Basic workflow with both flags
+    2. `test_auto_approve_beads_with_iterations` - Multiple iterations with beads
+    3. `test_auto_approve_beads_config_file_integration` - Beads from config file
+    4. `test_auto_approve_beads_cli_overrides_config` - CLI and config interaction
+    5. `test_auto_approve_beads_error_handling` - Graceful degradation when bd unavailable
+    6. `test_auto_approve_beads_complete_workflow` - Complete workflow with verify-baseline
+  - **Status**: Task ready for final REVIEW
+
+## Session: 2026-04-02 23:55 UTC - REVIEW (Priority 69)
 
 ### Review Completed
 - ✅ **Priority 69: TEST - Add End-to-End Auto-Approve with Beads Test** - REVIEW COMPLETE

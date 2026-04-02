@@ -2707,7 +2707,7 @@ fn test_auto_approve_beads_config_file_integration() {
     );
     
     let _: Result<_, _> = std::env::set_current_dir(&original_dir);
-    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use // Ignore errors if directory is in use
+    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use
 }
 
 #[test]
