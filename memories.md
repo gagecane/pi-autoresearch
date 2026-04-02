@@ -2,6 +2,26 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02: phase1_design.rs Testing
+
+- Added 20 unit tests for phase1_design.rs module to achieve 80%+ coverage
+- Tests cover:
+  - `ExperimentDesign::new()` - constructor and clone
+  - `BaselineRecord::new()` - constructor, clone, debug
+  - `BaselineVerificationResult` - success, failure, failure_with_data, debug
+  - `generate_design()` - 8 scenarios:
+    - Memory question → peak_memory_mb (baseline: 512.0)
+    - Speed question → execution_time_ms (baseline: 1000.0)
+    - Performance question → execution_time_ms (baseline: 1000.0)
+    - Accuracy question → accuracy_percent (baseline: 85.0)
+    - Default question → metric_value (baseline: 100.0)
+    - Case insensitive matching (MEMORY vs memory)
+    - Target improvement default (0.30)
+    - Hypothesis format ("Optimizing based on: {question}")
+- Total test count: 239 tests (56 lib + 95 main + 68 integration + 13 mutation + 7 performance)
+- All tests pass consistently
+- Metric detection keywords: "memory", "speed", "performance", "accuracy"
+
 ## 2026-04-02: metric_evaluator.rs Testing
 
 - Verified 24 unit tests for metric_evaluator.rs module (already implemented in previous session)

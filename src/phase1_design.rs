@@ -65,3 +65,206 @@ pub fn generate_design(question: &str) -> ExperimentDesign {
     };
     ExperimentDesign { hypothesis: format!("Optimizing based on: {}", question), metric, measurement, baseline, target_improvement: 0.30 }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Tests for ExperimentDesign::new()
+    #[test]
+    fn test_experiment_design_new() {
+        let design = ExperimentDesign::new(
+            "Test hypothesis".to_string(),
+            "test_metric".to_string(),
+            "test_command".to_string(),
+            100.0,
+            0.25
+        );
+        assert_eq!(design.hypothesis, "Test hypothesis");
+        assert_eq!(design.metric, "test_metric");
+        assert_eq!(design.measurement, "test_command");
+        assert_eq!(design.baseline, 100.0);
+        assert_eq!(design.target_improvement, 0.25);
+    }
+
+    #[test]
+    fn test_experiment_design_clone() {
+        let design1 = ExperimentDesign::new(
+            "Hypothesis".to_string(),
+            "metric".to_string(),
+            "command".to_string(),
+            50.0,
+            0.30
+        );
+        let design2 = design1.clone();
+        assert_eq!(design2.hypothesis, design1.hypothesis);
+        assert_eq!(design2.metric, design1.metric);
+    }
+
+    // Tests for BaselineRecord::new()
+    #[test]
+    fn test_baseline_record_new() {
+        let record = BaselineRecord::new(
+            "2024-01-01T00:00:00Z".to_string(),
+            "abc123".to_string(),
+            "test_metric".to_string(),
+            "test_command".to_string(),
+            100.0,
+            vec![100.0, 101.0],
+            0.01,
+            true
+        );
+        assert_eq!(record.timestamp, "2024-01-01T00:00:00Z");
+        assert_eq!(record.git_commit, "abc123");
+        assert_eq!(record.metric, "test_metric");
+        assert_eq!(record.measurement_command, "test_command");
+        assert_eq!(record.value, 100.0);
+        assert_eq!(record.verification_runs, vec![100.0, 101.0]);
+        assert_eq!(record.variance, 0.01);
+        assert!(record.within_threshold);
+    }
+
+    #[test]
+    fn test_baseline_record_clone() {
+        let record1 = BaselineRecord::new(
+            "timestamp".to_string(),
+            "commit".to_string(),
+            "metric".to_string(),
+            "command".to_string(),
+            50.0,
+            vec![50.0],
+            0.0,
+            true
+        );
+        let record2 = record1.clone();
+        assert_eq!(record2.metric, record1.metric);
+        assert_eq!(record2.value, record1.value);
+    }
+
+    #[test]
+    fn test_baseline_record_debug() {
+        let record = BaselineRecord::new(
+            "timestamp".to_string(),
+            "commit".to_string(),
+            "test_metric".to_string(),
+            "command".to_string(),
+            100.0,
+            vec![100.0],
+            0.0,
+            true
+        );
+        let debug_str = format!("{:?}", record);
+        assert!(debug_str.contains("BaselineRecord"));
+        assert!(debug_str.contains("test_metric"));
+    }
+
+    // Tests for BaselineVerificationResult
+    #[test]
+    fn test_baseline_verification_result_success() {
+        let record = BaselineRecord::new(
+            "timestamp".to_string(),
+            "commit".to_string(),
+            "metric".to_string(),
+            "command".to_string(),
+            100.0,
+            vec![100.0],
+            0.0,
+            true
+        );
+        let result = BaselineVerificationResult::success(record);
+        assert!(result.success);
+        assert!(result.baseline_record.is_some());
+        assert!(result.error_message.is_none());
+    }
+
+    #[test]
+    fn test_baseline_verification_result_failure() {
+        let result = BaselineVerificationResult::failure("Test error".to_string());
+        assert!(!result.success);
+        assert!(result.baseline_record.is_none());
+        assert_eq!(result.error_message, Some("Test error".to_string()));
+    }
+
+    #[test]
+    fn test_baseline_verification_result_failure_with_data() {
+        let record = BaselineRecord::new(
+            "timestamp".to_string(),
+            "commit".to_string(),
+            "metric".to_string(),
+            "command".to_string(),
+            100.0,
+            vec![100.0],
+            0.0,
+            false
+        );
+        let result = BaselineVerificationResult::failure_with_data(record, "Variance too high".to_string());
+        assert!(!result.success);
+        assert!(result.baseline_record.is_some());
+        assert_eq!(result.error_message, Some("Variance too high".to_string()));
+    }
+
+    #[test]
+    fn test_baseline_verification_result_debug() {
+        let result = BaselineVerificationResult::failure("error".to_string());
+        let debug_str = format!("{:?}", result);
+        assert!(debug_str.contains("BaselineVerificationResult"));
+    }
+
+    // Tests for generate_design()
+    #[test]
+    fn test_generate_design_memory_question() {
+        let design = generate_design("How can I reduce memory usage?");
+        assert_eq!(design.metric, "peak_memory_mb");
+        assert_eq!(design.baseline, 512.0);
+        assert!(design.hypothesis.contains("How can I reduce memory usage?"));
+    }
+
+    #[test]
+    fn test_generate_design_speed_question() {
+        let design = generate_design("How can I improve speed?");
+        assert_eq!(design.metric, "execution_time_ms");
+        assert_eq!(design.baseline, 1000.0);
+    }
+
+    #[test]
+    fn test_generate_design_performance_question() {
+        let design = generate_design("Optimize performance of this function");
+        assert_eq!(design.metric, "execution_time_ms");
+        assert_eq!(design.baseline, 1000.0);
+    }
+
+    #[test]
+    fn test_generate_design_accuracy_question() {
+        let design = generate_design("Improve model accuracy");
+        assert_eq!(design.metric, "accuracy_percent");
+        assert_eq!(design.baseline, 85.0);
+    }
+
+    #[test]
+    fn test_generate_design_default_question() {
+        let design = generate_design("Make this better");
+        assert_eq!(design.metric, "metric_value");
+        assert_eq!(design.baseline, 100.0);
+        assert_eq!(design.measurement, "Run evaluation script");
+    }
+
+    #[test]
+    fn test_generate_design_case_insensitive() {
+        let design1 = generate_design("MEMORY optimization");
+        let design2 = generate_design("memory optimization");
+        assert_eq!(design1.metric, design2.metric);
+    }
+
+    #[test]
+    fn test_generate_design_target_improvement_default() {
+        let design = generate_design("Test question");
+        assert_eq!(design.target_improvement, 0.30);
+    }
+
+    #[test]
+    fn test_generate_design_hypothesis_format() {
+        let question = "Improve cache performance";
+        let design = generate_design(question);
+        assert_eq!(design.hypothesis, format!("Optimizing based on: {}", question));
+    }
+}
