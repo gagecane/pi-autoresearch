@@ -2,6 +2,37 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 23:59 UTC: Task Ready for Review (Priority 85)
+
+**Priority 85: TEST - Add Doc Tests for metric_evaluator.rs** - READY FOR REVIEW
+
+**Changes Made**:
+- Added 12 doc tests for metric_evaluator.rs module
+- Documented all public types and functions with comprehensive doc comments:
+  - `MetricError` - 2 doc tests (creating error, displaying with suggestions)
+  - `MetricEvaluator` struct - 4 doc tests (default, custom variance, execute measurement, verify baseline)
+  - `MetricEvaluator::new()` - 1 doc test with example
+  - `MetricEvaluator::execute_measurement()` - 2 doc tests (executing command, handling errors)
+  - `MetricEvaluator::get_git_commit_hash()` - 1 doc test
+  - `MetricEvaluator::verify_baseline()` - 2 doc tests (verifying baseline, checking result)
+- Each doc comment includes Examples section with runnable code
+- Doc tests verify both basic usage and error handling
+
+**Test Results**:
+- 12 new doc tests added (70 total doc tests now)
+- All 70 doc tests passing
+- All 162 lib tests passing
+- All 103 main.rs tests passing
+- All 84 of 89 integration tests passing (5 pre-existing failures unrelated to this change)
+- Zero clippy warnings
+- Zero compiler warnings
+
+**Key Learnings**:
+- Doc tests for MetricError should show both error creation and Display implementation
+- MetricEvaluator::execute_measurement examples should show both success and error cases
+- verify_baseline examples should show the complete workflow with Result handling
+- Module-level doc comments provide good overview for library users
+
 ## 2026-04-02 23:59 UTC: Task Ready for Review (Priority 84)
 
 **Priority 84: TEST - Add Doc Tests for stuck_detector.rs** - READY FOR REVIEW

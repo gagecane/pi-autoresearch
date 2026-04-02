@@ -1,5 +1,32 @@
 # Progress
 
+## Session: 2026-04-02 23:59 UTC - READY FOR REVIEW (Priority 85)
+
+### Ready for Review
+- 🔄 **Priority 85: TEST - Add Doc Tests for metric_evaluator.rs** - READY FOR REVIEW
+  - Added 12 doc tests for metric_evaluator.rs module functions:
+    - `MetricError` - 2 doc tests (creating error, displaying with suggestions)
+    - `MetricEvaluator` struct - 4 doc tests (default, custom variance, execute measurement, verify baseline)
+    - `MetricEvaluator::new()` - 1 doc test with example
+    - `MetricEvaluator::execute_measurement()` - 2 doc tests (executing command, handling errors)
+    - `MetricEvaluator::get_git_commit_hash()` - 1 doc test
+    - `MetricEvaluator::verify_baseline()` - 2 doc tests (verifying baseline, checking result)
+  - Each doc comment includes Examples section with runnable code
+  - Doc tests verify both basic usage and error handling
+  - **Test Results**:
+    - 12 new doc tests added (70 total doc tests now)
+    - All 70 doc tests passing
+    - All 162 lib tests passing
+    - All 103 main.rs tests passing
+    - All 84 of 89 integration tests passing (5 pre-existing failures unrelated to this change)
+    - Zero clippy warnings
+    - Zero compiler warnings
+  - **Changes Made**:
+    - src/metric_evaluator.rs: Added comprehensive doc comments with examples to MetricError, MetricEvaluator struct, and all public methods
+    - tasks.md: Marked Priority 85 as COMPLETE
+    - progress.md: Updated with this session
+  - **Next Task**: Priority 86 - TEST - Add Doc Tests for pi_agent.rs
+
 ## Session: 2026-04-02 23:59 UTC - REVIEW COMPLETE (Priority 84)
 
 ### Review Completed
