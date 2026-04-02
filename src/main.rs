@@ -9,6 +9,7 @@ use std::fs::OpenOptions;
 use std::path::PathBuf;
 use tracing::{info, debug, warn, error};
 use tracing_subscriber::EnvFilter;
+use indicatif::{ProgressBar, ProgressStyle};
 
 
 #[derive(Parser, Debug, Default)]
@@ -235,6 +236,19 @@ fn init_logging(cli: &Cli) -> Result<()> {
         .init();
 
     Ok(())
+}
+
+/// Create a progress bar with a custom message and total iterations
+fn create_progress_bar(message: &str, total: u64) -> ProgressBar {
+    let pb = ProgressBar::new(total);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{spinner} {msg} [{bar:40}] {pos}/{len} ({eta})")
+            .unwrap()
+            .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ")
+    );
+    pb.set_message(message.to_string());
+    pb
 }
 
 fn validate_config(config: &Config) -> Result<()> {
@@ -702,16 +716,22 @@ fn verify_baseline(
     let timestamp = Utc::now().to_rfc3339();
 
     let mut runs: Vec<f64> = Vec::new();
+    
+    // Create progress bar for baseline verification (2 runs)
+    let pb = create_progress_bar("Verifying baseline", 2);
 
     for i in 1..=2 {
+        pb.set_message(format!("Run {}/2...", i));
         debug!("  Run {}/2... ", i);
 
         match execute_measurement(measurement_command) {
             Ok(value) => {
                 info!("{:.2}", value);
                 runs.push(value);
+                pb.inc(1);
             }
             Err(e) => {
+                pb.abandon_with_message("FAILED".to_string());
                 error!("FAILED");
                 return Ok(BaselineVerificationResult {
                     success: false,
@@ -721,6 +741,8 @@ fn verify_baseline(
             }
         }
     }
+    
+    pb.finish_and_clear();
 
     if runs.len() < 2 {
         return Ok(BaselineVerificationResult {
@@ -934,6 +956,9 @@ fn run_iterative_loop(
         info!("");
     }
     
+    // Create progress bar for iterations
+    let pb = create_progress_bar("Exploring solutions", max_iterations as u64);
+    
     while state.current_iteration < max_iterations {
         // Layer 3: Check total runtime limit
         if state.start_time.elapsed() >= total_timeout {
@@ -1081,7 +1106,22 @@ fn run_iterative_loop(
             }
             state.consecutive_no_improvement = 0;
         }
+        
+        // Update progress bar
+        pb.set_position(state.current_iteration as u64);
+        pb.set_message(format!(
+            "Iter {}/{} | Best: {:.1} ({:+.1}%) | Stall: {}/{}",
+            state.current_iteration,
+            max_iterations,
+            state.best_metric,
+            (baseline_value - state.best_metric) / baseline_value * 100.0,
+            state.consecutive_no_improvement,
+            stall_limit
+        ));
     }
+    
+    // Finish progress bar
+    pb.finish_and_clear();
     
     // Check if we hit max iterations
     if stuck_reason.is_none() && state.current_iteration >= max_iterations {
