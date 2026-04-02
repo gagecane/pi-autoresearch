@@ -2,6 +2,125 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-03 01:00 UTC: Action Logging Implementation Complete (Priority 94.3)
+
+**Priority 94.3: AUDIT - Implement Action Logging** - COMPLETE
+
+**Implementation Summary**:
+- Added 12 helper methods to `AuditLogger` for logging experiment actions
+- Integrated audit logging into main experiment flow
+- Audit logger is optional (only created when `--audit-log-path` flag is provided)
+- All action types covered: experiment lifecycle, iterations, git operations, config changes
+
+**Key Design Decisions**:
+1. **Helper Methods**: Each action type has a dedicated helper method with typed parameters
+   - Prevents errors from manual HashMap construction
+   - Provides clear API for common logging scenarios
+   - Includes comprehensive doc tests for each method
+
+2. **Optional Audit Logger**: Audit logging is opt-in via `--audit-log-path` flag
+   - No performance impact when not enabled
+   - Graceful degradation if logger initialization fails
+   - Works with both normal and resume experiment flows
+
+3. **Integration Points**: Audit logger passed through function call chain
+   - `run()` → `run_iterative_loop()` → `run_iteration()`
+   - Mutable reference allows logging at any point
+   - Optional type (Option<AuditLogger>) avoids breaking existing code
+
+4. **Session ID Handling**: Experiment start logged with "pre-session" placeholder
+   - Actual session_id generated later in `run_iterative_loop()`
+   - Future enhancement could update initial log entry with real session_id
+   - Current approach works because each entry is independent JSON object
+
+5. **Comprehensive Coverage**: All major experiment actions are logged
+   - Experiment lifecycle (start, end with success/failure)
+   - Iteration lifecycle (start, end with improvement/kept status)
+   - Git operations (branch created, commit created, merged, deleted, checked out)
+   - Configuration changes (key, old value, new value)
+
+**Public API**:
+```rust
+impl AuditLogger {
+    pub fn log_experiment_start(&mut self, session_id: &str, question: &str, metric: &str, baseline: f64, target_improvement: f64) -> Result<()>
+    pub fn log_experiment_end(&mut self, session_id: &str, target_achieved: bool, final_improvement: f64, iterations: usize, termination_reason: &str) -> Result<()>
+    pub fn log_iteration_start(&mut self, session_id: &str, iteration_num: usize, branch_name: &str) -> Result<()>
+    pub fn log_iteration_end(&mut self, session_id: &str, iteration_num: usize, improvement: f64, kept: bool) -> Result<()>
+    pub fn log_branch_created(&mut self, session_id: &str, branch_name: &str, base_commit: &str) -> Result<()>
+    pub fn log_commit_created(&mut self, session_id: &str, commit_hash: &str, commit_message: &str, branch_name: &str) -> Result<()>
+    pub fn log_branch_merged(&mut self, session_id: &str, branch_name: &str, target_branch: &str, merge_commit: &str) -> Result<()>
+    pub fn log_branch_deleted(&mut self, session_id: &str, branch_name: &str, reason: &str) -> Result<()>
+    pub fn log_branch_checked_out(&mut self, session_id: &str, branch_name: &str) -> Result<()>
+    pub fn log_config_changed(&mut self, session_id: &str, config_key: &str, old_value: &str, new_value: &str) -> Result<()>
+}
+```
+
+**Test Coverage**:
+- 14 comprehensive tests covering:
+  - Experiment start/end (success and failure cases)
+  - Iteration start/end (kept and reverted changes)
+  - All git operations (branch created, commit created, merged, deleted, checked out)
+  - Configuration changes
+  - Complete workflow test simulating full experiment lifecycle
+
+**Test Results**:
+- All 14 action logging tests pass
+- All 309 lib tests pass (295 + 14 new)
+- All 103 main.rs tests pass
+- Zero clippy warnings
+- Zero compiler warnings
+
+**Files Modified**:
+- `src/audit.rs`: Added 12 helper methods with doc tests (600+ lines)
+- `src/main.rs`: Integrated audit logging (added import, initialization, function parameter)
+- `tasks.md`: Updated Priority 94.3 as COMPLETE
+- `progress.md`: Added session summary
+- `memories.md`: Added this entry
+
+**Example Audit Log Entry**:
+```json
+{
+  "timestamp": "2026-04-03T01:00:00+00:00",
+  "event_type": "experiment_started",
+  "session_id": "pre-session",
+  "user_info": {
+    "username": "developer",
+    "git_user_name": "Developer Name",
+    "git_user_email": "dev@example.com",
+    "cwd": "/path/to/project",
+    "hostname": "dev-machine"
+  },
+  "action": "Starting experiment: Can we improve performance?",
+  "details": {
+    "question": "Can we improve performance?",
+    "metric": "cpu_time",
+    "baseline": "100.0",
+    "target_improvement": "0.20"
+  }
+}
+```
+
+**CLI Usage**:
+```bash
+# Enable audit logging with JSON format (default)
+pi-autoresearch --question "..." --audit-log-path audit.log
+
+# Specify format
+pi-autoresearch --question "..." --audit-log-path audit.log --audit-log-format json
+```
+
+**Next Steps**:
+- Priority 94.4: Implement Decision Logging (log why changes kept/reverted)
+- Priority 94.5: Implement Measurement Logging (log all measurement data)
+- Priority 94.6: Add Audit Log Integration Tests (end-to-end testing)
+
+**Future Considerations**:
+- Update initial "pre-session" log entry with actual session_id after generation
+- Add audit log rotation for long-running experiments
+- Add audit log compression for archival
+- Add audit log query and search capabilities
+- Add audit log validation and integrity checking
+
 ## 2026-04-02 25:00 UTC: Audit Log Core Implementation Complete (Priority 94.2)
 
 **Priority 94.2: AUDIT - Implement Audit Log Core** - COMPLETE
