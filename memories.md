@@ -2,6 +2,30 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 15:00 UTC: API Documentation Review Complete
+
+**Priority 60: DOCS - Add API Documentation** - REVIEW COMPLETE
+
+**Documentation Created**:
+- `docs/API.md` (23.2KB) - Comprehensive API reference for library users
+
+**Key Learnings**:
+1. Library has 7 public modules: cli, phase1_design, phase2_iterate, stuck_detector, metric_evaluator, pi_agent, session
+2. All modules are well-documented with complete type definitions and method signatures
+3. Usage examples include complete end-to-end experiment workflow and stuck detector direct usage
+4. Error handling uses anyhow::Result consistently across all modules
+5. Documentation aligns perfectly with actual implementation
+
+**Documentation Structure**:
+- Overview with module imports
+- Table of contents
+- Complete API reference for all 7 modules
+- Multiple usage examples (complete workflow, stuck detector usage)
+- Error handling guidelines
+- Cross-references to other documentation
+
+**Next Priority**: Priority 61 - DOCS - Add Migration Guide
+
 ## 2026-04-02 06:40 UTC: Research - Next Improvement Opportunities
 
 **Priority 58: RESEARCH - Discover Next Improvement Opportunities**
