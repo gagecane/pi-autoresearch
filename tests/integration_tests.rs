@@ -2,9 +2,6 @@ use assert_cmd::Command;
 use serde_json::Value;
 use std::process::Output;
 
-#[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
-
 fn get_cli_output(args: &[&str]) -> Output {
     let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
     cmd.args(args);
