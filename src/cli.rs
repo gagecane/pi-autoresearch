@@ -29,11 +29,88 @@ pub struct Cli {
 }
 
 impl Cli {
+    /// Returns the effective max iterations value, using CLI value if provided, otherwise default of 20.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { max_iterations: None, ..Default::default() };
+    /// assert_eq!(cli.effective_max_iterations(), 20);
+    ///
+    /// let cli = Cli { max_iterations: Some(50), ..Default::default() };
+    /// assert_eq!(cli.effective_max_iterations(), 50);
+    /// ```
     pub fn effective_max_iterations(&self) -> usize { self.max_iterations.unwrap_or(20) }
+
+    /// Returns the effective iteration timeout in seconds, using CLI value if provided, otherwise default of 10 minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { iteration_timeout_minutes: None, ..Default::default() };
+    /// assert_eq!(cli.effective_iteration_timeout_secs(), 600); // 10 minutes
+    ///
+    /// let cli = Cli { iteration_timeout_minutes: Some(30), ..Default::default() };
+    /// assert_eq!(cli.effective_iteration_timeout_secs(), 1800); // 30 minutes
+    /// ```
     pub fn effective_iteration_timeout_secs(&self) -> u64 { self.iteration_timeout_minutes.unwrap_or(10) as u64 * 60 }
+
+    /// Returns the effective total timeout in seconds, using CLI value if provided, otherwise default of 120 minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { total_timeout_minutes: None, ..Default::default() };
+    /// assert_eq!(cli.effective_total_timeout_secs(), 7200); // 120 minutes
+    ///
+    /// let cli = Cli { total_timeout_minutes: Some(60), ..Default::default() };
+    /// assert_eq!(cli.effective_total_timeout_secs(), 3600); // 60 minutes
+    /// ```
     pub fn effective_total_timeout_secs(&self) -> u64 { self.total_timeout_minutes.unwrap_or(120) as u64 * 60 }
+
+    /// Returns the effective stall limit value, using CLI value if provided, otherwise default of 5.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { stall_limit: None, ..Default::default() };
+    /// assert_eq!(cli.effective_stall_limit(), 5);
+    ///
+    /// let cli = Cli { stall_limit: Some(10), ..Default::default() };
+    /// assert_eq!(cli.effective_stall_limit(), 10);
+    /// ```
     pub fn effective_stall_limit(&self) -> usize { self.stall_limit.unwrap_or(5) }
+
+    /// Returns the effective convergence threshold value, using CLI value if provided, otherwise default of 0.01.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { convergence_threshold: None, ..Default::default() };
+    /// assert_eq!(cli.effective_convergence_threshold(), 0.01);
+    ///
+    /// let cli = Cli { convergence_threshold: Some(0.05), ..Default::default() };
+    /// assert_eq!(cli.effective_convergence_threshold(), 0.05);
+    /// ```
     pub fn effective_convergence_threshold(&self) -> f64 { self.convergence_threshold.unwrap_or(0.01) }
+
+    /// Returns the effective convergence window value, using CLI value if provided, otherwise default of 3.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { convergence_window: None, ..Default::default() };
+    /// assert_eq!(cli.effective_convergence_window(), 3);
+    ///
+    /// let cli = Cli { convergence_window: Some(10), ..Default::default() };
+    /// assert_eq!(cli.effective_convergence_window(), 10);
+    /// ```
     pub fn effective_convergence_window(&self) -> usize { self.convergence_window.unwrap_or(3) }
 }
 

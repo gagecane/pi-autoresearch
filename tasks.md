@@ -1792,3 +1792,77 @@
 - Priority 85: TEST - Add Doc Tests for metric_evaluator.rs
 - Priority 86: TEST - Add Doc Tests for pi_agent.rs
 - Priority 87: TEST - Add Doc Tests for session.rs
+
+## Priority 81: TEST - Add Doc Tests for cli.rs
+**Status**: TODO
+**Description**: Add doc tests for cli.rs module functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly
+**Functions to Document**:
+- `effective_max_iterations()`
+- `effective_iteration_timeout_secs()`
+- `effective_total_timeout_secs()`
+- `effective_stall_limit()`
+- `effective_convergence_threshold()`
+- `effective_convergence_window()`
+
+## Priority 82: TEST - Add Doc Tests for phase1_design.rs
+**Status**: TODO
+**Description**: Add doc tests for phase1_design.rs module functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly
+**Functions to Document**:
+- `ExperimentDesign::new()`
+- `BaselineRecord::new()`
+- `BaselineRecord::builder()`
+- `BaselineRecordBuilder` methods
+- `generate_design()`
+
+## Priority 83: TEST - Add Doc Tests for phase2_iterate.rs
+**Status**: TODO
+**Description**: Add doc tests for phase2_iterate.rs module functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly
+**Functions to Document**:
+- `IterationRecord::new()`
+- `IterationConfig`
+- `IterationExecutor::new()`
+- `IterationExecutor::run_iteration()`
+- `IterationExecutor::run_loop()`
+
+## Priority 84: TEST - Add Doc Tests for stuck_detector.rs
+**Status**: TODO
+**Description**: Add doc tests for stuck_detector.rs module functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly
+**Functions to Document**:
+- `StuckReason` enum
+- `IterationState` methods
+- `StuckDetectorConfig`
+- `StuckDetector` methods
+
+## Priority 85: TEST - Add Doc Tests for metric_evaluator.rs
+**Status**: TODO
+**Description**: Add doc tests for metric_evaluator.rs module functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly
+**Functions to Document**:
+- `MetricError`
+- `MetricEvaluator::new()`
+- `MetricEvaluator::execute_measurement()`
+- `MetricEvaluator::get_git_commit_hash()`
+- `MetricEvaluator::verify_baseline()`
+
+## Priority 86: TEST - Add Doc Tests for pi_agent.rs
+**Status**: TODO
+**Description**: Add doc tests for pi_agent.rs module functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly
+**Functions to Document**:
+- `PiAgent::new()`
+- `PiAgent::propose_change()`
+- `BranchManager` methods
+- `generate_uuid()`
+
+## Priority 87: TEST - Add Doc Tests for session.rs
+**Status**: TODO
+**Description**: Add doc tests for session.rs module functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly
+**Functions to Document**:
+- `ExperimentSession` methods
+- `SessionManager` methods
+- `generate_session_id()`
