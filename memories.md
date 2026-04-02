@@ -1,5 +1,30 @@
 # Memories
 
+## 2026-04-02 01:24:43 UTC - Test Coverage Improvements
+
+### Learnings about Coverage Testing
+- Many error handling paths are difficult to test in unit tests
+- File permission tests require special handling (creating files then removing permissions)
+- Some code paths require specific system conditions (HOME env var, git states)
+- Integration-level code often requires full workflow execution to test
+- 80.20% line coverage is a good baseline; reaching 85% may require:
+  - More integration tests
+  - Refactoring to make error paths more testable
+  - Accepting that some paths are inherently difficult to test
+
+### Test Patterns Learned
+- Use `tempfile::tempdir()` for isolated file system tests
+- Use `std::env::remove_var()` and `std::env::set_var()` for environment variable tests
+- Use `std::fs::set_permissions()` for permission-based tests
+- Mark tests as defensive when they depend on external state (git, file system)
+
+### Code Quality Insights
+- Error handling paths are often the most important to test
+- Edge cases (0, 1, large numbers) should always be tested
+- Display/Debug implementations should have dedicated tests
+- Helper functions like `is_valid_session_path()` benefit from comprehensive edge case testing
+
+
 Important learnings and context about the pi-autoresearch project.
 
 ## Project Overview
