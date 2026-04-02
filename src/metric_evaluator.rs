@@ -2,11 +2,30 @@ use anyhow::Result;
 use std::io::Write;
 use std::process::Command;
 use chrono::Utc;
+use colored::Colorize;
 
 #[derive(Debug)]
 pub struct MetricError { pub message: String }
 
-impl std::fmt::Display for MetricError { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.message) } }
+impl std::fmt::Display for MetricError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.message)?;
+        writeln!(f)?;
+        writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+        if self.message.contains("Empty measurement command") {
+            writeln!(f, "  - Provide a valid measurement command")?;
+            writeln!(f, "  - Example: --measure \"cargo bench --bench performance\"")?;
+        } else if self.message.contains("Measurement command failed") {
+            writeln!(f, "  - Check that the command exists and is executable")?;
+            writeln!(f, "  - Run the command manually to verify it works")?;
+        } else if self.message.contains("Could not parse measurement output") {
+            writeln!(f, "  - Ensure the command outputs a numeric value")?;
+            writeln!(f, "  - Example output: 42.5 or 100")?;
+        }
+        writeln!(f, "  - See: docs/TROUBLESHOOTING.md#measurement-issues")?;
+        Ok(())
+    }
+}
 impl std::error::Error for MetricError { fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None } }
 
 #[derive(Debug, Clone)]
@@ -67,7 +86,9 @@ mod tests {
     #[test]
     fn test_metric_error_display() {
         let error = MetricError { message: "Test error message".to_string() };
-        assert_eq!(format!("{}", error), "Test error message");
+        let output = format!("{}", error);
+        assert!(output.contains("Test error message"));
+        assert!(output.contains("SUGGESTION"));
     }
 
     #[test]

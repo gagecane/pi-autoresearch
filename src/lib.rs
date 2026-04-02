@@ -22,31 +22,45 @@ mod tests {
     #[test]
     fn test_stuck_reason_display_iteration_timeout() {
         let reason = StuckReason::IterationTimeout;
-        assert_eq!(format!("{}", reason), "Iteration timeout exceeded");
+        let output = format!("{}", reason);
+        assert!(output.contains("Iteration timeout exceeded"));
+        assert!(output.contains("SUGGESTION"));
+        assert!(output.contains("iteration_timeout_minutes"));
     }
 
     #[test]
     fn test_stuck_reason_display_stall_limit() {
         let reason = StuckReason::StallLimitReached;
-        assert_eq!(format!("{}", reason), "No improvement after multiple iterations (stall limit reached)");
+        let output = format!("{}", reason);
+        assert!(output.contains("No improvement after multiple iterations"));
+        assert!(output.contains("SUGGESTION"));
+        assert!(output.contains("stall_limit"));
     }
 
     #[test]
     fn test_stuck_reason_display_total_timeout() {
         let reason = StuckReason::TotalTimeout;
-        assert_eq!(format!("{}", reason), "Total experiment timeout exceeded");
+        let output = format!("{}", reason);
+        assert!(output.contains("Total experiment timeout exceeded"));
+        assert!(output.contains("SUGGESTION"));
+        assert!(output.contains("total_timeout_minutes"));
     }
 
     #[test]
     fn test_stuck_reason_display_convergence() {
         let reason = StuckReason::ConvergenceAchieved;
-        assert_eq!(format!("{}", reason), "Metric convergence achieved");
+        let output = format!("{}", reason);
+        assert!(output.contains("Metric convergence achieved"));
+        assert!(output.contains("NOTE"));
     }
 
     #[test]
     fn test_stuck_reason_display_max_iterations() {
         let reason = StuckReason::MaxIterationsReached;
-        assert_eq!(format!("{}", reason), "Maximum iterations reached");
+        let output = format!("{}", reason);
+        assert!(output.contains("Maximum iterations reached"));
+        assert!(output.contains("SUGGESTION"));
+        assert!(output.contains("max_iterations"));
     }
 
     #[test]

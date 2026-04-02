@@ -1,4 +1,5 @@
 use std::time::Instant;
+use colored::Colorize;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StuckReason {
@@ -12,11 +13,51 @@ pub enum StuckReason {
 impl std::fmt::Display for StuckReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            StuckReason::IterationTimeout => write!(f, "Iteration timeout exceeded"),
-            StuckReason::StallLimitReached => write!(f, "No improvement after multiple iterations (stall limit reached)"),
-            StuckReason::TotalTimeout => write!(f, "Total experiment timeout exceeded"),
-            StuckReason::ConvergenceAchieved => write!(f, "Metric convergence achieved"),
-            StuckReason::MaxIterationsReached => write!(f, "Maximum iterations reached"),
+            StuckReason::IterationTimeout => {
+                writeln!(f, "Iteration timeout exceeded")?;
+                writeln!(f)?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Increase iteration_timeout_minutes")?;
+                writeln!(f, "  - Check if the measurement command is slow")?;
+                writeln!(f, "  - See: docs/TROUBLESHOOTING.md#experiment-issues")?;
+                Ok(())
+            }
+            StuckReason::StallLimitReached => {
+                writeln!(f, "No improvement after multiple iterations (stall limit reached)")?;
+                writeln!(f)?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Increase stall_limit to allow more iterations")?;
+                writeln!(f, "  - Adjust target_improvement to a more achievable value")?;
+                writeln!(f, "  - Review the agent's proposed changes for effectiveness")?;
+                writeln!(f, "  - See: docs/TROUBLESHOOTING.md#experiment-issues")?;
+                Ok(())
+            }
+            StuckReason::TotalTimeout => {
+                writeln!(f, "Total experiment timeout exceeded")?;
+                writeln!(f)?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Increase total_timeout_minutes")?;
+                writeln!(f, "  - Reduce max_iterations for faster completion")?;
+                writeln!(f, "  - See: docs/TROUBLESHOOTING.md#experiment-issues")?;
+                Ok(())
+            }
+            StuckReason::ConvergenceAchieved => {
+                writeln!(f, "Metric convergence achieved")?;
+                writeln!(f)?;
+                writeln!(f, "  {}", "NOTE:".cyan().bold())?;
+                writeln!(f, "  - The metric has stabilized within the convergence threshold")?;
+                writeln!(f, "  - Consider adjusting convergence_threshold if more precision is needed")?;
+                Ok(())
+            }
+            StuckReason::MaxIterationsReached => {
+                writeln!(f, "Maximum iterations reached")?;
+                writeln!(f)?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Increase max_iterations to explore more possibilities")?;
+                writeln!(f, "  - Adjust target_improvement to a more achievable value")?;
+                writeln!(f, "  - See: docs/TROUBLESHOOTING.md#experiment-issues")?;
+                Ok(())
+            }
         }
     }
 }

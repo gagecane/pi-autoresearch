@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use tracing::{info, debug, warn, error};
 use tracing_subscriber::EnvFilter;
 use indicatif::{ProgressBar, ProgressStyle};
+use colored::Colorize;
 
 
 #[derive(Parser, Debug, Default)]
@@ -179,28 +180,93 @@ impl std::fmt::Display for ConfigValidationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ConfigValidationError::MaxVarianceOutOfRange { value } => {
-                write!(f, "max_variance must be between 0.0 and 1.0, got {:.2}", value)
+                write!(f, 
+                    "max_variance must be between 0.0 and 1.0, got {:.2}\n\n",
+                    value
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Set max_variance to a value between 0.0 and 1.0")?;
+                writeln!(f, "  - Example: \"max_variance\": 0.05 (for 5%% variance)")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
             ConfigValidationError::TargetImprovementNotPositive { value } => {
-                write!(f, "target_improvement must be positive, got {:.2}", value)
+                write!(f, 
+                    "target_improvement must be positive, got {:.2}\n\n",
+                    value
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Set target_improvement to a positive value")?;
+                writeln!(f, "  - Example: \"target_improvement\": 0.20 (for 20%% improvement)")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
             ConfigValidationError::MaxIterationsNotPositive { value } => {
-                write!(f, "max_iterations must be positive, got {}", value)
+                write!(f, 
+                    "max_iterations must be positive, got {}\n\n",
+                    value
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Set max_iterations to a positive integer")?;
+                writeln!(f, "  - Example: \"max_iterations\": 20")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
             ConfigValidationError::IterationTimeoutNotPositive { value } => {
-                write!(f, "iteration_timeout_minutes must be positive, got {}", value)
+                write!(f, 
+                    "iteration_timeout_minutes must be positive, got {}\n\n",
+                    value
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Set iteration_timeout_minutes to a positive integer")?;
+                writeln!(f, "  - Example: \"iteration_timeout_minutes\": 10")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
             ConfigValidationError::TotalTimeoutNotPositive { value } => {
-                write!(f, "total_timeout_minutes must be positive, got {}", value)
+                write!(f, 
+                    "total_timeout_minutes must be positive, got {}\n\n",
+                    value
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Set total_timeout_minutes to a positive integer")?;
+                writeln!(f, "  - Example: \"total_timeout_minutes\": 120")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
             ConfigValidationError::StallLimitNotPositive { value } => {
-                write!(f, "stall_limit must be positive, got {}", value)
+                write!(f, 
+                    "stall_limit must be positive, got {}\n\n",
+                    value
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Set stall_limit to a positive integer")?;
+                writeln!(f, "  - Example: \"stall_limit\": 5")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
             ConfigValidationError::ConvergenceWindowNotPositive { value } => {
-                write!(f, "convergence_window must be positive, got {}", value)
+                write!(f, 
+                    "convergence_window must be positive, got {}\n\n",
+                    value
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Set convergence_window to a positive integer")?;
+                writeln!(f, "  - Example: \"convergence_window\": 3")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
             ConfigValidationError::SessionFileInvalidPath { path } => {
-                write!(f, "session_file path is not valid or writable: {}", path)
+                write!(f, 
+                    "session_file path is not valid or writable: {}\n\n",
+                    path
+                )?;
+                writeln!(f, "  {}", "SUGGESTION:".yellow().bold())?;
+                writeln!(f, "  - Ensure the directory exists and is writable")?;
+                writeln!(f, "  - Use an absolute path if needed")?;
+                writeln!(f, "  - Example: \"session_file\": \"./autoresearch.jsonl\"")?;
+                writeln!(f, "  - See: docs/CONFIG.md for more information")?;
+                Ok(())
             }
         }
     }
@@ -736,7 +802,16 @@ fn verify_baseline(
                 return Ok(BaselineVerificationResult {
                     success: false,
                     baseline_record: None,
-                    error_message: Some(format!("Run {} failed: {}", i, e)),
+                    error_message: Some(format!(
+                        "Run {} failed: {}\n\n",
+                        i, e
+                    ) + &format!(
+                        "  {}\n",
+                        "SUGGESTION:".yellow().bold()
+                    ) + "  - Check that the measurement command works correctly\n" +
+                        "  - Ensure the command outputs a numeric value\n" +
+                        "  - Run the command manually to verify\n" +
+                        "  - See: docs/TROUBLESHOOTING.md#measurement-issues")
                 });
             }
         }
@@ -1066,6 +1141,10 @@ fn run_iterative_loop(
             Err(e) => {
                 if !cli.quiet {
                     error!("  ✗ Iteration failed: {}", e);
+                    eprintln!("  {}", "  SUGGESTION:".yellow().bold());
+                    eprintln!("    - Check that the agent's proposed changes are valid");
+                    eprintln!("    - Verify the measurement command still works after changes");
+                    eprintln!("    - See: docs/TROUBLESHOOTING.md#experiment-issues");
                 }
                 state.consecutive_no_improvement += 1;
             }
@@ -2181,6 +2260,11 @@ fn print_failure_report(result: &FinalizationResult, target_improvement: f64) {
         }
         if let Some(ref err) = result.error_message {
             error!("  Error: {}", err);
+            eprintln!("\n  {}", "SUGGESTION:".yellow().bold());
+            eprintln!("  - Review the recommendations above");
+            eprintln!("  - Try adjusting the target improvement or iteration limits");
+            eprintln!("  - Consider using --verbose for more detailed output");
+            eprintln!("  - See: docs/TROUBLESHOOTING.md#experiment-issues");
         }
     }
 }
@@ -2364,6 +2448,11 @@ async fn run() -> Result<()> {
             }
         } else {
             error!("Session '{}' not found in {}", session_id, cli.session_file);
+            eprintln!("\n  {}", "SUGGESTION:".yellow().bold());
+            eprintln!("  - Check the session ID is correct");
+            eprintln!("  - List available sessions with: --history");
+            eprintln!("  - Ensure the session file exists and is readable");
+            eprintln!("  - See: docs/USAGE.md#resuming-experiments");
             std::process::exit(1);
         }
     }
@@ -2404,11 +2493,20 @@ async fn run() -> Result<()> {
                 
                 if let Some(err) = result.error_message {
                     error!("Baseline verification failed: {}", err);
+                    eprintln!("\n  {}", "SUGGESTION:".yellow().bold());
+                    eprintln!("  - Check that the measurement command works correctly");
+                    eprintln!("  - Ensure the command outputs a numeric value");
+                    eprintln!("  - Run the command manually to verify: {}", get_measure(&cli, &config, "<not set>"));
+                    eprintln!("  - See: docs/TROUBLESHOOTING.md#measurement-issues");
                     std::process::exit(1);
                 }
             }
             Err(e) => {
                 error!("Baseline verification error: {}", e);
+                eprintln!("\n  {}", "SUGGESTION:".yellow().bold());
+                eprintln!("  - Check that all required flags are provided");
+                eprintln!("  - Verify the measurement command is valid");
+                eprintln!("  - See: docs/TROUBLESHOOTING.md#measurement-issues");
                 std::process::exit(1);
             }
         }
@@ -2475,6 +2573,11 @@ async fn run() -> Result<()> {
             if !baseline_result.success {
                 if let Some(err) = baseline_result.error_message {
                     error!("Baseline verification failed: {}", err);
+                    eprintln!("\n  {}", "SUGGESTION:".yellow().bold());
+                    eprintln!("  - Check that the measurement command works correctly");
+                    eprintln!("  - Ensure the command outputs a numeric value");
+                    eprintln!("  - Run the command manually to verify: {}", measure_to_use);
+                    eprintln!("  - See: docs/TROUBLESHOOTING.md#measurement-issues");
                     std::process::exit(1);
                 }
             }
