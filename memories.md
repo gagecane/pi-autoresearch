@@ -2,6 +2,38 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 23:59 UTC: Task Complete (Priority 83)
+
+**Priority 83: TEST - Add Doc Tests for phase2_iterate.rs** - COMPLETE
+
+**Changes Made**:
+- Added 13 doc tests for phase2_iterate.rs module
+- Documented all public structs and functions with comprehensive doc comments:
+  - `IterationRecord` struct - 2 doc tests (successful iteration, failed iteration)
+  - `IterationRecord::new()` - 1 doc test with example
+  - `IterationConfig` struct - 2 doc tests (default config, custom config)
+  - `IterationConfig::default()` - 1 doc test verifying all default values
+  - `IterationResult` struct - 2 doc tests (with data, empty result)
+  - `IterationExecutor` struct - 2 doc tests (default config, custom config)
+  - `IterationExecutor::new()` - 1 doc test
+  - `IterationExecutor::run_iteration()` - 1 doc test with measurement command
+  - `IterationExecutor::run_loop()` - 1 doc test with stopping conditions explanation
+- Each doc comment includes Examples section with runnable code
+- Doc tests verify both basic usage and edge cases
+
+**Test Results**:
+- 13 new doc tests added (37 total doc tests now)
+- All 37 doc tests passing
+- All 162 lib tests passing
+- All 103 main.rs tests passing
+- All 84 of 89 integration tests passing (5 pre-existing failures unrelated to this change)
+- Zero clippy warnings
+- Zero compiler warnings
+
+**Key Learnings**:
+- Doc tests for iteration executor need to use simple measurement commands like `echo 90`
+- The `run_loop` function has complex stopping conditions that should be documented clearly
+
 ## 2026-04-02 23:59 UTC: Task Complete (Priority 82)
 
 **Priority 82: TEST - Add Doc Tests for phase1_document.rs** - COMPLETE
