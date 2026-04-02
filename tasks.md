@@ -83,19 +83,112 @@
 **Review**: REVIEW COMPLETE - All 26 functions properly documented with comprehensive doc comments and examples. Implementation verified correct, all tests pass.
 
 ## Priority 92: FEATURE - Add Experiment Result Export
-**Status**: TODO
+**Status**: DECOMPOSED
 **Description**: Add experiment result export functionality (CSV, JSON, PDF, Markdown)
 **Rationale**: Users need to export experiment results for reporting and analysis
+**Decomposed Into**:
+- Priority 92.1: CLI - Add Export Flags
+- Priority 92.2: EXPORT - Implement JSON Export
+- Priority 92.3: EXPORT - Implement CSV Export
+- Priority 92.4: EXPORT - Implement Markdown Export
+- Priority 92.5: EXPORT - Implement PDF Export
+- Priority 92.6: TEST - Add Export Integration Tests
+
+## Priority 92.1: CLI - Add Export Flags
+**Status**: TODO
+**Description**: Add CLI flags for export functionality
+**Rationale**: Users need CLI interface to request experiment result exports
 **Implementation**:
-- Add `--export FORMAT` flag (csv, json, pdf, markdown)
-- Add `--export-path PATH` for output file location
-- Export all experiment data (baseline, iterations, final results)
-- Include metadata (question, metric, timestamps, git commits)
-- Format-specific features:
-  - CSV: Tabular data for spreadsheet analysis
-  - JSON: Complete data structure for programmatic access
-  - PDF: Professional report with charts and analysis
-  - Markdown: Human-readable report with tables
+- Add `--export FORMAT` flag to cli.rs (csv, json, pdf, markdown)
+- Add `--export-path PATH` flag for output file location
+- Add ExportFormat enum with variants: Csv, Json, Pdf, Markdown
+- Add helper function `get_export_format()` and `get_export_path()`
+- Default export path: "export_{session_id}_{format}.{ext}"
+**Test**:
+- Verify flags are recognized in --help
+- Verify default export path is generated correctly
+- Verify custom export path is used when provided
+
+## Priority 92.2: EXPORT - Implement JSON Export
+**Status**: TODO
+**Description**: Implement JSON export for experiment results
+**Rationale**: JSON provides complete data structure for programmatic access
+**Implementation**:
+- Create `export_json(session: &ExperimentSession, path: &str) -> Result<()>`
+- Export complete ExperimentSession structure
+- Include all metadata (session_id, question, design, baseline, iterations)
+- Pretty-print JSON with 2-space indentation
+- Add export timestamp and pi-autoresearch version
+**Test**:
+- Verify JSON is valid and parseable
+- Verify all session data is included
+- Verify export file is created at correct path
+
+## Priority 92.3: EXPORT - Implement CSV Export
+**Status**: TODO
+**Description**: Implement CSV export for experiment results
+**Rationale**: CSV provides tabular data for spreadsheet analysis
+**Implementation**:
+- Create `export_csv(session: &ExperimentSession, path: &str) -> Result<()>`
+- Export iterations as rows with columns:
+  - iteration, timestamp, metric_value, improvement_ratio, status, git_commit, runtime_seconds
+- Include baseline as first row
+- Include metadata as CSV comments at top
+**Test**:
+- Verify CSV is valid and parseable
+- Verify all iterations are included
+- Verify baseline is first row
+- Verify headers are correct
+
+## Priority 92.4: EXPORT - Implement Markdown Export
+**Status**: TODO
+**Description**: Implement Markdown export for experiment results
+**Rationale**: Markdown provides human-readable reports with tables
+**Implementation**:
+- Create `export_markdown(session: &ExperimentSession, path: &str) -> Result<()>`
+- Generate structured report with:
+  - Title with question and session ID
+  - Summary section (metric, baseline, best improvement, iterations)
+  - Timeline table (iteration, timestamp, value, improvement, status)
+  - Final results section
+  - Metadata section (timestamps, git commits, config)
+**Test**:
+- Verify Markdown is valid and readable
+- Verify all sections are included
+- Verify tables are properly formatted
+
+## Priority 92.5: EXPORT - Implement PDF Export
+**Status**: TODO
+**Description**: Implement PDF export for experiment results
+**Rationale**: PDF provides professional reports for sharing
+**Implementation**:
+- Add `enigo` or `tiny-skia` crate for PDF generation (or use `enpdf` if available)
+- Create `export_pdf(session: &ExperimentSession, path: &str) -> Result<()>`
+- Generate professional report with:
+  - Title page with question and metadata
+  - Executive summary
+  - Iteration timeline chart (if possible, otherwise table)
+  - Results table
+  - Footer with timestamp and version
+**Note**: PDF generation may require external dependencies or could be implemented as "generate Markdown and convert to PDF using system tools"
+**Test**:
+- Verify PDF is valid and can be opened
+- Verify all content is included
+- Verify formatting is professional
+
+## Priority 92.6: TEST - Add Export Integration Tests
+**Status**: TODO
+**Description**: Add integration tests for export functionality
+**Rationale**: Verify export works end-to-end with real experiments
+**Implementation**:
+- Test `--export json` with real experiment
+- Test `--export csv` with real experiment
+- Test `--export markdown` with real experiment
+- Test `--export pdf` with real experiment
+- Test `--export-path` custom path
+- Test export with multiple iterations
+- Test export with failed experiment
+- Verify exported files are valid and contain correct data
 
 ## Priority 93: FEATURE - Add Experiment Notification System
 **Status**: TODO

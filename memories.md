@@ -2,6 +2,59 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 07:00 UTC: Task Decomposition (Priority 92)
+
+**Priority 92: FEATURE - Add Experiment Result Export** - DECOMPOSED
+
+**Decomposition Rationale**:
+- Task was too abstract to implement in a single session
+- Multiple distinct export formats require separate implementation
+- Each format has different technical requirements and dependencies
+
+**Decomposed Into 6 Tasks**:
+1. **Priority 92.1: CLI - Add Export Flags**
+   - Add --export FORMAT and --export-path PATH flags
+   - Create ExportFormat enum
+   - Add helper functions
+
+2. **Priority 92.2: EXPORT - Implement JSON Export**
+   - Export complete ExperimentSession structure
+   - Pretty-print with metadata
+   - Most straightforward implementation
+
+3. **Priority 92.3: EXPORT - Implement CSV Export**
+   - Export iterations as tabular data
+   - Include baseline as first row
+   - Add metadata as comments
+
+4. **Priority 92.4: EXPORT - Implement Markdown Export**
+   - Generate human-readable report
+   - Include tables and sections
+   - No external dependencies needed
+
+5. **Priority 92.5: EXPORT - Implement PDF Export**
+   - May require external dependencies
+   - Could use Markdown-to-PDF conversion
+   - Most complex implementation
+
+6. **Priority 92.6: TEST - Add Export Integration Tests**
+   - Test all formats end-to-end
+   - Verify file validity
+   - Test with various experiment scenarios
+
+**Key Learnings**:
+- Decompose abstract feature tasks into concrete implementation steps
+- Order tasks by complexity (JSON → CSV → Markdown → PDF)
+- Include integration tests as final task
+- Each subtask should be completable in one session
+
+**Changes Made**:
+- tasks.md: Decomposed Priority 92 into 6 detailed subtasks
+- progress.md: Updated with decomposition session
+- memories.md: Added this entry
+
+**Next Task**: Priority 92.1 - CLI - Add Export Flags
+
 ## 2026-04-03 00:30 UTC: Task Ready for Review (Priority 91)
 
 **Priority 91: TEST - Add Doc Tests for main.rs** - READY FOR REVIEW
