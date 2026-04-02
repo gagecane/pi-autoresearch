@@ -1353,14 +1353,30 @@
 **Review**: Implementation verified correct - all 7 modules documented with complete type definitions, method signatures, default values, comprehensive usage examples (complete experiment workflow, stuck detector direct usage), error handling guidelines, and cross-references to related documentation. Documentation aligns with actual implementation.
 
 ## Priority 61: DOCS - Add Migration Guide
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Create migration guide for config file changes
 **Rationale**: Users need help migrating between versions
-**Content to Create**:
-- Version-by-version migration instructions
-- Breaking changes documentation
-- Config file format changes
-- CLI argument changes
+**Content Created**:
+- Version-by-version migration instructions (0.1.0, Unreleased)
+- Breaking changes documentation (config validation, session file format, git branch naming)
+- Config file format changes (new fields, validation rules)
+- CLI argument changes (new flags, no removed flags)
+- Migration steps for pre-0.1.0 development versions
+- General migration tips (config file, session files, git branches)
+- Troubleshooting section with common issues
+- Links to related documentation
+**File Created**:
+- `docs/MIGRATION.md` (8.2KB) - Comprehensive migration guide
+**Documentation Includes**:
+- Version history with planned changes
+- Config file changes with examples
+- CLI changes with flag reference table
+- Session file format changes with backward compatibility notes
+- Git branch naming format changes
+- Logging changes with RUST_LOG configuration
+- Migration steps for pre-0.1.0 users
+- Troubleshooting for common migration issues
+**Review**: Implementation verified correct - comprehensive migration guide created, covers all major version changes, provides clear migration steps, includes troubleshooting section, links to related documentation
 
 ## Priority 62: DOCS - Add More Examples
 **Status**: TODO
