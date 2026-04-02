@@ -295,17 +295,105 @@
 **Review**: REVIEW COMPLETE - Integration tests properly verify export functionality end-to-end, all tests pass consistently
 
 ## Priority 93: FEATURE - Add Experiment Notification System
-**Status**: TODO
-**Description**: Add experiment notification system (email, Slack, webhook)
+**Status**: DECOMPOSED
+**Description**: Add experiment notification system (email, slack, webhook)
 **Rationale**: Users need to be notified when experiments complete or fail
+**Decomposed Into**:
+- Priority 93.1: CLI - Add Notification Flags
+- Priority 93.2: NOTIFICATION - Implement Webhook Notifications
+- Priority 93.3: NOTIFICATION - Implement Slack Notifications
+- Priority 93.4: NOTIFICATION - Implement Email Notifications
+- Priority 93.5: NOTIFICATION - Add Iteration Milestone Notifications
+- Priority 93.6: TEST - Add Notification Integration Tests
+
+## Priority 93.1: CLI - Add Notification Flags
+**Status**: TODO
+**Description**: Add CLI flags for notification functionality
+**Rationale**: Users need CLI interface to configure notifications
 **Implementation**:
-- Add `--notify-provider PROVIDER` flag (email, slack, webhook)
+- Add `NotificationProvider` enum with variants: Webhook, Slack, Email
+- Add `--notify-provider PROVIDER` flag (webhook, slack, email)
 - Add `--notify-url URL` for webhook/Slack URL
-- Add `--notify-email EMAIL` for email notifications
-- Notify on experiment completion (success/failure)
-- Notify on iteration milestones (every N iterations)
-- Include summary in notifications (best improvement, iterations, runtime)
-- Support multiple notification providers
+- Add `--notify-email EMAIL` for email recipient
+- Add `--notify-milestone N` for iteration milestone notifications (every N iterations)
+- Add helper methods on Cli struct to retrieve notification settings
+**Tests**:
+- Test enum variant parsing
+- Test CLI flag parsing for all options
+- Test helper methods return correct values
+
+## Priority 93.2: NOTIFICATION - Implement Webhook Notifications
+**Status**: TODO
+**Description**: Implement webhook notification provider
+**Rationale**: Webhooks provide flexible integration with external systems
+**Implementation**:
+- Create `src/notification.rs` module
+- Implement `send_webhook(url: &str, session: &ExperimentSession) -> Result<()>`
+- Send JSON payload with experiment summary
+- Support custom webhook URL
+- Include session_id, question, best_improvement, iterations, runtime
+**Tests**:
+- Test webhook payload structure
+- Test URL validation
+- Test error handling for failed requests
+
+## Priority 93.3: NOTIFICATION - Implement Slack Notifications
+**Status**: TODO
+**Description**: Implement Slack notification provider
+**Rationale**: Slack is widely used for team notifications
+**Implementation**:
+- Implement `send_slack(webhook_url: &str, session: &ExperimentSession) -> Result<()>`
+- Format message for Slack (blocks/attachments)
+- Include color-coded status (green for success, red for failure)
+- Use Slack webhook API
+**Tests**:
+- Test Slack message formatting
+- Test webhook integration
+- Test error handling
+
+## Priority 93.4: NOTIFICATION - Implement Email Notifications
+**Status**: TODO
+**Description**: Implement email notification provider
+**Rationale**: Email provides reliable notifications
+**Implementation**:
+- Implement `send_email(to: &str, session: &ExperimentSession) -> Result<()>`
+- Use SMTP or email service API
+- Format HTML email with experiment summary
+- Include attachment options (JSON/CSV)
+**Tests**:
+- Test email formatting
+- Test SMTP configuration
+- Test error handling
+
+## Priority 93.5: NOTIFICATION - Add Iteration Milestone Notifications
+**Status**: TODO
+**Description**: Add notifications at iteration milestones
+**Rationale**: Users want progress updates during long experiments
+**Implementation**:
+- Add milestone tracking in experiment loop
+- Send notification every N iterations (configurable)
+- Include current iteration, best improvement so far, elapsed time
+- Don't spam - only send on milestones
+**Tests**:
+- Test milestone calculation
+- Test notification frequency
+- Test with different milestone values
+
+## Priority 93.6: TEST - Add Notification Integration Tests
+**Status**: TODO
+**Description**: Add integration tests for notification functionality
+**Rationale**: Verify notifications work end-to-end
+**Implementation**:
+- Mock webhook endpoints for testing
+- Test all notification providers
+- Test milestone notifications
+- Test error scenarios
+- Test notification payload content
+**Tests**:
+- Integration test for webhook notifications
+- Integration test for Slack notifications
+- Integration test for email notifications
+- Integration test for milestone notifications
 
 ## Priority 94: FEATURE - Add Experiment Audit Logging
 **Status**: TODO
