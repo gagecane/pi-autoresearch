@@ -747,7 +747,7 @@ pi-autoresearch --question "..." --audit-log-path audit.log --audit-log-format j
 ```
 
 ## Priority 94.4: AUDIT - Implement Decision Logging
-**Status**: COMPLETE ✅
+**Status**: READY FOR REVIEW 🔄
 **Description**: Implement logging of experiment decisions
 **Rationale**: Track why changes were kept or reverted
 **Implementation**:
