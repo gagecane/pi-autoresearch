@@ -18,6 +18,21 @@ pub enum ExportFormat {
     Markdown,
 }
 
+/// Notification provider for experiment updates
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub enum NotificationProvider {
+    /// Webhook for custom integrations
+    #[value(name = "webhook")]
+    #[default]
+    Webhook,
+    /// Slack for team notifications
+    #[value(name = "slack")]
+    Slack,
+    /// Email for reliable notifications
+    #[value(name = "email")]
+    Email,
+}
+
 impl ExportFormat {
     /// Returns the file extension for this format
     pub fn extension(&self) -> &'static str {
@@ -58,6 +73,10 @@ pub struct Cli {
     #[arg(long)] pub ralph_task_file: Option<String>,
     #[arg(long, value_enum)] pub export: Option<ExportFormat>,
     #[arg(long, alias = "export-path")] pub export_path: Option<String>,
+    #[arg(long, value_enum)] pub notify_provider: Option<NotificationProvider>,
+    #[arg(long, alias = "notify-url")] pub notify_url: Option<String>,
+    #[arg(long, alias = "notify-email")] pub notify_email: Option<String>,
+    #[arg(long, alias = "notify-milestone")] pub notify_milestone: Option<usize>,
 }
 
 impl Cli {
@@ -187,6 +206,92 @@ impl Cli {
             let format_ext = self.export.as_ref().map_or("json", |f| f.extension());
             format!("export_{}_{}.{}", session_id, format_ext, format_ext)
         }
+    }
+
+    /// Returns the notification provider if specified, otherwise None.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, NotificationProvider};
+    /// let cli = Cli { notify_provider: None, ..Default::default() };
+    /// assert!(cli.get_notify_provider().is_none());
+    ///
+    /// let cli = Cli { notify_provider: Some(NotificationProvider::Slack), ..Default::default() };
+    /// assert_eq!(cli.get_notify_provider(), Some(&NotificationProvider::Slack));
+    /// ```
+    pub fn get_notify_provider(&self) -> Option<&NotificationProvider> {
+        self.notify_provider.as_ref()
+    }
+
+    /// Returns the notification URL if specified, otherwise None.
+    ///
+    /// Used for webhook and Slack notifications.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { notify_url: None, ..Default::default() };
+    /// assert!(cli.get_notify_url().is_none());
+    ///
+    /// let cli = Cli { notify_url: Some("https://hooks.slack.com/services/xxx".to_string()), ..Default::default() };
+    /// assert_eq!(cli.get_notify_url(), Some(&"https://hooks.slack.com/services/xxx".to_string()));
+    /// ```
+    pub fn get_notify_url(&self) -> Option<&String> {
+        self.notify_url.as_ref()
+    }
+
+    /// Returns the notification email if specified, otherwise None.
+    ///
+    /// Used for email notifications.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { notify_email: None, ..Default::default() };
+    /// assert!(cli.get_notify_email().is_none());
+    ///
+    /// let cli = Cli { notify_email: Some("user@example.com".to_string()), ..Default::default() };
+    /// assert_eq!(cli.get_notify_email(), Some(&"user@example.com".to_string()));
+    /// ```
+    pub fn get_notify_email(&self) -> Option<&String> {
+        self.notify_email.as_ref()
+    }
+
+    /// Returns the notification milestone if specified, otherwise None.
+    ///
+    /// When set, sends notifications every N iterations.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { notify_milestone: None, ..Default::default() };
+    /// assert!(cli.get_notify_milestone().is_none());
+    ///
+    /// let cli = Cli { notify_milestone: Some(5), ..Default::default() };
+    /// assert_eq!(cli.get_notify_milestone(), Some(&5));
+    /// ```
+    pub fn get_notify_milestone(&self) -> Option<&usize> {
+        self.notify_milestone.as_ref()
+    }
+
+    /// Returns true if notifications are configured (provider is specified).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, NotificationProvider};
+    /// let cli = Cli { notify_provider: None, ..Default::default() };
+    /// assert!(!cli.has_notifications_enabled());
+    ///
+    /// let cli = Cli { notify_provider: Some(NotificationProvider::Webhook), ..Default::default() };
+    /// assert!(cli.has_notifications_enabled());
+    /// ```
+    pub fn has_notifications_enabled(&self) -> bool {
+        self.notify_provider.is_some()
     }
 }
 
@@ -469,5 +574,187 @@ mod tests {
         ]);
         assert_eq!(cli.export, Some(ExportFormat::Csv));
         assert_eq!(cli.export_path, Some("/tmp/report.csv".to_string()));
+    }
+
+    #[test]
+    fn test_notification_provider_default() {
+        assert_eq!(NotificationProvider::default(), NotificationProvider::Webhook);
+    }
+
+    #[test]
+    fn test_notification_provider_variants() {
+        let providers = vec![
+            NotificationProvider::Webhook,
+            NotificationProvider::Slack,
+            NotificationProvider::Email,
+        ];
+        assert_eq!(providers.len(), 3);
+    }
+
+    #[test]
+    fn test_cli_parse_notify_provider() {
+        let cli = Cli::parse_from(["test", "--notify-provider", "webhook"]);
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Webhook));
+
+        let cli = Cli::parse_from(["test", "--notify-provider", "slack"]);
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Slack));
+
+        let cli = Cli::parse_from(["test", "--notify-provider", "email"]);
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Email));
+    }
+
+    #[test]
+    fn test_cli_parse_notify_url() {
+        let cli = Cli::parse_from(["test", "--notify-url", "https://hooks.example.com/xxx"]);
+        assert_eq!(cli.notify_url, Some("https://hooks.example.com/xxx".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_notify_email() {
+        let cli = Cli::parse_from(["test", "--notify-email", "user@example.com"]);
+        assert_eq!(cli.notify_email, Some("user@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_notify_milestone() {
+        let cli = Cli::parse_from(["test", "--notify-milestone", "5"]);
+        assert_eq!(cli.notify_milestone, Some(5));
+    }
+
+    #[test]
+    fn test_get_notify_provider_none() {
+        let cli = Cli { notify_provider: None, ..Default::default() };
+        assert!(cli.get_notify_provider().is_none());
+    }
+
+    #[test]
+    fn test_get_notify_provider_some() {
+        let cli = Cli { notify_provider: Some(NotificationProvider::Slack), ..Default::default() };
+        assert_eq!(cli.get_notify_provider(), Some(&NotificationProvider::Slack));
+    }
+
+    #[test]
+    fn test_get_notify_url_none() {
+        let cli = Cli { notify_url: None, ..Default::default() };
+        assert!(cli.get_notify_url().is_none());
+    }
+
+    #[test]
+    fn test_get_notify_url_some() {
+        let cli = Cli { notify_url: Some("https://hooks.slack.com/xxx".to_string()), ..Default::default() };
+        assert_eq!(cli.get_notify_url(), Some(&"https://hooks.slack.com/xxx".to_string()));
+    }
+
+    #[test]
+    fn test_get_notify_email_none() {
+        let cli = Cli { notify_email: None, ..Default::default() };
+        assert!(cli.get_notify_email().is_none());
+    }
+
+    #[test]
+    fn test_get_notify_email_some() {
+        let cli = Cli { notify_email: Some("user@example.com".to_string()), ..Default::default() };
+        assert_eq!(cli.get_notify_email(), Some(&"user@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_get_notify_milestone_none() {
+        let cli = Cli { notify_milestone: None, ..Default::default() };
+        assert!(cli.get_notify_milestone().is_none());
+    }
+
+    #[test]
+    fn test_get_notify_milestone_some() {
+        let cli = Cli { notify_milestone: Some(10), ..Default::default() };
+        assert_eq!(cli.get_notify_milestone(), Some(&10));
+    }
+
+    #[test]
+    fn test_has_notifications_enabled_none() {
+        let cli = Cli { notify_provider: None, ..Default::default() };
+        assert!(!cli.has_notifications_enabled());
+    }
+
+    #[test]
+    fn test_has_notifications_enabled_webhook() {
+        let cli = Cli { notify_provider: Some(NotificationProvider::Webhook), ..Default::default() };
+        assert!(cli.has_notifications_enabled());
+    }
+
+    #[test]
+    fn test_has_notifications_enabled_slack() {
+        let cli = Cli { notify_provider: Some(NotificationProvider::Slack), ..Default::default() };
+        assert!(cli.has_notifications_enabled());
+    }
+
+    #[test]
+    fn test_has_notifications_enabled_email() {
+        let cli = Cli { notify_provider: Some(NotificationProvider::Email), ..Default::default() };
+        assert!(cli.has_notifications_enabled());
+    }
+
+    #[test]
+    fn test_cli_parse_notify_provider_and_url() {
+        let cli = Cli::parse_from([
+            "test",
+            "--notify-provider", "slack",
+            "--notify-url", "https://hooks.slack.com/services/xxx"
+        ]);
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Slack));
+        assert_eq!(cli.notify_url, Some("https://hooks.slack.com/services/xxx".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_notify_provider_and_email() {
+        let cli = Cli::parse_from([
+            "test",
+            "--notify-provider", "email",
+            "--notify-email", "user@example.com"
+        ]);
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Email));
+        assert_eq!(cli.notify_email, Some("user@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_notify_with_milestone() {
+        let cli = Cli::parse_from([
+            "test",
+            "--notify-provider", "webhook",
+            "--notify-url", "https://hooks.example.com/xxx",
+            "--notify-milestone", "5"
+        ]);
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Webhook));
+        assert_eq!(cli.notify_url, Some("https://hooks.example.com/xxx".to_string()));
+        assert_eq!(cli.notify_milestone, Some(5));
+    }
+
+    #[test]
+    fn test_cli_parse_all_notify_options() {
+        let cli = Cli::parse_from([
+            "test",
+            "--notify-provider", "slack",
+            "--notify-url", "https://hooks.slack.com/services/xxx",
+            "--notify-email", "fallback@example.com",
+            "--notify-milestone", "10"
+        ]);
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Slack));
+        assert_eq!(cli.notify_url, Some("https://hooks.slack.com/services/xxx".to_string()));
+        assert_eq!(cli.notify_email, Some("fallback@example.com".to_string()));
+        assert_eq!(cli.notify_milestone, Some(10));
+    }
+
+    #[test]
+    fn test_cli_parse_notify_aliases() {
+        // Test notify-url alias
+        let cli = Cli::parse_from(["test", "--notify-url", "https://example.com"]);
+        assert_eq!(cli.notify_url, Some("https://example.com".to_string()));
+
+        // Test notify-email alias
+        let cli = Cli::parse_from(["test", "--notify-email", "test@example.com"]);
+        assert_eq!(cli.notify_email, Some("test@example.com".to_string()));
+
+        // Test notify-milestone alias
+        let cli = Cli::parse_from(["test", "--notify-milestone", "7"]);
+        assert_eq!(cli.notify_milestone, Some(7));
     }
 }

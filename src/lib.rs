@@ -7,7 +7,7 @@ pub mod pi_agent;
 pub mod session;
 pub mod export;
 
-pub use cli::{Cli, ExportFormat};
+pub use cli::{Cli, ExportFormat, NotificationProvider};
 pub use phase1_design::{ExperimentDesign, generate_design};
 pub use phase2_iterate::IterationRecord;
 pub use stuck_detector::{StuckReason, StuckDetector, StuckDetectorConfig, IterationState};

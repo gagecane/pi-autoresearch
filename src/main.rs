@@ -11,7 +11,7 @@ use tracing::{info, debug, warn, error};
 use tracing_subscriber::EnvFilter;
 use indicatif::{ProgressBar, ProgressStyle};
 use colored::Colorize;
-use pi_autoresearch::cli::ExportFormat;
+use pi_autoresearch::cli::{ExportFormat, NotificationProvider};
 use pi_autoresearch::export::export;
 use pi_autoresearch::session::ExperimentSession as LibraryExperimentSession;
 use pi_autoresearch::phase1_design::{ExperimentDesign as LibraryExperimentDesign, BaselineRecord as LibraryBaselineRecord};
@@ -142,6 +142,22 @@ struct Cli {
     /// Export path for output file (default: export_{session_id}_{format}.{ext})
     #[arg(long, alias = "export-path")]
     export_path: Option<String>,
+
+    /// Notification provider (webhook, slack, email)
+    #[arg(long, value_enum)]
+    notify_provider: Option<NotificationProvider>,
+
+    /// Notification URL for webhook/Slack
+    #[arg(long, alias = "notify-url")]
+    notify_url: Option<String>,
+
+    /// Notification email recipient
+    #[arg(long, alias = "notify-email")]
+    notify_email: Option<String>,
+
+    /// Send notifications every N iterations (milestone notifications)
+    #[arg(long, alias = "notify-milestone")]
+    notify_milestone: Option<usize>,
 }
 
 /// Configuration loaded from config file
