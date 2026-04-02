@@ -1,5 +1,32 @@
 # Memories
 
+## 2026-04-02 03:00:00 UTC - API.md Review
+
+### Review Findings
+- Reviewed Priority 45: DOCS - Add API Documentation
+- Found significant discrepancies between documentation and implementation
+- Fixed all data type definitions to match actual structs:
+  - ExperimentDesign: Removed non-existent fields (question, design, max_iterations), corrected measurement field name
+  - BaselineRecord: Completely rewrote with correct fields (timestamp, git_commit, metric, measurement_command, value, verification_runs, variance, within_threshold)
+  - IterationRecord: Rewrote with correct fields (iteration, timestamp, agent_action, metric_value, improvement, kept)
+  - ExperimentSession: Rewrote with correct structure (includes nested design and baseline_record)
+  - FinalizationResult: Rewrote with correct fields (success, final_improvement, best_value, branch_name, commit_message, key_changes, error_message, failure_report)
+  - FailureReport: Rewrote with correct fields (best_improvement, best_value, baseline, target_improvement, iterations_completed, stuck_reason, recommendations)
+  - StuckReason: Fixed variant name (Convergence -> ConvergenceAchieved)
+  - ConfigValidationError: Fixed all variant names to match implementation (e.g., MaxVarianceOutOfRange instead of InvalidMaxVariance)
+  - BaselineError: Simplified to just message field
+- Fixed all function signatures to match implementation
+- Updated code examples to use correct API
+- Marked Priority 45 as COMPLETE in tasks.md
+
+### Documentation Quality Learnings
+- API documentation must be verified against actual implementation
+- Data type definitions are easy to get wrong without checking source
+- Function signatures change during development and docs can become stale
+- Examples should be tested against actual API to ensure they compile
+- Regular audits of documentation against code are necessary
+- Review process catches critical errors that would mislead library users
+
 ## 2026-04-02 02:15:00 UTC - EXAMPLES.md Review
 
 ### Review Findings
