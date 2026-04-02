@@ -1,5 +1,33 @@
 # Progress
 
+## Session: 2026-04-02 14:45 UTC - API DOCUMENTATION COMPLETE
+
+### Completed
+- ✅ **Priority 60: DOCS - Add API Documentation**
+  - Created comprehensive API documentation in `docs/API.md` (23.2KB)
+  - **Documentation Structure**:
+    - Overview with module imports
+    - Table of contents
+    - Complete API reference for all 7 modules:
+      1. `cli` - CLI argument definitions (Cli struct)
+      2. `phase1_design` - Experiment design and baseline (ExperimentDesign, BaselineRecord, BaselineRecordBuilder, BaselineVerificationResult, generate_design())
+      3. `phase2_iterate` - Iteration execution (IterationRecord, IterationConfig, IterationResult, IterationExecutor)
+      4. `stuck_detector` - Stuck detection (StuckReason, IterationState, StuckDetectorConfig, StuckDetector)
+      5. `metric_evaluator` - Metric evaluation (MetricEvaluator)
+      6. `pi_agent` - AI agent (PiAgent)
+      7. `session` - Session management (ExperimentSession, SessionRecord, SessionManager, generate_session_id())
+  - **Content Includes**:
+    - Complete type definitions with all fields
+    - All public methods with signatures
+    - Default values for configuration structs
+    - Multiple usage examples:
+      - Complete experiment workflow (end-to-end example)
+      - Stuck detector direct usage example
+      - Individual type construction examples
+    - Error handling guidelines
+    - Cross-references to other documentation (USAGE.md, CONFIG.md, EXAMPLES.md, specs/)
+  - **Review**: Ready for review - all API surfaces documented with comprehensive examples
+
 ## Session: 2026-04-02 08:15 UTC - CODE QUALITY COMPLETE
 
 ### Completed
