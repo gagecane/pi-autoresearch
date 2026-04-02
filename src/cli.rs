@@ -1,4 +1,34 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+
+/// Export format for experiment results
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub enum ExportFormat {
+    /// CSV format for spreadsheet analysis
+    #[value(name = "csv")]
+    Csv,
+    /// JSON format for programmatic access
+    #[value(name = "json")]
+    #[default]
+    Json,
+    /// PDF format for professional reports
+    #[value(name = "pdf")]
+    Pdf,
+    /// Markdown format for human-readable reports
+    #[value(name = "markdown")]
+    Markdown,
+}
+
+impl ExportFormat {
+    /// Returns the file extension for this format
+    pub fn extension(&self) -> &'static str {
+        match self {
+            ExportFormat::Csv => "csv",
+            ExportFormat::Json => "json",
+            ExportFormat::Pdf => "pdf",
+            ExportFormat::Markdown => "md",
+        }
+    }
+}
 
 #[derive(Parser, Debug, Clone, Default)]
 #[command(name = "pi-autoresearch")]
@@ -26,6 +56,8 @@ pub struct Cli {
     #[arg(long)] pub beads_enabled: bool,
     #[arg(long)] pub ralph_tui_enabled: bool,
     #[arg(long)] pub ralph_task_file: Option<String>,
+    #[arg(long, value_enum)] pub export: Option<ExportFormat>,
+    #[arg(long, alias = "export-path")] pub export_path: Option<String>,
 }
 
 impl Cli {
@@ -112,6 +144,50 @@ impl Cli {
     /// assert_eq!(cli.effective_convergence_window(), 10);
     /// ```
     pub fn effective_convergence_window(&self) -> usize { self.convergence_window.unwrap_or(3) }
+
+    /// Returns the export format if specified, otherwise None.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, ExportFormat};
+    /// let cli = Cli { export: None, ..Default::default() };
+    /// assert!(cli.get_export_format().is_none());
+    ///
+    /// let cli = Cli { export: Some(ExportFormat::Csv), ..Default::default() };
+    /// assert_eq!(cli.get_export_format(), Some(&ExportFormat::Csv));
+    /// ```
+    pub fn get_export_format(&self) -> Option<&ExportFormat> {
+        self.export.as_ref()
+    }
+
+    /// Returns the export path, generating a default if not specified.
+    ///
+    /// The default format is: `export_{session_id}_{format}.{ext}`
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - The session ID to use in the default filename
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, ExportFormat};
+    /// let cli = Cli { export_path: None, export: Some(ExportFormat::Json), ..Default::default() };
+    /// let path = cli.get_export_path("session_123");
+    /// assert!(path.contains("export_session_123_json.json"));
+    ///
+    /// let cli = Cli { export_path: Some("/custom/path.json".to_string()), ..Default::default() };
+    /// assert_eq!(cli.get_export_path("session_123"), "/custom/path.json");
+    /// ```
+    pub fn get_export_path(&self, session_id: &str) -> String {
+        if let Some(ref path) = self.export_path {
+            path.clone()
+        } else {
+            let format_ext = self.export.as_ref().map_or("json", |f| f.extension());
+            format!("export_{}_{}.{}", session_id, format_ext, format_ext)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -283,5 +359,115 @@ mod tests {
         assert!(!cli.verbose);
         assert!(!cli.quiet);
         assert!(!cli.beads_enabled);
+    }
+
+    #[test]
+    fn test_export_format_extension() {
+        assert_eq!(ExportFormat::Csv.extension(), "csv");
+        assert_eq!(ExportFormat::Json.extension(), "json");
+        assert_eq!(ExportFormat::Pdf.extension(), "pdf");
+        assert_eq!(ExportFormat::Markdown.extension(), "md");
+    }
+
+    #[test]
+    fn test_export_format_default() {
+        assert_eq!(ExportFormat::default(), ExportFormat::Json);
+    }
+
+    #[test]
+    fn test_cli_parse_export_format() {
+        let cli = Cli::parse_from(["test", "--export", "csv"]);
+        assert_eq!(cli.export, Some(ExportFormat::Csv));
+
+        let cli = Cli::parse_from(["test", "--export", "json"]);
+        assert_eq!(cli.export, Some(ExportFormat::Json));
+
+        let cli = Cli::parse_from(["test", "--export", "pdf"]);
+        assert_eq!(cli.export, Some(ExportFormat::Pdf));
+
+        let cli = Cli::parse_from(["test", "--export", "markdown"]);
+        assert_eq!(cli.export, Some(ExportFormat::Markdown));
+    }
+
+    #[test]
+    fn test_cli_parse_export_path() {
+        let cli = Cli::parse_from(["test", "--export-path", "/custom/path.json"]);
+        assert_eq!(cli.export_path, Some("/custom/path.json".to_string()));
+    }
+
+    #[test]
+    fn test_get_export_format_none() {
+        let cli = Cli { export: None, ..Default::default() };
+        assert!(cli.get_export_format().is_none());
+    }
+
+    #[test]
+    fn test_get_export_format_some() {
+        let cli = Cli { export: Some(ExportFormat::Csv), ..Default::default() };
+        assert_eq!(cli.get_export_format(), Some(&ExportFormat::Csv));
+    }
+
+    #[test]
+    fn test_get_export_path_custom() {
+        let cli = Cli {
+            export_path: Some("/custom/path.json".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(cli.get_export_path("session_123"), "/custom/path.json");
+    }
+
+    #[test]
+    fn test_get_export_path_default_json() {
+        let cli = Cli {
+            export_path: None,
+            export: Some(ExportFormat::Json),
+            ..Default::default()
+        };
+        let path = cli.get_export_path("session_123");
+        assert_eq!(path, "export_session_123_json.json");
+    }
+
+    #[test]
+    fn test_get_export_path_default_csv() {
+        let cli = Cli {
+            export_path: None,
+            export: Some(ExportFormat::Csv),
+            ..Default::default()
+        };
+        let path = cli.get_export_path("session_456");
+        assert_eq!(path, "export_session_456_csv.csv");
+    }
+
+    #[test]
+    fn test_get_export_path_default_markdown() {
+        let cli = Cli {
+            export_path: None,
+            export: Some(ExportFormat::Markdown),
+            ..Default::default()
+        };
+        let path = cli.get_export_path("session_789");
+        assert_eq!(path, "export_session_789_md.md");
+    }
+
+    #[test]
+    fn test_get_export_path_default_when_no_format() {
+        let cli = Cli {
+            export_path: None,
+            export: None,
+            ..Default::default()
+        };
+        let path = cli.get_export_path("session_abc");
+        assert_eq!(path, "export_session_abc_json.json");
+    }
+
+    #[test]
+    fn test_cli_parse_export_and_path() {
+        let cli = Cli::parse_from([
+            "test",
+            "--export", "csv",
+            "--export-path", "/tmp/report.csv"
+        ]);
+        assert_eq!(cli.export, Some(ExportFormat::Csv));
+        assert_eq!(cli.export_path, Some("/tmp/report.csv".to_string()));
     }
 }

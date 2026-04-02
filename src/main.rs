@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
 use std::process::Command;
@@ -11,6 +11,36 @@ use tracing::{info, debug, warn, error};
 use tracing_subscriber::EnvFilter;
 use indicatif::{ProgressBar, ProgressStyle};
 use colored::Colorize;
+
+/// Export format for experiment results
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub enum ExportFormat {
+    /// CSV format for spreadsheet analysis
+    #[value(name = "csv")]
+    Csv,
+    /// JSON format for programmatic access
+    #[value(name = "json")]
+    #[default]
+    Json,
+    /// PDF format for professional reports
+    #[value(name = "pdf")]
+    Pdf,
+    /// Markdown format for human-readable reports
+    #[value(name = "markdown")]
+    Markdown,
+}
+
+impl ExportFormat {
+    /// Returns the file extension for this format
+    pub fn extension(&self) -> &'static str {
+        match self {
+            ExportFormat::Csv => "csv",
+            ExportFormat::Json => "json",
+            ExportFormat::Pdf => "pdf",
+            ExportFormat::Markdown => "md",
+        }
+    }
+}
 
 
 #[derive(Parser, Debug, Default)]
@@ -129,6 +159,14 @@ struct Cli {
     /// Second session ID for comparison (requires --compare-id1)
     #[arg(long)]
     compare_id2: Option<String>,
+
+    /// Export format for experiment results (csv, json, pdf, markdown)
+    #[arg(long, value_enum)]
+    export: Option<ExportFormat>,
+
+    /// Export path for output file (default: export_{session_id}_{format}.{ext})
+    #[arg(long, alias = "export-path")]
+    export_path: Option<String>,
 }
 
 /// Configuration loaded from config file
@@ -930,6 +968,51 @@ fn get_convergence_window(cli: &Cli, config: &Option<Config>, default: usize) ->
     cli.convergence_window
         .or(config.as_ref().and_then(|c| c.convergence_window))
         .unwrap_or(default)
+}
+
+/// Returns the export format if specified, otherwise None.
+///
+/// # Examples
+///
+/// ```ignore
+/// use pi_autoresearch::cli::{Cli, ExportFormat};
+/// let cli = Cli { export: None, ..Default::default() };
+/// assert!(get_export_format(&cli).is_none());
+///
+/// let cli = Cli { export: Some(ExportFormat::Csv), ..Default::default() };
+/// assert_eq!(get_export_format(&cli), Some(&ExportFormat::Csv));
+/// ```
+fn get_export_format(cli: &Cli) -> Option<&ExportFormat> {
+    cli.export.as_ref()
+}
+
+/// Returns the export path, generating a default if not specified.
+///
+/// The default format is: `export_{session_id}_{format}.{ext}`
+///
+/// # Arguments
+///
+/// * `cli` - The CLI arguments
+/// * `session_id` - The session ID to use in the default filename
+///
+/// # Examples
+///
+/// ```ignore
+/// use pi_autoresearch::cli::{Cli, ExportFormat};
+/// let cli = Cli { export_path: None, export: Some(ExportFormat::Json), ..Default::default() };
+/// let path = get_export_path(&cli, "session_123");
+/// assert_eq!(path, "export_session_123_json.json");
+///
+/// let cli = Cli { export_path: Some("/custom/path.json".to_string()), ..Default::default() };
+/// assert_eq!(get_export_path(&cli, "session_123"), "/custom/path.json");
+/// ```
+fn get_export_path(cli: &Cli, session_id: &str) -> String {
+    if let Some(ref path) = cli.export_path {
+        path.clone()
+    } else {
+        let format_ext = cli.export.as_ref().map_or("json", |f| f.extension());
+        format!("export_{}_{}.{}", session_id, format_ext, format_ext)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
