@@ -870,15 +870,55 @@ pi-autoresearch --question "..." --audit-log-path audit.log --audit-log-format j
 - Priority 95.6: TEST - Add Visualization Integration Tests
 
 ## Priority 95.1: CLI - Add Visualization Flags
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add CLI flags for visualization functionality
 **Rationale**: Users need CLI interface to configure visualization options
 **Implementation**:
-- Add `VisualizationFormat` enum with variants: Html, Png, Both
-- Add `--visualize FORMAT` flag (html, png, both)
-- Add `--visualize-path PATH` for output file location
-- Add `--visualize-open` flag to automatically open in browser
-- Add helper methods on Cli struct
+- ✅ Added `VisualizationFormat` enum with variants: Html, Png, Both
+  - Added to `src/cli.rs` (for library usage)
+  - Exported from `src/lib.rs` for use in main.rs
+  - Default format is Html
+  - Implemented `extension()` method to return file extension for each format
+- ✅ Added `--visualize FORMAT` flag (html, png, both)
+- ✅ Added `--visualize-path PATH` for output file location (with alias `visualize_path`)
+- ✅ Added `--visualize-open` flag to automatically open in browser
+- ✅ Added helper methods on Cli struct:
+  - `get_visualize_format()` - Returns the visualization format if specified
+  - `get_visualize_path(session_id)` - Returns visualization path with default generation
+  - `has_visualization_enabled()` - Returns true if format is specified
+  - `should_open_browser()` - Returns true if visualize-open flag is set
+- ✅ Default visualization path format: "visualize_{session_id}_{format}.{ext}"
+**Tests Added**:
+- `test_visualization_format_default` - Verifies Html is default
+- `test_visualization_format_variants` - Verifies all 3 variants exist
+- `test_visualization_format_extension` - Verifies correct extension for each format
+- `test_cli_parse_visualize_format` - Verifies all formats can be parsed from CLI
+- `test_cli_parse_visualize_path` - Verifies custom path parsing
+- `test_cli_parse_visualize_open` - Verifies visualize-open flag parsing
+- `test_get_visualize_format_none` - Verifies None when no format specified
+- `test_get_visualize_format_some` - Verifies format retrieval when specified
+- `test_get_visualize_path_custom` - Verifies custom path is used
+- `test_get_visualize_path_default_html` - Verifies default HTML path generation
+- `test_get_visualize_path_default_png` - Verifies default PNG path generation
+- `test_get_visualize_path_default_both` - Verifies default "both" path generation
+- `test_get_visualize_path_default_when_no_format` - Verifies fallback to HTML
+- `test_has_visualization_enabled_none` - Verifies false when no format
+- `test_has_visualization_enabled_some` - Verifies true for any format
+- `test_should_open_browser_false` - Verifies false when flag not set
+- `test_should_open_browser_true` - Verifies true when flag is set
+- `test_cli_parse_visualize_path_and_format` - Verifies both flags work together
+- `test_cli_parse_visualize_alias` - Verifies visualize-path alias works
+- `test_cli_parse_visualize_with_other_options` - Verifies integration with other flags
+**Test Results**:
+- All 20 visualization-specific tests pass
+- All 348 lib tests pass
+- `cargo build` completes with no warnings
+- `cargo clippy` completes with no warnings
+- `--help` shows new flags correctly:
+  - `--visualize <VISUALIZE>` with possible values: html, png, both
+  - `--visualize-path <VISUALIZE_PATH>` for output path
+  - `--visualize-open` to auto-open in browser
+**Review**: REVIEW COMPLETE - Visualization flags properly implemented in cli.rs and main.rs, VisualizationFormat enum defined once in cli.rs and exported from lib.rs, comprehensive tests added (20 tests), all tests pass, help output shows new options correctly, zero warnings, follows same pattern as export, notification, and audit log implementations
 
 ## Priority 95.2: VISUALIZATION - Implement Chart Generation Core
 **Status**: TODO

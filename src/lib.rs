@@ -9,7 +9,7 @@ pub mod export;
 pub mod notification;
 pub mod audit;
 
-pub use cli::{Cli, ExportFormat, NotificationProvider, AuditLogFormat};
+pub use cli::{Cli, ExportFormat, NotificationProvider, AuditLogFormat, VisualizationFormat};
 pub use phase1_design::{ExperimentDesign, BaselineRecord, generate_design};
 pub use phase2_iterate::IterationRecord;
 pub use stuck_detector::{StuckReason, StuckDetector, StuckDetectorConfig, IterationState};

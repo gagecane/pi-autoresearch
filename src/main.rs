@@ -11,7 +11,7 @@ use tracing::{info, debug, warn, error};
 use tracing_subscriber::EnvFilter;
 use indicatif::{ProgressBar, ProgressStyle};
 use colored::Colorize;
-use pi_autoresearch::cli::{ExportFormat, NotificationProvider, AuditLogFormat};
+use pi_autoresearch::cli::{ExportFormat, NotificationProvider, AuditLogFormat, VisualizationFormat};
 use pi_autoresearch::export::export;
 use pi_autoresearch::session::ExperimentSession as LibraryExperimentSession;
 use pi_autoresearch::phase1_design::{ExperimentDesign as LibraryExperimentDesign, BaselineRecord as LibraryBaselineRecord};
@@ -167,6 +167,18 @@ struct Cli {
     /// Audit log format (json, csv, text)
     #[arg(long, alias = "audit-log-format", value_enum)]
     audit_log_format: Option<AuditLogFormat>,
+
+    /// Visualization format (html, png, both)
+    #[arg(long, value_enum)]
+    visualize: Option<VisualizationFormat>,
+
+    /// Visualization output path
+    #[arg(long, alias = "visualize-path")]
+    visualize_path: Option<String>,
+
+    /// Automatically open visualization in browser
+    #[arg(long)]
+    visualize_open: bool,
 }
 
 /// Configuration loaded from config file

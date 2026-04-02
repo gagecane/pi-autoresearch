@@ -48,6 +48,21 @@ pub enum AuditLogFormat {
     Text,
 }
 
+/// Visualization format for experiment results
+#[derive(ValueEnum, Debug, Clone, Default, PartialEq, Eq)]
+pub enum VisualizationFormat {
+    /// HTML format for interactive reports
+    #[value(name = "html")]
+    #[default]
+    Html,
+    /// PNG format for static charts
+    #[value(name = "png")]
+    Png,
+    /// Both HTML and PNG formats
+    #[value(name = "both")]
+    Both,
+}
+
 impl ExportFormat {
     /// Returns the file extension for this format
     pub fn extension(&self) -> &'static str {
@@ -56,6 +71,17 @@ impl ExportFormat {
             ExportFormat::Json => "json",
             ExportFormat::Pdf => "pdf",
             ExportFormat::Markdown => "md",
+        }
+    }
+}
+
+impl VisualizationFormat {
+    /// Returns the file extension for this format
+    pub fn extension(&self) -> &'static str {
+        match self {
+            VisualizationFormat::Html => "html",
+            VisualizationFormat::Png => "png",
+            VisualizationFormat::Both => "html", // Default to HTML for "both"
         }
     }
 }
@@ -94,6 +120,9 @@ pub struct Cli {
     #[arg(long, alias = "notify-milestone")] pub notify_milestone: Option<usize>,
     #[arg(long, alias = "audit-log")] pub audit_log_path: Option<String>,
     #[arg(long, alias = "audit-log-format", value_enum)] pub audit_log_format: Option<AuditLogFormat>,
+    #[arg(long, value_enum)] pub visualize: Option<VisualizationFormat>,
+    #[arg(long, alias = "visualize-path")] pub visualize_path: Option<String>,
+    #[arg(long)] pub visualize_open: bool,
 }
 
 impl Cli {
@@ -357,6 +386,82 @@ impl Cli {
     /// ```
     pub fn has_audit_logging_enabled(&self) -> bool {
         self.audit_log_path.is_some()
+    }
+
+    /// Returns the visualization format if specified, otherwise None.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, VisualizationFormat};
+    /// let cli = Cli { visualize: None, ..Default::default() };
+    /// assert!(cli.get_visualize_format().is_none());
+    ///
+    /// let cli = Cli { visualize: Some(VisualizationFormat::Html), ..Default::default() };
+    /// assert_eq!(cli.get_visualize_format(), Some(&VisualizationFormat::Html));
+    /// ```
+    pub fn get_visualize_format(&self) -> Option<&VisualizationFormat> {
+        self.visualize.as_ref()
+    }
+
+    /// Returns the visualization path, generating a default if not specified.
+    ///
+    /// The default format is: `visualize_{session_id}_{format}.{ext}`
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - The session ID to use in the default filename
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, VisualizationFormat};
+    /// let cli = Cli { visualize_path: None, visualize: Some(VisualizationFormat::Html), ..Default::default() };
+    /// let path = cli.get_visualize_path("session_123");
+    /// assert!(path.contains("visualize_session_123_html.html"));
+    ///
+    /// let cli = Cli { visualize_path: Some("/custom/path.html".to_string()), ..Default::default() };
+    /// assert_eq!(cli.get_visualize_path("session_123"), "/custom/path.html");
+    /// ```
+    pub fn get_visualize_path(&self, session_id: &str) -> String {
+        if let Some(ref path) = self.visualize_path {
+            path.clone()
+        } else {
+            let format_ext = self.visualize.as_ref().map_or("html", |f| f.extension());
+            format!("visualize_{}_{}.{}", session_id, format_ext, format_ext)
+        }
+    }
+
+    /// Returns true if visualization is configured (format is specified).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::{Cli, VisualizationFormat};
+    /// let cli = Cli { visualize: None, ..Default::default() };
+    /// assert!(!cli.has_visualization_enabled());
+    ///
+    /// let cli = Cli { visualize: Some(VisualizationFormat::Html), ..Default::default() };
+    /// assert!(cli.has_visualization_enabled());
+    /// ```
+    pub fn has_visualization_enabled(&self) -> bool {
+        self.visualize.is_some()
+    }
+
+    /// Returns true if the browser should be opened automatically.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { visualize_open: false, ..Default::default() };
+    /// assert!(!cli.should_open_browser());
+    ///
+    /// let cli = Cli { visualize_open: true, ..Default::default() };
+    /// assert!(cli.should_open_browser());
+    /// ```
+    pub fn should_open_browser(&self) -> bool {
+        self.visualize_open
     }
 }
 
@@ -931,6 +1036,178 @@ mod tests {
         assert_eq!(cli.audit_log_path, Some("audit.log".to_string()));
         assert_eq!(cli.audit_log_format, Some(AuditLogFormat::Json));
         assert_eq!(cli.export, Some(ExportFormat::Csv));
+        assert_eq!(cli.notify_provider, Some(NotificationProvider::Webhook));
+    }
+
+    #[test]
+    fn test_visualization_format_default() {
+        assert_eq!(VisualizationFormat::default(), VisualizationFormat::Html);
+    }
+
+    #[test]
+    fn test_visualization_format_variants() {
+        let formats = vec![
+            VisualizationFormat::Html,
+            VisualizationFormat::Png,
+            VisualizationFormat::Both,
+        ];
+        assert_eq!(formats.len(), 3);
+    }
+
+    #[test]
+    fn test_visualization_format_extension() {
+        assert_eq!(VisualizationFormat::Html.extension(), "html");
+        assert_eq!(VisualizationFormat::Png.extension(), "png");
+        assert_eq!(VisualizationFormat::Both.extension(), "html");
+    }
+
+    #[test]
+    fn test_cli_parse_visualize_format() {
+        let cli = Cli::parse_from(["test", "--visualize", "html"]);
+        assert_eq!(cli.visualize, Some(VisualizationFormat::Html));
+
+        let cli = Cli::parse_from(["test", "--visualize", "png"]);
+        assert_eq!(cli.visualize, Some(VisualizationFormat::Png));
+
+        let cli = Cli::parse_from(["test", "--visualize", "both"]);
+        assert_eq!(cli.visualize, Some(VisualizationFormat::Both));
+    }
+
+    #[test]
+    fn test_cli_parse_visualize_path() {
+        let cli = Cli::parse_from(["test", "--visualize-path", "/custom/path.html"]);
+        assert_eq!(cli.visualize_path, Some("/custom/path.html".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_visualize_open() {
+        let cli = Cli::parse_from(["test", "--visualize-open"]);
+        assert!(cli.visualize_open);
+    }
+
+    #[test]
+    fn test_get_visualize_format_none() {
+        let cli = Cli { visualize: None, ..Default::default() };
+        assert!(cli.get_visualize_format().is_none());
+    }
+
+    #[test]
+    fn test_get_visualize_format_some() {
+        let cli = Cli { visualize: Some(VisualizationFormat::Png), ..Default::default() };
+        assert_eq!(cli.get_visualize_format(), Some(&VisualizationFormat::Png));
+    }
+
+    #[test]
+    fn test_get_visualize_path_custom() {
+        let cli = Cli {
+            visualize_path: Some("/custom/path.html".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(cli.get_visualize_path("session_123"), "/custom/path.html");
+    }
+
+    #[test]
+    fn test_get_visualize_path_default_html() {
+        let cli = Cli {
+            visualize_path: None,
+            visualize: Some(VisualizationFormat::Html),
+            ..Default::default()
+        };
+        let path = cli.get_visualize_path("session_123");
+        assert_eq!(path, "visualize_session_123_html.html");
+    }
+
+    #[test]
+    fn test_get_visualize_path_default_png() {
+        let cli = Cli {
+            visualize_path: None,
+            visualize: Some(VisualizationFormat::Png),
+            ..Default::default()
+        };
+        let path = cli.get_visualize_path("session_456");
+        assert_eq!(path, "visualize_session_456_png.png");
+    }
+
+    #[test]
+    fn test_get_visualize_path_default_both() {
+        let cli = Cli {
+            visualize_path: None,
+            visualize: Some(VisualizationFormat::Both),
+            ..Default::default()
+        };
+        let path = cli.get_visualize_path("session_789");
+        assert_eq!(path, "visualize_session_789_html.html");
+    }
+
+    #[test]
+    fn test_get_visualize_path_default_when_no_format() {
+        let cli = Cli {
+            visualize_path: None,
+            visualize: None,
+            ..Default::default()
+        };
+        let path = cli.get_visualize_path("session_abc");
+        assert_eq!(path, "visualize_session_abc_html.html");
+    }
+
+    #[test]
+    fn test_has_visualization_enabled_none() {
+        let cli = Cli { visualize: None, ..Default::default() };
+        assert!(!cli.has_visualization_enabled());
+    }
+
+    #[test]
+    fn test_has_visualization_enabled_some() {
+        let cli = Cli { visualize: Some(VisualizationFormat::Html), ..Default::default() };
+        assert!(cli.has_visualization_enabled());
+    }
+
+    #[test]
+    fn test_should_open_browser_false() {
+        let cli = Cli { visualize_open: false, ..Default::default() };
+        assert!(!cli.should_open_browser());
+    }
+
+    #[test]
+    fn test_should_open_browser_true() {
+        let cli = Cli { visualize_open: true, ..Default::default() };
+        assert!(cli.should_open_browser());
+    }
+
+    #[test]
+    fn test_cli_parse_visualize_path_and_format() {
+        let cli = Cli::parse_from([
+            "test",
+            "--visualize", "png",
+            "--visualize-path", "/tmp/chart.png"
+        ]);
+        assert_eq!(cli.visualize, Some(VisualizationFormat::Png));
+        assert_eq!(cli.visualize_path, Some("/tmp/chart.png".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_visualize_alias() {
+        // Test --visualize-path alias
+        let cli = Cli::parse_from(["test", "--visualize-path", "chart.html"]);
+        assert_eq!(cli.visualize_path, Some("chart.html".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parse_visualize_with_other_options() {
+        let cli = Cli::parse_from([
+            "test",
+            "--question", "Test question",
+            "--visualize", "html",
+            "--visualize-path", "report.html",
+            "--visualize-open",
+            "--export", "json",
+            "--notify-provider", "webhook"
+        ]);
+        assert_eq!(cli.question, Some("Test question".to_string()));
+        assert_eq!(cli.visualize, Some(VisualizationFormat::Html));
+        assert_eq!(cli.visualize_path, Some("report.html".to_string()));
+        assert!(cli.visualize_open);
+        assert_eq!(cli.export, Some(ExportFormat::Json));
         assert_eq!(cli.notify_provider, Some(NotificationProvider::Webhook));
     }
 }

@@ -858,3 +858,54 @@
 
 ### Next Task
 - Priority 93.1: CLI - Add Notification Flags
+## 2026-04-02 13:05 UTC - Priority 95.1: CLI - Add Visualization Flags
+
+**Status**: COMPLETE
+
+**Summary**: Implemented CLI flags for visualization functionality following the same pattern as export, notification, and audit log implementations.
+
+**Changes**:
+- Added  enum with Html, Png, and Both variants in src/cli.rs
+- Added , , and  flags
+- Added helper methods: , , , 
+- Exported  from src/lib.rs
+- Added visualization fields to main.rs Cli struct
+- Added 20 comprehensive unit tests
+- All 348 lib tests pass
+- Build completes with no warnings
+
+**Files Modified**:
+- src/cli.rs: Added VisualizationFormat enum, CLI fields, helper methods, and 20 tests
+- src/lib.rs: Added VisualizationFormat to exports
+- src/main.rs: Added visualization CLI fields
+- tasks.md: Marked Priority 95.1 as COMPLETE with detailed implementation notes
+
+**Next Steps**:
+- Ready for REVIEW
+- Next task: Priority 95.2: VISUALIZATION - Implement Chart Generation Core
+
+## 2026-04-02 13:05 UTC - Priority 95.1: CLI - Add Visualization Flags
+
+**Status**: COMPLETE
+
+**Summary**: Implemented CLI flags for visualization functionality following the same pattern as export, notification, and audit log implementations.
+
+**Changes**:
+- Added VisualizationFormat enum with Html, Png, and Both variants in src/cli.rs
+- Added --visualize, --visualize-path, and --visualize-open flags
+- Added helper methods: get_visualize_format(), get_visualize_path(), has_visualization_enabled(), should_open_browser()
+- Exported VisualizationFormat from src/lib.rs
+- Added visualization fields to main.rs Cli struct
+- Added 20 comprehensive unit tests
+- All 348 lib tests pass
+- Build completes with no warnings
+
+**Files Modified**:
+- src/cli.rs: Added VisualizationFormat enum, CLI fields, helper methods, and 20 tests
+- src/lib.rs: Added VisualizationFormat to exports
+- src/main.rs: Added visualization CLI fields
+- tasks.md: Marked Priority 95.1 as COMPLETE with detailed implementation notes
+
+**Next Steps**:
+- Ready for REVIEW
+- Next task: Priority 95.2: VISUALIZATION - Implement Chart Generation Core
