@@ -2351,3 +2351,157 @@ fn test_progress_bar_shown_during_baseline_verification() {
     assert!(json["baseline_record"].is_object());
     assert!(json["baseline_record"]["within_threshold"].as_bool().unwrap());
 }
+
+// ==================== Error Message Tests ====================
+
+/// Tests for improved error messages with suggestions
+
+#[test]
+fn test_error_message_includes_suggestion() {
+    // Test that config validation errors include suggestions
+    let temp_dir = std::env::temp_dir().join(format!("pi-autoresearch-error-msg-{}", std::process::id()));
+    let config_dir = temp_dir.join(".config").join("pi-autoresearch");
+    let _ = std::fs::create_dir_all(&config_dir);
+    
+    let config_file = config_dir.join("config.json");
+    // Invalid config with max_variance > 1.0
+    let config_content = r#"{
+        "max_variance": 1.5,
+        "max_iterations": 1
+    }"#;
+    std::fs::write(&config_file, config_content).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test error message",
+        "--auto-approve",
+        "--metric",
+        "test",
+        "--measure",
+        "echo 100.0",
+        "--baseline",
+        "100.0",
+        "--skip-git",
+    ];
+    
+    let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
+    cmd.args(&args);
+    cmd.env("HOME", &temp_dir);
+    let output = cmd.output().unwrap();
+    
+    // Should fail with error
+    assert!(!output.status.success(),
+        "Command should fail with invalid config");
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Verify error message includes suggestion
+    assert!(stderr.contains("SUGGESTION"),
+        "Error message should include SUGGESTION section");
+    assert!(stderr.contains("max_variance"),
+        "Error message should mention the invalid field");
+    assert!(stderr.contains("docs/CONFIG.md"),
+        "Error message should link to documentation");
+    
+    // Clean up
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}
+
+#[test]
+fn test_error_message_session_not_found() {
+    // Test that session not found error includes helpful suggestions
+    let args = vec![
+        "--resume",
+        "nonexistent-session-id",
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Should fail with error
+    assert!(!output.status.success(),
+        "Command should fail with nonexistent session");
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Verify error message includes suggestion
+    assert!(stderr.contains("not found"),
+        "Error message should indicate session not found");
+    assert!(stderr.contains("SUGGESTION"),
+        "Error message should include SUGGESTION section");
+    assert!(stderr.contains("--history"),
+        "Error message should suggest using --history flag");
+}
+
+#[test]
+fn test_error_message_baseline_verification() {
+    // Test that baseline verification errors include helpful suggestions
+    // Use verify-baseline mode to force measurement validation
+    let args = vec![
+        "--metric",
+        "test",
+        "--measure",
+        "echo not_a_number",
+        "--verify-baseline",
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Should fail with error
+    assert!(!output.status.success(),
+        "Command should fail with non-numeric output");
+    
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Verify error message includes suggestion
+    assert!(stderr.contains("SUGGESTION"),
+        "Error message should include SUGGESTION section");
+    assert!(stderr.contains("numeric"),
+        "Error message should mention numeric requirement");
+    assert!(stderr.contains("docs/TROUBLESHOOTING.md"),
+        "Error message should link to troubleshooting documentation");
+}
+
+#[test]
+fn test_stuck_reason_includes_suggestions() {
+    // Test that stuck reason errors include helpful suggestions
+    // This is tested via the StuckReason Display implementation
+    use pi_autoresearch::StuckReason;
+    
+    let reason = StuckReason::StallLimitReached;
+    let output = format!("{}", reason);
+    
+    assert!(output.contains("SUGGESTION"),
+        "StuckReason should include SUGGESTION section");
+    assert!(output.contains("stall_limit"),
+        "StallLimitReached should mention stall_limit");
+    assert!(output.contains("docs/TROUBLESHOOTING.md"),
+        "StuckReason should link to troubleshooting documentation");
+}
+
+#[test]
+fn test_metric_error_includes_suggestions() {
+    // Test that metric errors include helpful suggestions
+    use pi_autoresearch::metric_evaluator::MetricError;
+    
+    let error = MetricError {
+        message: "Could not parse measurement output as number: 'not_a_number'".to_string()
+    };
+    let output = format!("{}", error);
+    
+    assert!(output.contains("SUGGESTION"),
+        "MetricError should include SUGGESTION section");
+    assert!(output.contains("numeric"),
+        "MetricError should mention numeric requirement");
+    assert!(output.contains("docs/TROUBLESHOOTING.md"),
+        "MetricError should link to troubleshooting documentation");
+}
