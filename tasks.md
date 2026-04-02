@@ -568,18 +568,105 @@ pi-autoresearch --question "..." --notify-provider slack --notify-url "https://h
 **Review**: REVIEW COMPLETE - Integration tests properly verify notification flag parsing, provider selection, and integration with export functionality. All 18 tests pass consistently.
 
 ## Priority 94: FEATURE - Add Experiment Audit Logging
-**Status**: TODO
+**Status**: DECOMPOSED
 **Description**: Add experiment audit logging for compliance
 **Rationale**: Organizations need audit trails for experiments
+**Decomposed Into**:
+- Priority 94.1: CLI - Add Audit Log Flags
+- Priority 94.2: AUDIT - Implement Audit Log Core
+- Priority 94.3: AUDIT - Implement Action Logging
+- Priority 94.4: AUDIT - Implement Decision Logging
+- Priority 94.5: AUDIT - Implement Measurement Logging
+- Priority 94.6: TEST - Add Audit Log Integration Tests
+
+## Priority 94.1: CLI - Add Audit Log Flags
+**Status**: TODO
+**Description**: Add CLI flags for audit logging functionality
+**Rationale**: Users need CLI interface to configure audit logging
 **Implementation**:
-- Add `--audit-log PATH` for audit log file
-- Log all experiment actions with timestamps
-- Include user information (who ran the experiment)
-- Log all decisions (keep/revert changes)
-- Log all configuration changes
-- Log all measurement results
-- Immutable audit log (append-only)
-- Support for compliance requirements (SOX, HIPAA, etc.)
+- Add `--audit-log PATH` flag for audit log file location
+- Add `--audit-log-format FORMAT` flag (json, csv, text) - optional
+- Add helper methods on Cli struct:
+  - `get_audit_log_path()` - Returns audit log path if specified
+  - `get_audit_log_format()` - Returns audit log format if specified
+  - `has_audit_logging_enabled()` - Returns true if audit log is specified
+
+## Priority 94.2: AUDIT - Implement Audit Log Core
+**Status**: TODO
+**Description**: Implement core audit logging infrastructure
+**Rationale**: Foundation for all audit logging functionality
+**Implementation**:
+- Create `src/audit.rs` module
+- Implement `AuditLogger` struct with:
+  - File handle for append-only logging
+  - Session ID tracking
+  - User information capture (whoami, git user, etc.)
+  - Timestamp generation (RFC3339)
+- Implement `AuditEntry` struct with:
+  - timestamp, event_type, session_id, user_info
+  - action, details (JSON-serializable)
+- Implement `AuditLogger::new(path)` for creating logger
+- Implement `AuditLogger::log(entry)` for appending entries
+- Implement `AuditLogger::flush()` for ensuring data is written
+- Ensure atomic writes for data integrity
+
+## Priority 94.3: AUDIT - Implement Action Logging
+**Status**: TODO
+**Description**: Implement logging of experiment actions
+**Rationale**: Track all actions taken during experiment
+**Implementation**:
+- Define `AuditEventType` enum with action types:
+  - ExperimentStarted, ExperimentCompleted
+  - IterationStarted, IterationCompleted
+  - BranchCreated, BranchMerged, BranchDeleted
+  - CommitCreated, ConfigChanged
+- Implement `AuditLogger::log_action(event_type, details)`
+- Log experiment start with configuration
+- Log iteration start/end with timing
+- Log git operations (branch creation, commits, merges)
+- Log configuration changes
+
+## Priority 94.4: AUDIT - Implement Decision Logging
+**Status**: TODO
+**Description**: Implement logging of experiment decisions
+**Rationale**: Track why changes were kept or reverted
+**Implementation**:
+- Define decision types in `AuditEventType`:
+  - ChangeKept, ChangeReverted
+  - TargetAchieved, TargetNotAchieved
+  - Stalled, Converged, Timeout
+- Implement `AuditLogger::log_decision(decision_type, reason, details)`
+- Log when changes are kept (improvement achieved)
+- Log when changes are reverted (no improvement)
+- Log termination reasons (target achieved, stalled, timeout, etc.)
+- Include metric values and improvement percentages
+
+## Priority 94.5: AUDIT - Implement Measurement Logging
+**Status**: TODO
+**Description**: Implement logging of measurement results
+**Rationale**: Track all measurement data for compliance
+**Implementation**:
+- Implement `AuditLogger::log_measurement(metric_name, value, baseline, improvement)`
+- Log baseline measurement
+- Log each iteration measurement
+- Include timing information for measurements
+- Include measurement command/output if available
+- Log measurement failures/errors
+
+## Priority 94.6: TEST - Add Audit Log Integration Tests
+**Status**: TODO
+**Description**: Add integration tests for audit logging functionality
+**Rationale**: Verify audit logging works end-to-end with real experiments
+**Implementation**:
+- Add integration tests in `tests/integration_tests.rs`:
+  - Test audit log file creation
+  - Test audit log with successful experiment
+  - Test audit log with failed experiment
+  - Test audit log with multiple iterations
+  - Test audit log format variations (json, csv, text)
+  - Test audit log contains all required fields
+  - Test audit log is append-only (immutable)
+  - Test audit log with export and notification
 
 ## Priority 95: FEATURE - Add Experiment Result Visualization
 **Status**: TODO
