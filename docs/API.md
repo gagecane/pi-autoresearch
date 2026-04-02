@@ -1,41 +1,70 @@
 # pi-autoresearch API Documentation
 
-This document provides a comprehensive reference for the pi-autoresearch library API. The library is designed to be used both as a CLI tool and as a Rust library for programmatic access to autonomous research experimentation.
+This document provides API reference for developers who want to use pi-autoresearch as a library.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Modules](#modules)
+- [Public Modules](#public-modules)
 - [Core Types](#core-types)
+- [CLI Interface](#cli-interface)
+- [Experiment Design](#experiment-design)
+- [Iteration Management](#iteration-management)
+- [Stuck Detection](#stuck-detection)
+- [Session Management](#session-management)
+- [Metric Evaluation](#metric-evaluation)
+- [PI Agent Integration](#pi-agent-integration)
 - [Usage Examples](#usage-examples)
-- [Error Handling](#error-handling)
+
+---
 
 ## Overview
 
-The pi-autoresearch library provides a modular architecture for autonomous research experimentation:
+The pi-autoresearch library provides a modular API for autonomous research experiments. You can use individual components or the full experiment workflow.
 
 ```rust
 use pi_autoresearch::*;
-
-// Core modules
-use pi_autoresearch::cli::Cli;
-use pi_autoresearch::phase1_design::{ExperimentDesign, generate_design, BaselineRecord, BaselineRecordBuilder};
-use pi_autoresearch::phase2_iterate::{IterationRecord, IterationConfig, IterationExecutor, IterationResult};
-use pi_autoresearch::stuck_detector::{StuckReason, StuckDetector, StuckDetectorConfig, IterationState};
-use pi_autoresearch::metric_evaluator::MetricEvaluator;
-use pi_autoresearch::pi_agent::PiAgent;
-use pi_autoresearch::session::{ExperimentSession, SessionManager, SessionRecord};
 ```
 
-## Modules
+---
+
+## Public Modules
 
 ### `cli`
 
-Command-line interface definitions.
+Command-line interface definitions and utilities.
 
-#### `Cli`
+### `phase1_design`
 
-Struct representing the CLI arguments.
+Experiment design and baseline verification.
+
+### `phase2_iterate`
+
+Iteration management and record keeping.
+
+### `stuck_detector`
+
+Detection of stalled or stuck experiments.
+
+### `metric_evaluator`
+
+Metric measurement and evaluation.
+
+### `pi_agent`
+
+PI agent integration for code modifications.
+
+### `session`
+
+Session file management and persistence.
+
+---
+
+## Core Types
+
+### `Cli`
+
+Command-line interface struct with all configuration options.
 
 ```rust
 pub struct Cli {
@@ -93,491 +122,162 @@ pub struct Cli {
     /// Resume a previous experiment by session ID
     pub resume: Option<String>,
     
-    /// List prior experiments
-    pub history: bool,
-    
     /// Enable beads integration
     pub beads_enabled: bool,
     
     /// Skip git operations
     pub skip_git: bool,
     
-    /// List all autoresearch branches
-    pub list_branches: bool,
-    
-    /// Clean up old autoresearch branches
-    pub cleanup_branches: bool,
-    
-    /// Only remove branches older than N days
-    pub cleanup_days: usize,
-    
     /// Dry run mode
     pub dry_run: bool,
-    
-    /// Path to config file
-    pub config: Option<String>,
-    
-    /// First session ID for comparison
-    pub compare_id1: Option<String>,
-    
-    /// Second session ID for comparison
-    pub compare_id2: Option<String>,
 }
 ```
 
-**Traits Implemented:** `Parser`, `Debug`, `Default`
+**Methods:**
+
+- `impl Default for Cli` - Creates a default CLI configuration
+- `fn parse()` - Parses command-line arguments (via clap)
 
 ---
 
-### `phase1_design`
+## Experiment Design
 
-Design and baseline verification for experiments.
-
-#### `ExperimentDesign`
+### `ExperimentDesign`
 
 Represents the design of an experiment.
 
 ```rust
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExperimentDesign {
-    pub hypothesis: String,
+    pub question: String,
     pub metric: String,
-    pub measurement: String,
+    pub measure: String,
     pub baseline: f64,
     pub target_improvement: f64,
+    pub max_iterations: usize,
+    pub strategies: Vec<String>,
+    pub risks: Vec<String>,
+    pub validation_steps: Vec<String>,
 }
 ```
 
-**Methods:**
+### `generate_design()`
+
+Generates an experiment design based on the research question.
 
 ```rust
-impl ExperimentDesign {
-    /// Create a new experiment design
-    pub fn new(
-        hypothesis: String,
-        metric: String,
-        measurement: String,
-        baseline: f64,
-        target_improvement: f64,
-    ) -> Self
-}
-```
-
-**Example:**
-
-```rust
-let design = ExperimentDesign::new(
-    "Reduce memory usage in database module".to_string(),
-    "peak_memory_mb".to_string(),
-    "Run benchmark suite, capture peak RSS".to_string(),
-    512.0,
-    0.25, // 25% improvement target
-);
-```
-
-#### `BaselineRecord`
-
-Records baseline measurement data.
-
-```rust
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct BaselineRecord {
-    pub timestamp: String,
-    pub git_commit: String,
-    pub metric: String,
-    pub measurement_command: String,
-    pub value: f64,
-    pub verification_runs: Vec<f64>,
-    pub variance: f64,
-    pub within_threshold: bool,
-}
-```
-
-**Methods:**
-
-```rust
-impl BaselineRecord {
-    /// Create using builder pattern (recommended)
-    pub fn builder() -> BaselineRecordBuilder
-    
-    /// Create directly (use with caution - many arguments)
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        timestamp: String,
-        git_commit: String,
-        metric: String,
-        measurement_command: String,
-        value: f64,
-        verification_runs: Vec<f64>,
-        variance: f64,
-        within_threshold: bool,
-    ) -> Self
-}
-```
-
-**Example (Builder Pattern):**
-
-```rust
-let baseline = BaselineRecord::builder()
-    .timestamp("2024-01-01T00:00:00Z".to_string())
-    .git_commit("abc123".to_string())
-    .metric("peak_memory_mb".to_string())
-    .measurement_command("./benchmark".to_string())
-    .value(512.0)
-    .verification_runs(vec![512.0, 515.0])
-    .variance(0.006)
-    .within_threshold(true)
-    .build();
-```
-
-**Example (Direct Construction):**
-
-```rust
-let baseline = BaselineRecord::new(
-    "2024-01-01T00:00:00Z".to_string(),
-    "abc123".to_string(),
-    "peak_memory_mb".to_string(),
-    "./benchmark".to_string(),
-    512.0,
-    vec![512.0, 515.0],
-    0.006,
-    true,
-);
-```
-
-#### `BaselineRecordBuilder`
-
-Builder for constructing `BaselineRecord` instances.
-
-```rust
-#[derive(Default)]
-pub struct BaselineRecordBuilder
-```
-
-**Methods:**
-
-```rust
-impl BaselineRecordBuilder {
-    pub fn timestamp(mut self, timestamp: String) -> Self
-    pub fn git_commit(mut self, git_commit: String) -> Self
-    pub fn metric(mut self, metric: String) -> Self
-    pub fn measurement_command(mut self, measurement_command: String) -> Self
-    pub fn value(mut self, value: f64) -> Self
-    pub fn verification_runs(mut self, verification_runs: Vec<f64>) -> Self
-    pub fn variance(mut self, variance: f64) -> Self
-    pub fn within_threshold(mut self, within_threshold: bool) -> Self
-    pub fn build(self) -> BaselineRecord
-}
-```
-
-**Note:** All fields are required. Calling `build()` without setting all fields will panic with a descriptive error message.
-
-#### `BaselineVerificationResult`
-
-Result of baseline verification.
-
-```rust
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BaselineVerificationResult {
-    pub success: bool,
-    pub baseline_record: Option<BaselineRecord>,
-    pub error_message: Option<String>,
-}
-```
-
-**Methods:**
-
-```rust
-impl BaselineVerificationResult {
-    pub fn success(baseline_record: BaselineRecord) -> Self
-    pub fn failure(error_message: String) -> Self
-    pub fn failure_with_data(baseline_record: BaselineRecord, error_message: String) -> Self
-}
-```
-
-#### `generate_design()`
-
-Generates an experiment design based on a research question.
-
-```rust
-pub fn generate_design(question: &str) -> ExperimentDesign
+pub fn generate_design(
+    question: &str,
+    metric: &str,
+    baseline: f64,
+    target_improvement: f64,
+) -> Result<ExperimentDesign>
 ```
 
 **Parameters:**
-- `question`: The research question to explore
+- `question` - The research question to explore
+- `metric` - The metric to optimize
+- `baseline` - The baseline value
+- `target_improvement` - Target improvement ratio (0.0 to 1.0)
 
-**Returns:** An `ExperimentDesign` with auto-detected metric, measurement command, and baseline
-
-**Metric Detection:**
-- Contains "memory" → `peak_memory_mb` (baseline: 512.0)
-- Contains "speed" or "performance" → `execution_time_ms` (baseline: 1000.0)
-- Contains "accuracy" → `accuracy_percent` (baseline: 85.0)
-- Default → `metric_value` (baseline: 100.0)
+**Returns:**
+- `Ok(ExperimentDesign)` - The generated experiment design
+- `Err(anyhow::Error)` - If design generation fails
 
 **Example:**
 
 ```rust
-let design = generate_design("How can I reduce memory usage?");
-assert_eq!(design.metric, "peak_memory_mb");
-assert_eq!(design.baseline, 512.0);
-assert_eq!(design.target_improvement, 0.30); // Default 30%
+use pi_autoresearch::{generate_design, ExperimentDesign};
+
+let design: ExperimentDesign = generate_design(
+    "How can I reduce memory usage?",
+    "peak_memory_mb",
+    100.0,
+    0.20,
+)?;
+
+println!("Strategies: {:?}", design.strategies);
 ```
 
 ---
 
-### `phase2_iterate`
+## Iteration Management
 
-Iteration execution and management.
+### `IterationRecord`
 
-#### `IterationRecord`
-
-Records a single iteration's results.
+Represents a single iteration in an experiment.
 
 ```rust
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct IterationRecord {
     pub iteration: usize,
     pub timestamp: String,
-    pub agent_action: String,
     pub metric_value: f64,
     pub improvement: f64,
-    pub kept: bool,
+    pub is_improvement: bool,
+    pub agent_action: String,
+    pub changes_applied: bool,
+    pub changes_kept: bool,
+    pub git_commit: Option<String>,
+    pub duration_seconds: f64,
+    pub notes: Option<String>,
 }
 ```
 
-**Methods:**
-
-```rust
-impl IterationRecord {
-    pub fn new(
-        iteration: usize,
-        agent_action: String,
-        metric_value: f64,
-        improvement: f64,
-        kept: bool,
-    ) -> Self
-}
-```
-
-#### `IterationConfig`
-
-Configuration for the iteration loop.
-
-```rust
-#[derive(Debug, Clone)]
-pub struct IterationConfig {
-    pub max_iterations: usize,
-    pub iteration_timeout_secs: u64,
-    pub total_timeout_secs: u64,
-    pub stall_limit: usize,
-    pub convergence_threshold: f64,
-    pub convergence_window: usize,
-    pub verbose: bool,
-    pub quiet: bool,
-}
-```
-
-**Default Values:**
-
-```rust
-impl Default for IterationConfig {
-    fn default() -> Self {
-        Self {
-            max_iterations: 20,
-            iteration_timeout_secs: 600,    // 10 minutes
-            total_timeout_secs: 7200,       // 2 hours
-            stall_limit: 5,
-            convergence_threshold: 0.01,    // 1%
-            convergence_window: 3,
-            verbose: false,
-            quiet: false,
-        }
-    }
-}
-```
-
-#### `IterationResult`
-
-Result of running the iteration loop.
-
-```rust
-#[derive(Debug)]
-pub struct IterationResult {
-    pub iterations: Vec<IterationRecord>,
-    pub best_iteration: Option<usize>,
-    pub best_metric: f64,
-    pub stuck_reason: Option<StuckReason>,
-}
-```
-
-#### `IterationExecutor`
-
-Executes the iteration loop.
-
-```rust
-pub struct IterationExecutor
-```
-
-**Methods:**
-
-```rust
-impl IterationExecutor {
-    /// Create a new executor with the given configuration
-    pub fn new(config: IterationConfig, max_variance: f64) -> Self
-    
-    /// Run a single iteration
-    pub fn run_iteration(
-        &self,
-        iteration: usize,
-        question: &str,
-        baseline_value: f64,
-        best_metric: f64,
-        measure_command: &str,
-    ) -> Result<IterationRecord>
-    
-    /// Run the full iteration loop
-    pub fn run_loop(
-        &self,
-        question: &str,
-        baseline_value: f64,
-        measure_command: &str,
-    ) -> Result<IterationResult>
-}
-```
-
-**Example:**
-
-```rust
-let config = IterationConfig::default();
-let executor = IterationExecutor::new(config, 0.05);
-
-let result = executor.run_loop(
-    "How can I improve performance?",
-    1000.0,  // baseline
-    "./benchmark",  // measurement command
-)?;
-
-println!("Best iteration: {:?}", result.best_iteration);
-println!("Best metric: {:.2}", result.best_metric);
-println!("Stuck reason: {:?}", result.stuck_reason);
-```
+**Fields:**
+- `iteration` - Iteration number (1-indexed)
+- `timestamp` - ISO 8601 timestamp
+- `metric_value` - Measured metric value
+- `improvement` - Improvement percentage from baseline
+- `is_improvement` - Whether this iteration improved the metric
+- `agent_action` - Description of what the agent did
+- `changes_applied` - Whether changes were applied
+- `changes_kept` - Whether changes were kept (not reverted)
+- `git_commit` - Git commit hash if changes were committed
+- `duration_seconds` - Duration of the iteration
+- `notes` - Additional notes about the iteration
 
 ---
 
-### `stuck_detector`
+## Stuck Detection
 
-Detects when experiments are stuck or should terminate.
+### `StuckDetector`
 
-#### `StuckReason`
-
-Reasons for experiment termination.
+Detects when an experiment is stuck or should terminate.
 
 ```rust
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum StuckReason {
-    IterationTimeout,
-    StallLimitReached,
-    TotalTimeout,
-    ConvergenceAchieved,
-    MaxIterationsReached,
+pub struct StuckDetector {
+    pub config: StuckDetectorConfig,
+    pub state: IterationState,
 }
 ```
 
-**Display Implementations:**
-- `IterationTimeout` → "Iteration timeout exceeded"
-- `StallLimitReached` → "No improvement after multiple iterations (stall limit reached)"
-- `TotalTimeout` → "Total experiment timeout exceeded"
-- `ConvergenceAchieved` → "Metric convergence achieved"
-- `MaxIterationsReached` → "Maximum iterations reached"
+### `StuckDetectorConfig`
 
-#### `IterationState`
-
-Tracks the state of iterations.
+Configuration for the stuck detector.
 
 ```rust
-#[derive(Debug, Clone)]
+pub struct StuckDetectorConfig {
+    pub max_iterations: usize,
+    pub iteration_timeout: Duration,
+    pub total_timeout: Duration,
+    pub stall_limit: usize,
+    pub convergence_threshold: f64,
+    pub convergence_window: usize,
+}
+```
+
+### `IterationState`
+
+Current state of the iteration process.
+
+```rust
 pub struct IterationState {
     pub current_iteration: usize,
     pub best_metric: f64,
     pub best_iteration: usize,
     pub consecutive_no_improvement: usize,
     pub backoff_count: usize,
-    pub start_time: Instant,
     pub recent_metrics: Vec<f64>,
 }
-```
-
-**Methods:**
-
-```rust
-impl IterationState {
-    pub fn new(baseline_metric: f64) -> Self
-    pub fn record_improvement(&mut self, iteration: usize, metric_value: f64)
-    pub fn record_no_improvement(&mut self, iteration: usize, metric_value: f64)
-    pub fn apply_backoff(&mut self)
-    pub fn elapsed(&self) -> Duration
-}
-```
-
-**Example:**
-
-```rust
-let mut state = IterationState::new(100.0);
-
-// Record an improvement
-state.record_improvement(1, 90.0);
-assert_eq!(state.best_metric, 90.0);
-assert_eq!(state.best_iteration, 1);
-
-// Record no improvement
-state.record_no_improvement(2, 95.0);
-assert_eq!(state.consecutive_no_improvement, 1);
-
-// Apply backoff
-state.apply_backoff();
-assert_eq!(state.consecutive_no_improvement, 0);
-assert_eq!(state.backoff_count, 1);
-```
-
-#### `StuckDetectorConfig`
-
-Configuration for stuck detection.
-
-```rust
-#[derive(Debug, Clone)]
-pub struct StuckDetectorConfig {
-    pub max_iterations: usize,
-    pub iteration_timeout_secs: u64,
-    pub total_timeout_secs: u64,
-    pub stall_limit: usize,
-    pub convergence_threshold: f64,
-    pub convergence_window: usize,
-}
-```
-
-**Default Values:**
-
-```rust
-impl Default for StuckDetectorConfig {
-    fn default() -> Self {
-        Self {
-            max_iterations: 20,
-            iteration_timeout_secs: 600,
-            total_timeout_secs: 7200,
-            stall_limit: 5,
-            convergence_threshold: 0.01,
-            convergence_window: 3,
-        }
-    }
-}
-```
-
-#### `StuckDetector`
-
-Detects when an experiment should stop.
-
-```rust
-pub struct StuckDetector { config: StuckDetectorConfig }
 ```
 
 **Methods:**
@@ -586,138 +286,93 @@ pub struct StuckDetector { config: StuckDetectorConfig }
 impl StuckDetector {
     pub fn new(config: StuckDetectorConfig) -> Self
     
-    pub fn check_total_timeout(&self, elapsed: Duration) -> Option<StuckReason>
+    pub fn update(&mut self, metric_value: f64, iteration: usize)
     
-    pub fn check_iteration_timeout(&self, elapsed: Duration) -> Option<StuckReason>
+    pub fn is_stuck(&self) -> bool
     
-    pub fn check_max_iterations(&self, current: usize) -> Option<StuckReason>
+    pub fn get_stuck_reason(&self) -> Option<StuckReason>
     
-    pub fn check_convergence(&self, recent_metrics: &[f64]) -> Option<StuckReason>
+    pub fn should_backoff(&self) -> bool
+}
+```
+
+### `StuckReason`
+
+Reason why an experiment is stuck.
+
+```rust
+pub enum StuckReason {
+    /// Maximum iterations reached
+    MaxIterationsReached,
     
-    pub fn check_stall_limit(
-        &self,
-        consecutive_no_improvement: usize,
-        backoff_count: usize,
-    ) -> Option<StuckReason>
+    /// Iteration timeout exceeded
+    IterationTimeout,
     
-    pub fn should_backoff(
-        &self,
-        consecutive_no_improvement: usize,
-        backoff_count: usize,
-    ) -> bool
+    /// Total experiment timeout exceeded
+    TotalTimeout,
+    
+    /// No improvement after multiple iterations
+    StallLimitReached,
+    
+    /// Metric convergence achieved
+    ConvergenceAchieved,
 }
 ```
 
 **Example:**
 
 ```rust
-let config = StuckDetectorConfig::default();
-let detector = StuckDetector::new(config);
+use pi_autoresearch::{StuckDetector, StuckDetectorConfig, IterationState};
+use std::time::Duration;
 
-// Check for convergence
-let metrics = vec![100.0, 100.5, 100.3];
-match detector.check_convergence(&metrics) {
-    Some(StuckReason::ConvergenceAchieved) => println!("Converged!"),
-    None => println!("Still improving..."),
-}
+let config = StuckDetectorConfig {
+    max_iterations: 20,
+    iteration_timeout: Duration::from_secs(600),
+    total_timeout: Duration::from_secs(3600),
+    stall_limit: 5,
+    convergence_threshold: 0.01,
+    convergence_window: 3,
+};
 
-// Check if should backoff
-if detector.should_backoff(5, 1) {
-    println!("Should backoff");
-}
-```
+let mut detector = StuckDetector::new(config);
 
----
-
-### `metric_evaluator`
-
-Evaluates metrics and executes measurements.
-
-#### `MetricEvaluator`
-
-Executes measurement commands and verifies baselines.
-
-```rust
-pub struct MetricEvaluator { max_variance: f64 }
-```
-
-**Methods:**
-
-```rust
-impl MetricEvaluator {
-    pub fn new(max_variance: f64) -> Self
+// Update with each iteration
+for (i, metric) in metrics.iter().enumerate() {
+    detector.update(*metric, i + 1);
     
-    pub fn execute_measurement(&self, command: &str) -> Result<f64>
-    
-    pub fn verify_baseline(
-        &self,
-        metric: &str,
-        measurement_command: &str,
-    ) -> Result<BaselineVerificationResult>
-}
-```
-
----
-
-### `pi_agent`
-
-AI agent for proposing changes.
-
-#### `PiAgent`
-
-Simulated AI agent that proposes changes.
-
-```rust
-pub struct PiAgent { _simulated: bool }
-```
-
-**Methods:**
-
-```rust
-impl PiAgent {
-    pub fn new(_simulated: bool) -> Self
-    
-    pub fn propose_change(
-        &self,
-        question: &str,
-        current_state: &str,
-        metric_feedback: &str,
-    ) -> String
-}
-```
-
-**Default:**
-
-```rust
-impl Default for PiAgent {
-    fn default() -> Self {
-        Self::new(true)
+    if detector.is_stuck() {
+        println!("Experiment stuck: {:?}", detector.get_stuck_reason());
+        break;
     }
 }
 ```
 
 ---
 
-### `session`
+## Session Management
 
-Session management and persistence.
-
-#### `ExperimentSession`
+### `ExperimentSession`
 
 Represents a complete experiment session.
 
 ```rust
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExperimentSession {
     pub session_id: String,
     pub question: String,
-    pub design: ExperimentDesign,
-    pub baseline_record: BaselineRecord,
-    pub iterations: Vec<IterationRecord>,
-    pub best_iteration: Option<usize>,
+    pub metric: String,
+    pub measure: String,
+    pub baseline: f64,
+    pub target_improvement: f64,
     pub start_time: String,
     pub end_time: Option<String>,
     pub status: String,
+    pub iterations: Vec<IterationRecord>,
+    pub best_improvement: f64,
+    pub best_iteration: usize,
+    pub final_metric: f64,
+    pub stuck_reason: Option<StuckReason>,
+    pub git_branch: Option<String>,
+    pub git_commit: Option<String>,
 }
 ```
 
@@ -728,274 +383,287 @@ impl ExperimentSession {
     pub fn new(
         session_id: String,
         question: String,
-        design: ExperimentDesign,
-        baseline_record: BaselineRecord,
+        metric: String,
+        measure: String,
+        baseline: f64,
+        target_improvement: f64,
     ) -> Self
     
-    pub fn add_iteration(&mut self, iteration: IterationRecord)
+    pub fn add_iteration(&mut self, record: IterationRecord)
     
-    pub fn finalize(&mut self, best_iteration: Option<usize>, status: String)
+    pub fn get_best_iteration(&self) -> Option<&IterationRecord>
     
-    pub fn calculate_final_improvement(&self) -> f64
+    pub fn is_complete(&self) -> bool
 }
 ```
 
-**Example:**
+---
+
+## Metric Evaluation
+
+### `MetricEvaluator`
+
+Evaluates metrics and verifies baselines.
 
 ```rust
-let session = ExperimentSession::new(
-    "session-123".to_string(),
-    "Improve performance".to_string(),
-    design,
-    baseline,
-);
-
-// Add iterations
-session.add_iteration(iteration1);
-session.add_iteration(iteration2);
-
-// Finalize
-session.finalize(Some(2), "completed".to_string());
-
-// Calculate improvement
-let improvement = session.calculate_final_improvement();
-println!("Final improvement: {:+.2}%", improvement * 100.0);
-```
-
-#### `SessionRecord`
-
-Enum for different types of session records.
-
-```rust
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged)]
-pub enum SessionRecord {
-    Baseline(BaselineRecord),
-    Iteration(IterationRecord),
-    Experiment(Box<ExperimentSession>),
+pub struct MetricEvaluator {
+    pub metric: String,
+    pub measure: String,
+    pub baseline: f64,
+    pub max_variance: f64,
 }
-```
-
-#### `SessionManager`
-
-Manages session file persistence.
-
-```rust
-pub struct SessionManager { session_file: String }
 ```
 
 **Methods:**
 
 ```rust
-impl SessionManager {
-    pub fn new(session_file: String) -> Self
+impl MetricEvaluator {
+    pub fn new(metric: String, measure: String, baseline: f64) -> Self
     
-    pub fn save_baseline(&self, record: &BaselineRecord) -> Result<()>
+    pub fn default() -> Self
     
-    pub fn save_iteration(&self, record: &IterationRecord) -> Result<()>
+    pub fn execute_measurement(&self) -> Result<f64>
     
-    pub fn save_session(&self, session: &ExperimentSession) -> Result<()>
+    pub fn verify_baseline(&self) -> Result<BaselineRecord>
     
-    pub fn read_all(&self) -> Result<Vec<SessionRecord>>
-    
-    pub fn find_session(&self, session_id: &str) -> Result<Option<ExperimentSession>>
-    
-    pub fn list_history(&self) -> Result<String>
+    pub fn get_git_commit_hash(&self) -> Result<String>
 }
+```
+
+### `MetricError`
+
+Error type for metric evaluation.
+
+```rust
+pub enum MetricError {
+    /// Command execution failed
+    CommandFailed(String),
+    
+    /// Output could not be parsed as a number
+    ParseError(String),
+    
+    /// Baseline variance exceeded threshold
+    VarianceExceeded { expected: f64, actual: f64, threshold: f64 },
+    
+    /// Measurement command is empty
+    EmptyCommand,
+}
+
+impl std::fmt::Display for MetricError
+impl std::error::Error for MetricError
 ```
 
 **Example:**
 
 ```rust
-let manager = SessionManager::new("experiments.jsonl".to_string());
+use pi_autoresearch::MetricEvaluator;
 
-// Save baseline
-manager.save_baseline(&baseline)?;
+let evaluator = MetricEvaluator::new(
+    "execution_time_ms".to_string(),
+    "cargo bench --bench my_bench".to_string(),
+    500.0,
+);
 
-// Save iterations
-for iteration in &iterations {
-    manager.save_iteration(iteration)?;
-}
-
-// Save final session
-manager.save_session(&session)?;
-
-// List history
-let history = manager.list_history()?;
-println!("{}", history);
+let baseline_record = evaluator.verify_baseline()?;
+println!("Verified baseline: {}", baseline_record.metric_value);
 ```
 
-#### `generate_session_id()`
+---
 
-Generates a unique session ID.
+## PI Agent Integration
+
+### `invoke_pi_agent()`
+
+Invokes the PI agent to generate code modifications.
 
 ```rust
-pub fn generate_session_id() -> String
+pub fn invoke_pi_agent(
+    question: &str,
+    current_code: &str,
+    strategies: &[String],
+) -> Result<String>
 ```
 
-**Returns:** A unique hexadecimal string
+**Parameters:**
+- `question` - The research question
+- `current_code` - Current code to modify
+- `strategies` - Optimization strategies to consider
+
+**Returns:**
+- `Ok(String)` - Agent response with proposed changes
+- `Err(anyhow::Error)` - If agent invocation fails
 
 ---
 
 ## Usage Examples
 
-### Complete Experiment Workflow
+### Example 1: Simple Experiment
 
 ```rust
-use pi_autoresearch::*;
-use pi_autoresearch::phase1_design::{generate_design, BaselineRecord};
-use pi_autoresearch::phase2_iterate::{IterationConfig, IterationExecutor};
-use pi_autoresearch::session::{ExperimentSession, SessionManager};
-use anyhow::Result;
+use pi_autoresearch::{Cli, ExperimentSession, generate_design};
 
-fn run_experiment(question: &str, measure_command: &str) -> Result<()> {
-    // Phase 1: Design
-    let design = generate_design(question);
-    println!("Design: {:?}", design);
+fn main() -> anyhow::Result<()> {
+    // Parse CLI arguments
+    let cli = Cli::parse();
     
-    // Verify baseline
-    let evaluator = MetricEvaluator::new(0.05);
-    let baseline_result = evaluator.verify_baseline(&design.metric, measure_command)?;
+    // Generate experiment design
+    let design = generate_design(
+        &cli.question.unwrap_or_default(),
+        &cli.metric.unwrap_or_default(),
+        cli.baseline.unwrap_or(100.0),
+        cli.target_improvement.unwrap_or(0.20),
+    )?;
     
-    if !baseline_result.success {
-        anyhow::bail!("Baseline verification failed: {:?}", baseline_result.error_message);
-    }
-    
-    let baseline = baseline_result.baseline_record.unwrap();
-    
-    // Create session
-    let session_id = generate_session_id();
-    let mut session = ExperimentSession::new(
-        session_id,
-        question.to_string(),
-        design.clone(),
-        baseline.clone(),
-    );
-    
-    // Save baseline
-    let manager = SessionManager::new("experiments.jsonl".to_string());
-    manager.save_baseline(&baseline)?;
-    
-    // Phase 2: Iterate
-    let config = IterationConfig::default();
-    let executor = IterationExecutor::new(config, 0.05);
-    
-    let iteration_result = executor.run_loop(question, baseline.value, measure_command)?;
-    
-    // Save iterations
-    for iteration in &iteration_result.iterations {
-        session.add_iteration(iteration.clone());
-        manager.save_iteration(iteration)?;
-    }
-    
-    // Finalize
-    session.finalize(
-        iteration_result.best_iteration,
-        if iteration_result.best_metric < baseline.value {
-            "completed".to_string()
-        } else {
-            "no_improvement".to_string()
-        },
-    );
-    
-    manager.save_session(&session)?;
-    
-    // Report results
-    let improvement = session.calculate_final_improvement();
-    println!("Experiment complete!");
-    println!("Final improvement: {:+.2}%", improvement * 100.0);
-    println!("Best iteration: {:?}", iteration_result.best_iteration);
-    println!("Stuck reason: {:?}", iteration_result.stuck_reason);
+    println!("Experiment Design:");
+    println!("  Question: {}", design.question);
+    println!("  Metric: {}", design.metric);
+    println!("  Baseline: {}", design.baseline);
+    println!("  Target: {:.1}%", design.target_improvement * 100.0);
     
     Ok(())
 }
 ```
 
-### Using the Stuck Detector Directly
+### Example 2: Custom Stuck Detection
 
 ```rust
-use pi_autoresearch::stuck_detector::*;
+use pi_autoresearch::{StuckDetector, StuckDetectorConfig, StuckReason};
 use std::time::Duration;
 
-fn main() {
+fn run_custom_experiment() -> anyhow::Result<()> {
     let config = StuckDetectorConfig {
-        max_iterations: 10,
-        iteration_timeout_secs: 60,
-        total_timeout_secs: 300,
-        stall_limit: 3,
-        convergence_threshold: 0.01,
+        max_iterations: 15,
+        iteration_timeout: Duration::from_secs(300),
+        total_timeout: Duration::from_secs(1800),
+        stall_limit: 4,
+        convergence_threshold: 0.005,
         convergence_window: 3,
     };
     
-    let detector = StuckDetector::new(config);
-    let mut state = IterationState::new(100.0);
+    let mut detector = StuckDetector::new(config);
+    let mut metrics = vec![100.0, 95.0, 92.0, 90.0, 88.0, 87.0, 86.5];
     
-    // Simulate iterations
-    for i in 1..=10 {
-        // Check total timeout
-        if let Some(reason) = detector.check_total_timeout(state.elapsed()) {
-            println!("Stopped: {}", reason);
+    for (i, metric) in metrics.iter().enumerate() {
+        detector.update(*metric, i + 1);
+        
+        println!("Iteration {}: metric = {}", i + 1, metric);
+        
+        if detector.is_stuck() {
+            match detector.get_stuck_reason() {
+                Some(StuckReason::ConvergenceAchieved) => {
+                    println!("✓ Converged at iteration {}", i + 1);
+                }
+                Some(StuckReason::StallLimitReached) => {
+                    println!("⚠ Stalled at iteration {}", i + 1);
+                }
+                _ => {
+                    println!("✗ Stopped at iteration {}", i + 1);
+                }
+            }
             break;
         }
-        
-        // Record improvement or no improvement
-        if i % 2 == 0 {
-            state.record_improvement(i, 100.0 - (i as f64));
-        } else {
-            state.record_no_improvement(i, 100.0 + (i as f64));
-        }
-        
-        // Check convergence
-        if let Some(reason) = detector.check_convergence(&state.recent_metrics) {
-            println!("Stopped: {}", reason);
-            break;
-        }
-        
-        // Check stall limit
-        if detector.should_backoff(state.consecutive_no_improvement, state.backoff_count) {
-            state.apply_backoff();
-            println!("Backing off...");
-        }
-        
-        if let Some(reason) = detector.check_stall_limit(
-            state.consecutive_no_improvement,
-            state.backoff_count,
-        ) {
-            println!("Stopped: {}", reason);
-            break;
-        }
-    }
-}
-```
-
-## Error Handling
-
-The library uses `anyhow::Result` for error handling:
-
-```rust
-use anyhow::Result;
-
-fn example() -> Result<()> {
-    // Operations that can fail
-    let value = execute_measurement("./benchmark")?;
-    
-    // Handle specific errors
-    let result = verify_baseline("metric", "./benchmark");
-    match result {
-        Ok(baseline) => println!("Baseline: {:.2}", baseline.value),
-        Err(e) => eprintln!("Failed: {}", e),
     }
     
     Ok(())
 }
 ```
 
+### Example 3: Session Management
+
+```rust
+use pi_autoresearch::{ExperimentSession, IterationRecord};
+
+fn manage_session() -> anyhow::Result<()> {
+    let mut session = ExperimentSession::new(
+        "session-001".to_string(),
+        "How to improve performance?".to_string(),
+        "execution_time_ms".to_string(),
+        "cargo bench".to_string(),
+        500.0,
+        0.30,
+    );
+    
+    // Add iterations
+    for i in 1..=5 {
+        let record = IterationRecord {
+            iteration: i,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            metric_value: 500.0 - (i as f64 * 10.0),
+            improvement: (i as f64 * 2.0),
+            is_improvement: true,
+            agent_action: format!("Optimized iteration {}", i),
+            changes_applied: true,
+            changes_kept: true,
+            git_commit: None,
+            duration_seconds: 10.0,
+            notes: None,
+        };
+        
+        session.add_iteration(record);
+    }
+    
+    println!("Best improvement: {:.1}%", session.best_improvement);
+    println!("Best iteration: {}", session.best_iteration);
+    
+    Ok(())
+}
+```
+
+### Example 4: Metric Evaluation
+
+```rust
+use pi_autoresearch::MetricEvaluator;
+
+fn evaluate_metric() -> anyhow::Result<()> {
+    let evaluator = MetricEvaluator::new(
+        "throughput_rps".to_string(),
+        "./benchmark.sh".to_string(),
+        1000.0,
+    );
+    
+    // Execute measurement
+    let value = evaluator.execute_measurement()?;
+    println!("Measured value: {}", value);
+    
+    // Verify baseline
+    let baseline = evaluator.verify_baseline()?;
+    println!("Baseline verified: {}", baseline.metric_value);
+    
+    Ok(())
+}
+```
+
+---
+
+## Error Handling
+
+All public functions return `Result<T, anyhow::Error>` for consistent error handling.
+
+```rust
+use anyhow::Result;
+
+fn my_function() -> Result<()> {
+    // Handle errors with ? operator
+    let design = generate_design("question", "metric", 100.0, 0.20)?;
+    
+    // Or match on errors
+    match metric_evaluator.verify_baseline() {
+        Ok(baseline) => println!("Baseline: {}", baseline.metric_value),
+        Err(e) => eprintln!("Failed to verify baseline: {}", e),
+    }
+    
+    Ok(())
+}
+```
+
+---
+
 ## See Also
 
-- [Usage Guide](USAGE.md) - How to use the CLI
-- [Configuration](CONFIG.md) - Config file options
-- [Examples](EXAMPLES.md) - Example use cases
-- [CLI Specification](../specs/CLI.md) - Complete CLI reference
-- [Session Format](../specs/SESSION.md) - Session file format
-- [Workflow](../specs/WORKFLOW.md) - Experiment workflow
+- [USAGE.md](./USAGE.md) - Complete usage guide
+- [CONFIG.md](./CONFIG.md) - Configuration file reference
+- [EXAMPLES.md](./EXAMPLES.md) - Example use cases
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and solutions
+- [specs/](../specs/) - Technical specifications
+- [README.md](../README.md) - Project overview
 

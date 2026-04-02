@@ -959,14 +959,36 @@
 **Review**: Documentation verified complete - all required content areas covered with 33 comprehensive examples, includes advanced configurations, CI/CD integrations, beads workflows, and best practices
 
 ## Priority 45: DOCS - Add API Documentation
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Create API documentation for library users
 **Rationale**: Developers who want to use pi-autoresearch as a library need API docs
-**Content to Create**:
-- Public API reference
-- Function signatures and parameters
-- Return values and error types
-- Usage examples for library integration
+**Content Created** (docs/API.md - 15KB):
+- Overview with module structure
+- Public modules documentation (cli, phase1_design, phase2_iterate, stuck_detector, metric_evaluator, pi_agent, session)
+- Core types with complete field documentation:
+  - `Cli` - All CLI options with descriptions
+  - `ExperimentDesign` - Experiment design structure
+  - `IterationRecord` - Iteration record fields
+  - `StuckDetector`, `StuckDetectorConfig`, `IterationState` - Stuck detection types
+  - `StuckReason` enum - All termination reasons
+  - `ExperimentSession` - Session management structure
+  - `MetricEvaluator` - Metric evaluation types
+  - `MetricError` enum - Error types
+- Function signatures and parameters for all public functions:
+  - `generate_design()` - Experiment design generation
+  - `invoke_pi_agent()` - Agent integration
+  - All `StuckDetector` methods
+  - All `ExperimentSession` methods
+  - All `MetricEvaluator` methods
+- Return values and error types with examples
+- 4 comprehensive usage examples:
+  - Simple experiment
+  - Custom stuck detection
+  - Session management
+  - Metric evaluation
+- Error handling patterns
+- Cross-references to related documentation
+**Review**: Implementation verified correct - comprehensive API documentation created, all public types documented with complete field descriptions, all functions documented with parameters and return values, usage examples demonstrate common patterns, error handling documented
 
 ## Priority 46: DOCS - Add Migration Guide
 **Status**: TODO
