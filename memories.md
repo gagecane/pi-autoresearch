@@ -2,6 +2,146 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-03 14:00 UTC: Chart Generation Core Review Complete (Priority 95.2)
+
+**Priority 95.2: VISUALIZATION - Implement Chart Generation Core** - REVIEW COMPLETE → COMPLETE
+
+**Review Summary**:
+- Reviewed implementation in `src/visualization.rs` (600+ lines)
+- Verified all 10 visualization unit tests pass
+- Verified all 14 visualization-related tests pass (including CLI tests from Priority 95.1)
+- Verified `cargo build` completes with no new warnings
+- Verified `cargo clippy` completes with no new warnings
+- Confirmed feedback.md is empty (no feedback needed)
+- Updated task status to COMPLETE
+
+**Implementation Quality**:
+- 4 chart types properly implemented:
+  1. `generate_improvement_trend()` - Line chart showing metric over iterations
+     - Adds baseline as first point (iteration 0)
+     - Draws line series with RED color
+     - Marks baseline with BLUE circle (radius 50)
+     - Marks best iteration with GREEN circle (radius 80)
+  2. `generate_iteration_comparison()` - Bar chart comparing all iterations
+     - BLUE for baseline (iteration 0)
+     - GREEN for best/kept iterations
+     - RED for reverted iterations
+     - Uses Rectangle for bar rendering
+  3. `generate_baseline_comparison()` - Bar chart comparing baseline vs final
+     - Compares baseline with last iteration (or baseline if no iterations)
+     - BLUE for baseline bar, GREEN for final bar
+     - Auto-scales y-axis with 10% margin
+  4. `generate_distribution_histogram()` - Histogram of measurement values
+     - 10 bins with auto-calculated bin width
+     - ORANGE bars
+     - Shows frequency distribution of all measurements
+- `generate_all()` convenience method creates output directory and generates all 4 charts
+- `VisualizationConfig` struct provides comprehensive configuration:
+  - width, height (default: 800x600)
+  - font_size, font_family (default: 14, sans-serif)
+  - show_grid (default: true)
+  - color_scheme (default: "default")
+- PNG output fully supported via plotters BitMapBackend
+- Proper error handling with Result return types
+- Comprehensive doc tests for all public methods
+
+**Test Coverage Verified**:
+- 10 comprehensive tests covering:
+  - `test_visualization_config_default` - Config defaults (800x600, font 14, grid true)
+  - `test_chart_generator_new` - Constructor with config
+  - `test_chart_generator_default` - Default impl
+  - `test_generate_improvement_trend` - Trend chart generation and file creation
+  - `test_generate_iteration_comparison` - Bar chart generation and file creation
+  - `test_generate_baseline_comparison` - Comparison chart generation and file creation
+  - `test_generate_distribution_histogram` - Histogram generation and file creation
+  - `test_generate_all` - All charts generation to directory
+  - `test_generate_with_empty_iterations` - Edge case handling (baseline only)
+- All tests create actual PNG files and verify file existence
+- Tests clean up temporary files after verification
+
+**Key Design Decisions**:
+1. **Plotters Library**: Chosen for PNG chart generation
+   - Well-maintained Rust plotting library
+   - BitMapBackend for PNG output
+   - Support for line series, bar charts, histograms
+   - No external dependencies beyond plotters
+
+2. **Color Coding Consistency**:
+   - BLUE for baseline (consistent across all charts)
+   - GREEN for success/best/kept (positive outcomes)
+   - RED for failure/reverted (negative outcomes)
+   - ORANGE for histogram (neutral data distribution)
+
+3. **Auto-Scaling**: Charts automatically scale to data range
+   - X-axis: Based on iteration count
+   - Y-axis: Based on metric value range
+   - Margins added for visual clarity (10% padding)
+
+4. **Error Handling**:
+   - Empty data returns descriptive error
+   - File creation errors propagate as Result
+   - Invalid data gracefully handled
+
+5. **Default Configuration**:
+   - 800x600 pixels (standard aspect ratio)
+   - Font size 14 (readable)
+   - Grid lines enabled (easier to read values)
+   - Sans-serif font (modern, clean)
+
+**Public API**:
+```rust
+pub struct VisualizationConfig {
+    pub width: usize,
+    pub height: usize,
+    pub font_size: usize,
+    pub font_family: String,
+    pub show_grid: bool,
+    pub color_scheme: String,
+}
+
+pub struct ChartGenerator {
+    config: VisualizationConfig,
+}
+
+impl ChartGenerator {
+    pub fn new(config: VisualizationConfig) -> Self
+    pub fn generate_improvement_trend(&self, session: &ExperimentSession, output_path: &str) -> Result<()>
+    pub fn generate_iteration_comparison(&self, session: &ExperimentSession, output_path: &str) -> Result<()>
+    pub fn generate_baseline_comparison(&self, session: &ExperimentSession, output_path: &str) -> Result<()>
+    pub fn generate_distribution_histogram(&self, session: &ExperimentSession, output_path: &str) -> Result<()>
+    pub fn generate_all(&self, session: &ExperimentSession, output_dir: &str) -> Result<()>
+}
+```
+
+**Test Results**:
+- All 10 visualization-specific tests pass
+- All 14 visualization-related tests pass (including CLI tests)
+- All 358 lib tests pass
+- `cargo build` completes with no warnings
+- `cargo clippy` completes with no warnings
+
+**Files Modified**:
+- `src/visualization.rs`: Created new module (600+ lines, 10 tests)
+- `src/lib.rs`: Added `pub mod visualization;` and exports
+- `Cargo.toml`: Added `plotters = "0.3"` dependency
+- `tasks.md`: Updated Priority 95.2 as COMPLETE
+- `completed_tasks.md`: Added Priority 95.2 entry
+- `progress.md`: Added review session summary
+
+**Next Steps**:
+- Priority 95.3: Implement HTML Report Generation (embed charts in HTML)
+- Priority 95.4: Implement PNG Chart Export (already done via plotters)
+- Priority 95.5: Add Statistical Analysis (mean, median, std dev, confidence intervals)
+- Priority 95.6: Add Visualization Integration Tests (end-to-end testing)
+
+**Future Considerations**:
+- Add SVG output option (plotters supports SVGBackend)
+- Add interactive HTML charts (Chart.js, D3.js)
+- Add chart customization options (colors, labels, legends)
+- Add animation for iteration progress
+- Add export to image formats (JPEG, WebP)
+
+---
 ## 2026-04-03 06:00 UTC: Measurement Logging Review Complete (Priority 94.5)
 
 **Priority 94.5: AUDIT - Implement Measurement Logging** - REVIEW COMPLETE → COMPLETE
