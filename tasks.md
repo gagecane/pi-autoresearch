@@ -1030,14 +1030,17 @@
 **Review**: Implementation verified correct - comprehensive migration guide created, covers all version changes, includes practical migration steps, troubleshooting section, and rollback procedures, well-organized with clear sections and examples, all information verified against actual implementation
 
 ## Priority 47: TEST - Add Fuzzing Tests
-**Status**: TODO
+**Status**: DECOMPOSED
 **Description**: Add fuzzing tests for session file parsing
 **Rationale**: Fuzzing helps find edge cases and security issues in parsers
-**Implementation**:
-- Add fuzzing framework (cargo-fuzz)
-- Create fuzz targets for JSON parsing
-- Create fuzz targets for session file parsing
-- Run fuzzing tests regularly
+**Decomposed Into**:
+- Priority 47.1: TEST - Add cargo-fuzz Dependency and Configuration
+- Priority 47.2: TEST - Create Fuzz Target for BaselineRecord Parsing
+- Priority 47.3: TEST - Create Fuzz Target for IterationRecord Parsing
+- Priority 47.4: TEST - Create Fuzz Target for ExperimentSession Parsing
+- Priority 47.5: TEST - Create Fuzz Target for Full Session File Parsing
+- Priority 47.6: TEST - Add Fuzzing to CI/CD Pipeline
+**Note**: Task decomposed into smaller, more actionable subtasks
 
 ## Priority 48: TEST - Add End-to-End Beads Tests
 **Status**: TODO
