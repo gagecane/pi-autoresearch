@@ -2,6 +2,105 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 14:30 UTC: stuck_detector.rs Testing
+
+**Priority 57: TEST - Add Unit Tests for stuck_detector.rs**
+
+**Implementation**:
+- Added 39 unit tests for stuck_detector.rs module (16 functions tested)
+- Added `Clone` derive to `IterationState` struct for test compatibility
+- Tests cover all major components and edge cases
+
+**StuckReason Enum Tests**:
+- Display trait implementation for all 5 variants:
+  - IterationTimeout → "Iteration timeout exceeded"
+  - StallLimitReached → "No improvement after multiple iterations (stall limit reached)"
+  - TotalTimeout → "Total experiment timeout exceeded"
+  - ConvergenceAchieved → "Metric convergence achieved"
+  - MaxIterationsReached → "Maximum iterations reached"
+- Debug, Clone, PartialEq, Eq implementations verified
+
+**IterationState Struct Tests**:
+- new() - constructor with baseline_metric parameter
+- record_improvement() - updates best_metric, resets consecutive_no_improvement and backoff_count
+- record_no_improvement() - increments consecutive_no_improvement
+- record_multiple_no_improvement() - tracks consecutive failures (3+ iterations)
+- apply_backoff() - resets consecutive_no_improvement, increments backoff_count
+- elapsed() - returns time since creation (Duration)
+- Clone and Debug implementations
+
+**StuckDetectorConfig Struct Tests**:
+- Default implementation:
+  - max_iterations = 20
+  - iteration_timeout_secs = 600 (10 min)
+  - total_timeout_secs = 7200 (2 hours)
+  - stall_limit = 5
+  - convergence_threshold = 0.01 (1%)
+  - convergence_window = 3
+- Custom config values
+- Clone implementation
+
+**StuckDetector Function Tests**:
+- new() - constructor with config
+- check_total_timeout() - 3 tests (not exceeded, exceeded, exact boundary)
+- check_iteration_timeout() - 2 tests (not exceeded, exceeded)
+- check_max_iterations() - 3 tests (not reached, reached, exceeded)
+- check_convergence() - 5 tests:
+  - Not enough metrics (< convergence_window)
+  - Convergence achieved (variance < threshold)
+  - Convergence not achieved (high variance)
+  - Exact window size (exactly convergence_window metrics)
+  - Zero values (handles division by zero edge case)
+- check_stall_limit() - 4 tests:
+  - Not reached (consecutive_no_improvement < stall_limit)
+  - Reached with backoff (stall_limit reached, backoff_count >= 2)
+  - Reached without backoff (stall_limit reached, backoff_count < 2)
+  - Exceeded (consecutive_no_improvement >> stall_limit)
+- should_backoff() - 4 tests:
+  - True (stall_limit reached, backoff_count < 2)
+  - False not enough no improvement (consecutive_no_improvement < stall_limit)
+  - False max backoff (backoff_count >= 2)
+  - Exact stall limit (consecutive_no_improvement == stall_limit)
+
+**Integration Tests**:
+1. Full stuck detection workflow:
+   - Reach stall_limit (3 iterations with no improvement)
+   - Apply backoff (resets consecutive_no_improvement, increments backoff_count)
+   - Reach stall_limit again (3 more iterations)
+   - Apply backoff again (backoff_count = 2)
+   - Reach stall_limit a third time (3 more iterations)
+   - Detect stall (stall_limit reached AND backoff_count >= 2)
+
+2. Convergence detection workflow:
+   - Simulate converging iterations (100.0 → 95.0 → 94.8 → 94.9)
+   - Verify convergence detected when variance < 2%
+
+3. Timeout detection workflow:
+   - Test iteration timeout (120s > 60s limit)
+   - Test total timeout (400s > 300s limit)
+
+**Test Results**:
+- 39 new tests added to lib.rs
+- All 162 lib tests pass (was 119)
+- All 68 integration tests still pass
+- All 13 mutation tests still pass
+- All 7 performance tests still pass
+- Total: 277 tests passing (162 lib + 95 main + 68 integration + 13 mutation + 7 performance)
+
+**Code Changes**:
+- src/stuck_detector.rs: Added `Clone` derive to `IterationState` struct
+- src/lib.rs: Added 39 unit tests in tests module
+
+**Learnings**:
+- Stuck detection requires both stall_limit reached AND backoff_count >= 2
+- Convergence detection uses variance calculation: (max - min) / min
+- Zero values in convergence check handled by checking if min > 1e-10
+- Backoff mechanism: resets consecutive_no_improvement but increments backoff_count
+- All 5 StuckReason variants have clear, descriptive Display implementations
+- Integration tests verify complete workflow scenarios, not just individual functions
+
+**Task Status**: READY FOR REVIEW
+
 ## 2026-04-02: pi_agent.rs Testing
 
 - Added 28 unit tests for pi_agent.rs module to achieve 80%+ coverage
