@@ -3490,7 +3490,71 @@ mod tests {
             ..Default::default()
         });
         assert!(!get_beads_enabled(&cli, &config));
-    }  
+    }
+
+    // BeadsIntegration unit tests
+
+    #[test]
+    fn test_beads_integration_new_disabled() {
+        let beads = BeadsIntegration::new(false);
+        assert!(!beads.enabled);
+        assert_eq!(beads.bead_id, None);
+    }
+
+    #[test]
+    fn test_beads_integration_new_enabled() {
+        let beads = BeadsIntegration::new(true);
+        assert!(beads.enabled);
+        assert_eq!(beads.bead_id, None);
+    }
+
+    #[test]
+    fn test_beads_integration_create_experiment_bead_disabled() {
+        let mut beads = BeadsIntegration::new(false);
+        let design = ExperimentDesign {
+            hypothesis: "Test hypothesis".to_string(),
+            metric: "test_metric".to_string(),
+            measurement: "echo 100".to_string(),
+            baseline: 100.0,
+            target_improvement: 0.20,
+        };
+        // Should return Ok immediately when disabled
+        let result = beads.create_experiment_bead("Test question", &design);
+        assert!(result.is_ok());
+        assert_eq!(beads.bead_id, None);
+    }
+
+    #[test]
+    fn test_beads_integration_update_bead_progress_disabled() {
+        let beads = BeadsIntegration::new(false);
+        // Should return Ok immediately when disabled
+        let result = beads.update_bead_progress(1, 90.0, -0.10, true);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_beads_integration_update_bead_progress_no_bead_id() {
+        let beads = BeadsIntegration::new(true);
+        // Should return Ok immediately when bead_id is None
+        let result = beads.update_bead_progress(1, 90.0, -0.10, true);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_beads_integration_close_bead_disabled() {
+        let beads = BeadsIntegration::new(false);
+        // Should return Ok immediately when disabled
+        let result = beads.close_bead(true, 0.15, 3);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_beads_integration_close_bead_no_bead_id() {
+        let beads = BeadsIntegration::new(true);
+        // Should return Ok immediately when bead_id is None
+        let result = beads.close_bead(true, 0.15, 3);
+        assert!(result.is_ok());
+    }
 }
 
 #[tokio::main]
