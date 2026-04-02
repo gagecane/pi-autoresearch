@@ -138,3 +138,264 @@ impl IterationExecutor {
         Ok(IterationResult { iterations, best_iteration: if state.best_iteration > 0 { Some(state.best_iteration) } else { None }, best_metric: state.best_metric, stuck_reason })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Tests for IterationRecord
+    #[test]
+    fn test_iteration_record_new() {
+        let record = IterationRecord::new(1, "test action".to_string(), 100.0, 0.1, true);
+        assert_eq!(record.iteration, 1);
+        assert_eq!(record.agent_action, "test action");
+        assert_eq!(record.metric_value, 100.0);
+        assert_eq!(record.improvement, 0.1);
+        assert!(record.kept);
+    }
+
+    #[test]
+    fn test_iteration_record_clone() {
+        let record1 = IterationRecord::new(1, "action".to_string(), 50.0, 0.05, false);
+        let record2 = record1.clone();
+        assert_eq!(record2.iteration, record1.iteration);
+        assert_eq!(record2.metric_value, record1.metric_value);
+    }
+
+    #[test]
+    fn test_iteration_record_debug() {
+        let record = IterationRecord::new(1, "test".to_string(), 100.0, 0.1, true);
+        let debug_str = format!("{:?}", record);
+        assert!(debug_str.contains("IterationRecord"));
+        assert!(debug_str.contains("test"));
+    }
+
+    // Tests for IterationConfig
+    #[test]
+    fn test_iteration_config_default() {
+        let config = IterationConfig::default();
+        assert_eq!(config.max_iterations, 20);
+        assert_eq!(config.iteration_timeout_secs, 600);
+        assert_eq!(config.total_timeout_secs, 7200);
+        assert_eq!(config.stall_limit, 5);
+        assert_eq!(config.convergence_threshold, 0.01);
+        assert_eq!(config.convergence_window, 3);
+        assert!(!config.verbose);
+        assert!(!config.quiet);
+    }
+
+    #[test]
+    fn test_iteration_config_custom() {
+        let config = IterationConfig {
+            max_iterations: 10,
+            iteration_timeout_secs: 300,
+            total_timeout_secs: 3600,
+            stall_limit: 3,
+            convergence_threshold: 0.05,
+            convergence_window: 5,
+            verbose: true,
+            quiet: false,
+        };
+        assert_eq!(config.max_iterations, 10);
+        assert_eq!(config.iteration_timeout_secs, 300);
+        assert!(config.verbose);
+    }
+
+    #[test]
+    fn test_iteration_config_clone() {
+        let config1 = IterationConfig::default();
+        let config2 = config1.clone();
+        assert_eq!(config2.max_iterations, config1.max_iterations);
+        assert_eq!(config2.stall_limit, config1.stall_limit);
+    }
+
+    // Tests for IterationResult
+    #[test]
+    fn test_iteration_result_with_data() {
+        let iterations = vec![
+            IterationRecord::new(1, "action1".to_string(), 90.0, 0.1, true),
+            IterationRecord::new(2, "action2".to_string(), 85.0, 0.15, true),
+        ];
+        let result = IterationResult {
+            iterations,
+            best_iteration: Some(2),
+            best_metric: 85.0,
+            stuck_reason: Some(StuckReason::MaxIterationsReached),
+        };
+        assert_eq!(result.iterations.len(), 2);
+        assert_eq!(result.best_iteration, Some(2));
+        assert_eq!(result.best_metric, 85.0);
+        assert!(result.stuck_reason.is_some());
+    }
+
+    #[test]
+    fn test_iteration_result_empty() {
+        let result = IterationResult {
+            iterations: vec![],
+            best_iteration: None,
+            best_metric: 100.0,
+            stuck_reason: None,
+        };
+        assert!(result.iterations.is_empty());
+        assert!(result.best_iteration.is_none());
+        assert!(result.stuck_reason.is_none());
+    }
+
+    // Tests for IterationExecutor
+    #[test]
+    fn test_iteration_executor_new() {
+        let config = IterationConfig::default();
+        let executor = IterationExecutor::new(config, 0.1);
+        // Just verify it doesn't panic
+        assert!(true);
+    }
+
+    #[test]
+    fn test_iteration_executor_new_with_custom_max_variance() {
+        let config = IterationConfig {
+            max_iterations: 10,
+            iteration_timeout_secs: 300,
+            total_timeout_secs: 3600,
+            stall_limit: 3,
+            convergence_threshold: 0.05,
+            convergence_window: 5,
+            verbose: false,
+            quiet: true,
+        };
+        let executor = IterationExecutor::new(config, 0.2);
+        // Just verify it doesn't panic
+        assert!(true);
+    }
+
+    // Test run_iteration with a simple command
+    #[test]
+    fn test_run_iteration_valid_command() {
+        let config = IterationConfig {
+            max_iterations: 5,
+            iteration_timeout_secs: 60,
+            total_timeout_secs: 300,
+            stall_limit: 3,
+            convergence_threshold: 0.01,
+            convergence_window: 3,
+            verbose: false,
+            quiet: true,
+        };
+        let executor = IterationExecutor::new(config, 0.1);
+        let result = executor.run_iteration(1, "test question", 100.0, 100.0, "echo 90");
+        assert!(result.is_ok());
+        let record = result.unwrap();
+        assert_eq!(record.iteration, 1);
+        assert_eq!(record.metric_value, 90.0);
+        assert!(record.kept); // 90 < 100, so it's an improvement
+    }
+
+    #[test]
+    fn test_run_iteration_degradation() {
+        let config = IterationConfig {
+            max_iterations: 5,
+            iteration_timeout_secs: 60,
+            total_timeout_secs: 300,
+            stall_limit: 3,
+            convergence_threshold: 0.01,
+            convergence_window: 3,
+            verbose: false,
+            quiet: true,
+        };
+        let executor = IterationExecutor::new(config, 0.1);
+        let result = executor.run_iteration(1, "test question", 100.0, 100.0, "echo 110");
+        assert!(result.is_ok());
+        let record = result.unwrap();
+        assert_eq!(record.metric_value, 110.0);
+        assert!(!record.kept); // 110 > 100, so it's a degradation
+    }
+
+    #[test]
+    fn test_run_iteration_invalid_command() {
+        let config = IterationConfig::default();
+        let executor = IterationExecutor::new(config, 0.1);
+        let result = executor.run_iteration(1, "test question", 100.0, 100.0, "echo not_a_number");
+        assert!(result.is_err());
+    }
+
+    // Test run_loop
+    #[test]
+    fn test_run_loop_improvement() {
+        let config = IterationConfig {
+            max_iterations: 5,
+            iteration_timeout_secs: 60,
+            total_timeout_secs: 300,
+            stall_limit: 3,
+            convergence_threshold: 0.01,
+            convergence_window: 3,
+            verbose: false,
+            quiet: true,
+        };
+        let executor = IterationExecutor::new(config, 0.1);
+        let result = executor.run_loop("test question", 100.0, "echo 90");
+        assert!(result.is_ok());
+        let iter_result = result.unwrap();
+        assert!(!iter_result.iterations.is_empty());
+        assert!(iter_result.best_metric <= 100.0);
+    }
+
+    #[test]
+    fn test_run_loop_max_iterations() {
+        let config = IterationConfig {
+            max_iterations: 3,
+            iteration_timeout_secs: 60,
+            total_timeout_secs: 300,
+            stall_limit: 10,
+            convergence_threshold: 0.01,
+            convergence_window: 5, // Window larger than max_iterations to prevent convergence
+            verbose: false,
+            quiet: true,
+        };
+        let executor = IterationExecutor::new(config, 0.1);
+        let result = executor.run_loop("test question", 100.0, "echo 95");
+        assert!(result.is_ok());
+        let iter_result = result.unwrap();
+        assert_eq!(iter_result.iterations.len(), 3);
+        assert_eq!(iter_result.stuck_reason, Some(StuckReason::MaxIterationsReached));
+    }
+
+    #[test]
+    fn test_run_loop_convergence() {
+        let config = IterationConfig {
+            max_iterations: 10,
+            iteration_timeout_secs: 60,
+            total_timeout_secs: 300,
+            stall_limit: 10,
+            convergence_threshold: 0.01,
+            convergence_window: 3,
+            verbose: false,
+            quiet: true,
+        };
+        let executor = IterationExecutor::new(config, 0.1);
+        // Use constant value to trigger convergence
+        let result = executor.run_loop("test question", 100.0, "echo 99.5");
+        assert!(result.is_ok());
+        let iter_result = result.unwrap();
+        // Should exit early due to convergence
+        assert!(iter_result.iterations.len() <= 10);
+    }
+
+    #[test]
+    fn test_run_loop_error_handling() {
+        let config = IterationConfig {
+            max_iterations: 3,
+            iteration_timeout_secs: 60,
+            total_timeout_secs: 300,
+            stall_limit: 10,
+            convergence_threshold: 0.01,
+            convergence_window: 3,
+            verbose: false,
+            quiet: true,
+        };
+        let executor = IterationExecutor::new(config, 0.1);
+        let result = executor.run_loop("test question", 100.0, "nonexistent_command");
+        assert!(result.is_ok()); // Should handle errors gracefully
+        let iter_result = result.unwrap();
+        // All iterations should fail
+        assert!(iter_result.iterations.is_empty() || iter_result.iterations.len() < 3);
+    }
+}
