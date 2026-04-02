@@ -2258,3 +2258,96 @@ fn test_beads_integration_error_handling() {
     let json = parse_json_output(&output);
     assert!(json["hypothesis"].as_str().unwrap().contains("error handling"));
 }
+
+#[test]
+fn test_progress_bar_shown_during_iterations() {
+    let session_file = "/tmp/test_progress_bar.jsonl";
+    std::fs::remove_file(session_file).ok();
+    
+    let args = vec![
+        "--question",
+        "test progress bar",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 90.0",
+        "--baseline",
+        "100.0",
+        "--target-improvement",
+        "0.1",  // Lower target to ensure success
+        "--max-iterations",
+        "3",
+        "--session-file",
+        session_file,
+        "--skip-git",
+    ];
+    let output = get_cli_output(&args);
+    
+    assert!(output.status.success(), 
+        "Command should succeed. stderr: {}",
+        String::from_utf8_lossy(&output.stderr));
+    
+    // Progress bars use stderr for output with ANSI escape codes
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Verify session file was created
+    assert!(std::path::Path::new(session_file).exists(),
+        "Session file should be created");
+    
+    // Read and parse session file to verify experiment data
+    let contents = std::fs::read_to_string(session_file).unwrap();
+    
+    // The ExperimentSession is the last JSON object in the file (pretty-printed)
+    // We need to find the start of this object by looking for "session_id"
+    let session_start = contents.find("\"session_id\"").expect("Should find session_id");
+    // Find the opening brace before session_id
+    let brace_start = contents[..session_start].rfind('{').expect("Should find opening brace");
+    let json_str = &contents[brace_start..];
+    
+    let session: serde_json::Value = serde_json::from_str(json_str)
+        .expect("Should parse experiment session JSON");
+    
+    // Verify experiment data
+    assert!(session["session_id"].is_string(), "Should have session_id");
+    assert!(session["iterations"].as_array().unwrap().len() > 0,
+        "Should have at least one iteration");
+    assert!(session["status"].as_str().unwrap().starts_with("complete"),
+        "Status should be complete or completed");
+}
+
+#[test]
+fn test_progress_bar_shown_during_baseline_verification() {
+    let session_file = "/tmp/test_progress_bar_baseline.jsonl";
+    let args = vec![
+        "--question",
+        "test baseline progress bar",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 100.0",
+        "--baseline",
+        "100.0",
+        "--verify-baseline",
+        "--session-file",
+        session_file,
+    ];
+    let output = get_cli_output(&args);
+    
+    assert!(output.status.success(), 
+        "Command should succeed. stderr: {}",
+        String::from_utf8_lossy(&output.stderr));
+    
+    // Progress bars use stderr for output
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Verify baseline verification was shown
+    assert!(stderr.contains("Verifying baseline"), 
+        "Should show progress bar for baseline verification");
+    
+    // Verify JSON output
+    let json = parse_json_output(&output);
+    assert!(json["baseline_record"].is_object());
+    assert!(json["baseline_record"]["within_threshold"].as_bool().unwrap());
+}
