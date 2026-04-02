@@ -625,6 +625,372 @@ impl AuditLogger {
     }
 }
 
+// ==================== Decision Logging Helper Functions ====================
+
+impl AuditLogger {
+    /// Logs that a change was kept due to improvement
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `iteration_num` - Current iteration number (1-indexed)
+    /// * `improvement` - Improvement achieved (as a ratio, e.g., 0.15 for 15%)
+    /// * `metric_value` - The measured metric value
+    /// * `baseline` - Baseline value for comparison
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_change_kept("session-123", 1, 0.15, 85.0, 100.0).unwrap();
+    /// ```
+    pub fn log_change_kept(
+        &mut self,
+        session_id: &str,
+        iteration_num: usize,
+        improvement: f64,
+        metric_value: f64,
+        baseline: f64,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("iteration".to_string(), iteration_num.to_string());
+        details.insert("improvement".to_string(), improvement.to_string());
+        details.insert("improvement_percent".to_string(), format!("{:+.2}%", improvement * 100.0));
+        details.insert("metric_value".to_string(), metric_value.to_string());
+        details.insert("baseline".to_string(), baseline.to_string());
+        details.insert("decision".to_string(), "kept".to_string());
+        details.insert("reason".to_string(), format!("Improvement of {:+.2}% achieved", improvement * 100.0));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::ChangeKept,
+            format!("Kept change in iteration {} (improvement: {:+.2}%)", iteration_num, improvement * 100.0),
+            details,
+        )
+    }
+    
+    /// Logs that a change was reverted due to lack of improvement
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `iteration_num` - Current iteration number (1-indexed)
+    /// * `improvement` - Improvement achieved (negative or zero for reverted changes)
+    /// * `metric_value` - The measured metric value
+    /// * `baseline` - Baseline value for comparison
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_change_reverted("session-123", 2, -0.05, 105.0, 100.0).unwrap();
+    /// ```
+    pub fn log_change_reverted(
+        &mut self,
+        session_id: &str,
+        iteration_num: usize,
+        improvement: f64,
+        metric_value: f64,
+        baseline: f64,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("iteration".to_string(), iteration_num.to_string());
+        details.insert("improvement".to_string(), improvement.to_string());
+        details.insert("improvement_percent".to_string(), format!("{:+.2}%", improvement * 100.0));
+        details.insert("metric_value".to_string(), metric_value.to_string());
+        details.insert("baseline".to_string(), baseline.to_string());
+        details.insert("decision".to_string(), "reverted".to_string());
+        details.insert("reason".to_string(), format!("No improvement: {:+.2}%", improvement * 100.0));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::ChangeReverted,
+            format!("Reverted change in iteration {} (improvement: {:+.2}%)", iteration_num, improvement * 100.0),
+            details,
+        )
+    }
+    
+    /// Logs that the target improvement was achieved
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `target_improvement` - Target improvement ratio that was required
+    /// * `actual_improvement` - Actual improvement achieved
+    /// * `iterations` - Number of iterations to achieve target
+    /// * `metric_value` - Final metric value
+    /// * `baseline` - Baseline value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_target_achieved("session-123", 0.20, 0.25, 5, 75.0, 100.0).unwrap();
+    /// ```
+    pub fn log_target_achieved(
+        &mut self,
+        session_id: &str,
+        target_improvement: f64,
+        actual_improvement: f64,
+        iterations: usize,
+        metric_value: f64,
+        baseline: f64,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("target_improvement".to_string(), target_improvement.to_string());
+        details.insert("target_improvement_percent".to_string(), format!("{:.1}%", target_improvement * 100.0));
+        details.insert("actual_improvement".to_string(), actual_improvement.to_string());
+        details.insert("actual_improvement_percent".to_string(), format!("{:+.2}%", actual_improvement * 100.0));
+        details.insert("iterations".to_string(), iterations.to_string());
+        details.insert("metric_value".to_string(), metric_value.to_string());
+        details.insert("baseline".to_string(), baseline.to_string());
+        details.insert("exceeded_target_by".to_string(), format!("{:+.2}%", (actual_improvement - target_improvement) * 100.0));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::TargetAchieved,
+            format!("Target achieved: {:+.2}% improvement (target: {:.1}%) in {} iterations",
+                    actual_improvement * 100.0, target_improvement * 100.0, iterations),
+            details,
+        )
+    }
+    
+    /// Logs that the target improvement was not achieved
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `target_improvement` - Target improvement ratio that was required
+    /// * `actual_improvement` - Actual improvement achieved (best)
+    /// * `iterations` - Total iterations performed
+    /// * `metric_value` - Final metric value
+    /// * `baseline` - Baseline value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_target_not_achieved("session-123", 0.20, 0.10, 10, 90.0, 100.0).unwrap();
+    /// ```
+    pub fn log_target_not_achieved(
+        &mut self,
+        session_id: &str,
+        target_improvement: f64,
+        actual_improvement: f64,
+        iterations: usize,
+        metric_value: f64,
+        baseline: f64,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("target_improvement".to_string(), target_improvement.to_string());
+        details.insert("target_improvement_percent".to_string(), format!("{:.1}%", target_improvement * 100.0));
+        details.insert("actual_improvement".to_string(), actual_improvement.to_string());
+        details.insert("actual_improvement_percent".to_string(), format!("{:+.2}%", actual_improvement * 100.0));
+        details.insert("iterations".to_string(), iterations.to_string());
+        details.insert("metric_value".to_string(), metric_value.to_string());
+        details.insert("baseline".to_string(), baseline.to_string());
+        details.insert("shortfall".to_string(), format!("{:.2}%", (target_improvement - actual_improvement) * 100.0));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::TargetNotAchieved,
+            format!("Target not achieved: {:+.2}% improvement (target: {:.1}%) after {} iterations",
+                    actual_improvement * 100.0, target_improvement * 100.0, iterations),
+            details,
+        )
+    }
+    
+    /// Logs that the experiment stalled (no improvement for N iterations)
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `stall_count` - Number of iterations without improvement
+    /// * `best_improvement` - Best improvement achieved so far
+    /// * `current_iteration` - Current iteration number when stalled
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_stalled("session-123", 5, 0.10, 10).unwrap();
+    /// ```
+    pub fn log_stalled(
+        &mut self,
+        session_id: &str,
+        stall_count: usize,
+        best_improvement: f64,
+        current_iteration: usize,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("stall_count".to_string(), stall_count.to_string());
+        details.insert("best_improvement".to_string(), best_improvement.to_string());
+        details.insert("best_improvement_percent".to_string(), format!("{:+.2}%", best_improvement * 100.0));
+        details.insert("current_iteration".to_string(), current_iteration.to_string());
+        details.insert("reason".to_string(), format!("No improvement for {} consecutive iterations", stall_count));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::Stalled,
+            format!("Experiment stalled: no improvement for {} iterations (best: {:+.2}%)",
+                    stall_count, best_improvement * 100.0),
+            details,
+        )
+    }
+    
+    /// Logs that the experiment converged (improvements below threshold)
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `convergence_threshold` - Threshold below which improvements are considered converged
+    /// * `best_improvement` - Best improvement achieved
+    /// * `current_iteration` - Current iteration number when converged
+    /// * `window_size` - Number of iterations in the convergence window
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_converged("session-123", 0.01, 0.15, 8, 5).unwrap();
+    /// ```
+    pub fn log_converged(
+        &mut self,
+        session_id: &str,
+        convergence_threshold: f64,
+        best_improvement: f64,
+        current_iteration: usize,
+        window_size: usize,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("convergence_threshold".to_string(), convergence_threshold.to_string());
+        details.insert("convergence_threshold_percent".to_string(), format!("{:.2}%", convergence_threshold * 100.0));
+        details.insert("best_improvement".to_string(), best_improvement.to_string());
+        details.insert("best_improvement_percent".to_string(), format!("{:+.2}%", best_improvement * 100.0));
+        details.insert("current_iteration".to_string(), current_iteration.to_string());
+        details.insert("window_size".to_string(), window_size.to_string());
+        details.insert("reason".to_string(), format!("Improvements below {:.2}% threshold over {} iterations",
+                                                      convergence_threshold * 100.0, window_size));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::Converged,
+            format!("Experiment converged: improvements below {:.2}% over {} iterations (best: {:+.2}%)",
+                    convergence_threshold * 100.0, window_size, best_improvement * 100.0),
+            details,
+        )
+    }
+    
+    /// Logs that the experiment timed out
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `timeout_seconds` - Timeout duration in seconds
+    /// * `iterations_completed` - Number of iterations completed before timeout
+    /// * `best_improvement` - Best improvement achieved before timeout
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_timeout("session-123", 3600, 5, 0.12).unwrap();
+    /// ```
+    pub fn log_timeout(
+        &mut self,
+        session_id: &str,
+        timeout_seconds: u64,
+        iterations_completed: usize,
+        best_improvement: f64,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("timeout_seconds".to_string(), timeout_seconds.to_string());
+        details.insert("timeout_formatted".to_string(), format_duration(timeout_seconds));
+        details.insert("iterations_completed".to_string(), iterations_completed.to_string());
+        details.insert("best_improvement".to_string(), best_improvement.to_string());
+        details.insert("best_improvement_percent".to_string(), format!("{:+.2}%", best_improvement * 100.0));
+        details.insert("reason".to_string(), format!("Experiment exceeded {} second timeout", timeout_seconds));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::Timeout,
+            format!("Experiment timed out after {} ({} iterations, best: {:+.2}%)",
+                    format_duration(timeout_seconds), iterations_completed, best_improvement * 100.0),
+            details,
+        )
+    }
+    
+    /// Logs that the experiment reached maximum iterations
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `max_iterations` - Maximum iteration limit
+    /// * `best_improvement` - Best improvement achieved
+    /// * `metric_value` - Final metric value
+    /// * `baseline` - Baseline value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_max_iterations_reached("session-123", 10, 0.15, 85.0, 100.0).unwrap();
+    /// ```
+    pub fn log_max_iterations_reached(
+        &mut self,
+        session_id: &str,
+        max_iterations: usize,
+        best_improvement: f64,
+        metric_value: f64,
+        baseline: f64,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("max_iterations".to_string(), max_iterations.to_string());
+        details.insert("best_improvement".to_string(), best_improvement.to_string());
+        details.insert("best_improvement_percent".to_string(), format!("{:+.2}%", best_improvement * 100.0));
+        details.insert("metric_value".to_string(), metric_value.to_string());
+        details.insert("baseline".to_string(), baseline.to_string());
+        details.insert("reason".to_string(), format!("Reached maximum iteration limit of {}", max_iterations));
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::MaxIterationsReached,
+            format!("Max iterations reached: {} iterations (best improvement: {:+.2}%)",
+                    max_iterations, best_improvement * 100.0),
+            details,
+        )
+    }
+}
+
+/// Formats a duration in seconds as a human-readable string
+fn format_duration(seconds: u64) -> String {
+    if seconds < 60 {
+        format!("{}s", seconds)
+    } else if seconds < 3600 {
+        format!("{}m {}s", seconds / 60, seconds % 60)
+    } else if seconds < 86400 {
+        format!("{}h {}m", seconds / 3600, (seconds % 3600) / 60)
+    } else {
+        format!("{}d {}h", seconds / 86400, (seconds % 86400) / 3600)
+    }
+}
+
 impl AuditLogger {
     /// Creates a new audit logger for the specified path
     ///
@@ -1373,4 +1739,337 @@ mod tests {
         let entry_count = content.matches("event_type").count();
         assert_eq!(entry_count, 9);
     }
+
+    // ==================== Decision Logging Tests ====================
+
+    #[test]
+    fn test_log_change_kept() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_change_kept("session-123", 1, 0.15, 85.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("change_kept"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"iteration\": \"1\"")); // iteration
+        assert!(content.contains("\"improvement\": \"0.15\"")); // improvement
+        assert!(content.contains("\"metric_value\": \"85\"")); // metric_value (85.0 serializes as 85)
+        assert!(content.contains("\"baseline\": \"100\"")); // baseline (100.0 serializes as 100)
+        assert!(content.contains("\"decision\": \"kept\"")); // decision
+        assert!(content.contains("15.00")); // improvement_percent
+    }
+
+    #[test]
+    fn test_log_change_reverted() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_change_reverted("session-123", 2, -0.05, 105.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("change_reverted"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"iteration\": \"2\"")); // iteration
+        assert!(content.contains("\"improvement\": \"-0.05\"")); // improvement
+        assert!(content.contains("\"metric_value\": \"105\"")); // metric_value (105.0 serializes as 105)
+        assert!(content.contains("\"baseline\": \"100\"")); // baseline (100.0 serializes as 100)
+        assert!(content.contains("\"decision\": \"reverted\"")); // decision
+        assert!(content.contains("-5.00")); // improvement_percent
+    }
+
+    #[test]
+    fn test_log_target_achieved() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_target_achieved("session-123", 0.20, 0.25, 5, 75.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("target_achieved"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"target_improvement\": \"0.2\"")); // target_improvement (0.20 serializes as 0.2)
+        assert!(content.contains("\"actual_improvement\": \"0.25\"")); // actual_improvement
+        assert!(content.contains("\"iterations\": \"5\"")); // iterations
+        assert!(content.contains("\"metric_value\": \"75\"")); // metric_value (75.0 serializes as 75)
+        assert!(content.contains("\"baseline\": \"100\"")); // baseline (100.0 serializes as 100)
+        assert!(content.contains("20.0")); // target_improvement_percent
+        assert!(content.contains("25.00")); // actual_improvement_percent
+    }
+
+    #[test]
+    fn test_log_target_not_achieved() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_target_not_achieved("session-123", 0.20, 0.10, 10, 90.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("target_not_achieved"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"target_improvement\": \"0.2\"")); // target_improvement (0.20 serializes as 0.2)
+        assert!(content.contains("\"actual_improvement\": \"0.1\"")); // actual_improvement (0.10 serializes as 0.1)
+        assert!(content.contains("\"iterations\": \"10\"")); // iterations
+        assert!(content.contains("\"metric_value\": \"90\"")); // metric_value (90.0 serializes as 90)
+        assert!(content.contains("\"baseline\": \"100\"")); // baseline (100.0 serializes as 100)
+        assert!(content.contains("20.0")); // target_improvement_percent
+        assert!(content.contains("10.00")); // actual_improvement_percent
+    }
+
+    #[test]
+    fn test_log_stalled() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_stalled("session-123", 5, 0.10, 10).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("stalled"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"stall_count\": \"5\"")); // stall_count
+        assert!(content.contains("\"best_improvement\": \"0.1\"")); // best_improvement (0.10 serializes as 0.1)
+        assert!(content.contains("\"current_iteration\": \"10\"")); // current_iteration
+        assert!(content.contains("10.00")); // best_improvement_percent
+    }
+
+    #[test]
+    fn test_log_converged() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_converged("session-123", 0.01, 0.15, 8, 5).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("converged"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"convergence_threshold\": \"0.01\"")); // convergence_threshold
+        assert!(content.contains("\"best_improvement\": \"0.15\"")); // best_improvement
+        assert!(content.contains("\"current_iteration\": \"8\"")); // current_iteration
+        assert!(content.contains("\"window_size\": \"5\"")); // window_size
+        assert!(content.contains("1.00")); // convergence_threshold_percent
+    }
+
+    #[test]
+    fn test_log_timeout() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_timeout("session-123", 3600, 5, 0.12).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("timeout"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"timeout_seconds\": \"3600\"")); // timeout_seconds
+        assert!(content.contains("\"iterations_completed\": \"5\"")); // iterations_completed
+        assert!(content.contains("\"best_improvement\": \"0.12\"")); // best_improvement
+        assert!(content.contains("1h 0m")); // timeout_formatted
+    }
+
+    #[test]
+    fn test_log_max_iterations_reached() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_max_iterations_reached("session-123", 10, 0.15, 85.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("max_iterations_reached"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("\"max_iterations\": \"10\"")); // max_iterations
+        assert!(content.contains("\"best_improvement\": \"0.15\"")); // best_improvement
+        assert!(content.contains("\"metric_value\": \"85\"")); // metric_value (85.0 serializes as 85)
+        assert!(content.contains("\"baseline\": \"100\"")); // baseline (100.0 serializes as 100)
+        assert!(content.contains("15.00")); // best_improvement_percent
+    }
+
+    #[test]
+    fn test_format_duration_seconds() {
+        assert_eq!(format_duration(30), "30s");
+        assert_eq!(format_duration(59), "59s");
+    }
+
+    #[test]
+    fn test_format_duration_minutes() {
+        assert_eq!(format_duration(60), "1m 0s");
+        assert_eq!(format_duration(120), "2m 0s");
+        assert_eq!(format_duration(300), "5m 0s");
+        assert_eq!(format_duration(365), "6m 5s");
+    }
+
+    #[test]
+    fn test_format_duration_hours() {
+        assert_eq!(format_duration(3600), "1h 0m");
+        assert_eq!(format_duration(7200), "2h 0m");
+        assert_eq!(format_duration(3661), "1h 1m");
+    }
+
+    #[test]
+    fn test_format_duration_days() {
+        assert_eq!(format_duration(86400), "1d 0h");
+        assert_eq!(format_duration(172800), "2d 0h");
+        assert_eq!(format_duration(90000), "1d 1h");
+    }
+
+    #[test]
+    fn test_decision_logging_complete_workflow() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Simulate a complete experiment with decisions
+        logger.log_experiment_start("session-123", "Test question", "cpu_time", 100.0, 0.20).unwrap();
+        
+        // Iteration 1: change kept
+        logger.log_iteration_start("session-123", 1, "autoresearch/iter-1-abc").unwrap();
+        logger.log_change_kept("session-123", 1, 0.15, 85.0, 100.0).unwrap();
+        logger.log_iteration_end("session-123", 1, 0.15, true).unwrap();
+        
+        // Iteration 2: change reverted
+        logger.log_iteration_start("session-123", 2, "autoresearch/iter-2-def").unwrap();
+        logger.log_change_reverted("session-123", 2, -0.05, 105.0, 100.0).unwrap();
+        logger.log_iteration_end("session-123", 2, -0.05, false).unwrap();
+        
+        // Iteration 3: target achieved
+        logger.log_iteration_start("session-123", 3, "autoresearch/iter-3-ghi").unwrap();
+        logger.log_change_kept("session-123", 3, 0.25, 75.0, 100.0).unwrap();
+        logger.log_iteration_end("session-123", 3, 0.25, true).unwrap();
+        logger.log_target_achieved("session-123", 0.20, 0.25, 3, 75.0, 100.0).unwrap();
+        
+        logger.log_experiment_end("session-123", true, 0.25, 3, "target_achieved").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Verify all decision events are logged
+        assert!(content.contains("change_kept"));
+        assert!(content.contains("change_reverted"));
+        assert!(content.contains("target_achieved"));
+        
+        // Count entries (12 total: experiment_start, iter1_start, change_kept, iter1_end,
+        // iter2_start, change_reverted, iter2_end, iter3_start, change_kept, iter3_end,
+        // target_achieved, experiment_end)
+        let entry_count = content.matches("event_type").count();
+        assert_eq!(entry_count, 12);
+    }
+
+    #[test]
+    fn test_decision_logging_termination_workflow() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Test all termination reasons
+        
+        // Test stalled
+        logger.log_stalled("session-123", 5, 0.10, 10).unwrap();
+        
+        // Test converged
+        logger.log_converged("session-124", 0.01, 0.15, 8, 5).unwrap();
+        
+        // Test timeout
+        logger.log_timeout("session-125", 3600, 5, 0.12).unwrap();
+        
+        // Test max iterations
+        logger.log_max_iterations_reached("session-126", 10, 0.15, 85.0, 100.0).unwrap();
+        
+        // Test target not achieved
+        logger.log_target_not_achieved("session-127", 0.20, 0.10, 10, 90.0, 100.0).unwrap();
+        
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Verify all termination events are logged
+        assert!(content.contains("stalled"));
+        assert!(content.contains("converged"));
+        assert!(content.contains("timeout"));
+        assert!(content.contains("max_iterations_reached"));
+        assert!(content.contains("target_not_achieved"));
+        
+        // Count entries
+        let entry_count = content.matches("event_type").count();
+        assert_eq!(entry_count, 5);
+    }
+
+    #[test]
+    fn test_decision_logging_with_zero_improvement() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Test with zero improvement (edge case)
+        logger.log_change_reverted("session-123", 1, 0.0, 100.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("change_reverted"));
+        assert!(content.contains("0.0")); // zero improvement
+        assert!(content.contains("0.00")); // 0.00%
+    }
+
+    #[test]
+    fn test_decision_logging_with_negative_improvement() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Test with negative improvement (regression)
+        logger.log_change_reverted("session-123", 1, -0.25, 125.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("change_reverted"));
+        assert!(content.contains("-0.25")); // negative improvement
+        assert!(content.contains("-25.00")); // -25.00%
+    }
+
+    #[test]
+    fn test_decision_logging_serialization() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_change_kept("session-123", 1, 0.15, 85.0, 100.0).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Parse JSON to verify structure
+        let entry: AuditEntry = serde_json::from_str(content.trim()).unwrap();
+        assert_eq!(entry.event_type, AuditEventType::ChangeKept);
+        assert_eq!(entry.session_id, "session-123");
+        assert!(entry.details.contains_key("improvement"));
+        assert!(entry.details.contains_key("decision"));
+        assert_eq!(entry.details.get("decision"), Some(&"kept".to_string()));
+    }
 }
+
