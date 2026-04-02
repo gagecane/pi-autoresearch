@@ -21,7 +21,7 @@ impl std::fmt::Display for StuckReason {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IterationState {
     pub current_iteration: usize,
     pub best_metric: f64,
