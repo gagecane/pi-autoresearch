@@ -430,3 +430,1187 @@
   "end_time": "2026-04-02T12:20:57.138541+00:00",
   "status": "no_improvement"
 }
+{"timestamp":"2026-04-02T18:49:38.926689+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:49:38.930413+00:00","agent_action":"Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "76f87ca1e67df0f6",
+  "question": "test notification aliases",
+  "design": {
+    "hypothesis": "Optimizing based on: test notification aliases",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:49:38.926689+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:49:38.930560+00:00",
+      "agent_action": "Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:49:38.930586+00:00",
+  "end_time": "2026-04-02T18:49:38.930587+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:49:38.942960+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:49:38.945289+00:00","agent_action":"Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "6a01909e14811a88",
+  "question": "test webhook provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:49:38.942960+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:49:38.945395+00:00",
+      "agent_action": "Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:49:38.945410+00:00",
+  "end_time": "2026-04-02T18:49:38.945411+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:50:21.642786+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:50:21.645809+00:00","agent_action":"Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "c3c268fe5e796f43",
+  "question": "test webhook notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:50:21.642786+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:50:21.645944+00:00",
+      "agent_action": "Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:50:21.645966+00:00",
+  "end_time": "2026-04-02T18:50:21.645966+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:50:34.862088+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:50:34.864585+00:00","agent_action":"Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "839f274188ae69c6",
+  "question": "test webhook notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:50:34.862088+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:50:34.864665+00:00",
+      "agent_action": "Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:50:34.864675+00:00",
+  "end_time": "2026-04-02T18:50:34.864676+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:51:38.605850+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:51:38.608849+00:00","agent_action":"Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "9d70e3c62dbdf34b",
+  "question": "test notification aliases",
+  "design": {
+    "hypothesis": "Optimizing based on: test notification aliases",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:51:38.605850+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:51:38.608963+00:00",
+      "agent_action": "Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:51:38.608990+00:00",
+  "end_time": "2026-04-02T18:51:38.608991+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:51:38.621756+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:51:38.624326+00:00","agent_action":"Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "62185a18847884f6",
+  "question": "test webhook provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:51:38.621756+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:51:38.624441+00:00",
+      "agent_action": "Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:51:38.624460+00:00",
+  "end_time": "2026-04-02T18:51:38.624461+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:51:48.176949+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:51:48.179393+00:00","agent_action":"Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "2e5601aac7e13361",
+  "question": "test webhook notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:51:48.176949+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:51:48.179520+00:00",
+      "agent_action": "Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:51:48.179544+00:00",
+  "end_time": "2026-04-02T18:51:48.179545+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:51:55.771392+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:51:55.774611+00:00","agent_action":"Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "6b7509d0b71c0725",
+  "question": "test webhook notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:51:55.771392+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:51:55.774726+00:00",
+      "agent_action": "Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:51:55.774746+00:00",
+  "end_time": "2026-04-02T18:51:55.774747+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:52:04.853863+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:52:04.857685+00:00","agent_action":"Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "bd17bbefec04bc3e",
+  "question": "test webhook notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:04.853863+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:04.857793+00:00",
+      "agent_action": "Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:04.857807+00:00",
+  "end_time": "2026-04-02T18:52:04.857808+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:52:22.311675+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}{"timestamp":"2026-04-02T18:52:22.311651+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+
+{"timestamp":"2026-04-02T18:52:22.312435+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}{"timestamp":"2026-04-02T18:52:22.312488+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+
+{"timestamp":"2026-04-02T18:52:22.312950+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:52:22.316597+00:00","agent_action":"Proposed change for 'test empty url': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"iteration":1,"timestamp":"2026-04-02T18:52:22.316593+00:00","agent_action":"Proposed change for 'test milestone notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "df2982432c61c6d2",
+  "question": "test empty url",
+  "design": {
+    "hypothesis": "Optimizing based on: test empty url",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:22.312488+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:22.316738+00:00",
+      "agent_action": "Proposed change for 'test empty url': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:22.316769+00:00",
+  "end_time": "2026-04-02T18:52:22.316770+00:00",
+  "status": "no_improvement"
+}
+{"iteration":1,"timestamp":"2026-04-02T18:52:22.317241+00:00","agent_action":"Proposed change for 'test email notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"iteration":1,"timestamp":"2026-04-02T18:52:22.317269+00:00","agent_action":"Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"iteration":1,"timestamp":"2026-04-02T18:52:22.317421+00:00","agent_action":"Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "ecc4f9fbd1135a53",
+  "question": "test webhook provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:22.312435+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:22.317423+00:00",
+      "agent_action": "Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:22.317436+00:00",
+  "end_time": "2026-04-02T18:52:22.317437+00:00",
+  "status": "no_improvement"
+}
+{
+  "session_id": "7bdfc8b6cecad164",
+  "question": "test notification aliases",
+  "design": {
+    "hypothesis": "Optimizing based on: test notification aliases",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:22.311651+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:22.317497+00:00",
+      "agent_action": "Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:22.317512+00:00",
+  "end_time": "2026-04-02T18:52:22.317513+00:00",
+  "status": "no_improvement"
+}
+{
+  "session_id": "8e2e905b648c957",
+  "question": "test email notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test email notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:22.312950+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:22.317468+00:00",
+      "agent_action": "Proposed change for 'test email notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:22.317515+00:00",
+  "end_time": "2026-04-02T18:52:22.317518+00:00",
+  "status": "no_improvement"
+}
+{"iteration":2,"timestamp":"2026-04-02T18:52:22.323362+00:00","agent_action":"Proposed change for 'test milestone notification': Based on current state 'Iteration 2, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"timestamp":"2026-04-02T18:52:49.310488+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"timestamp":"2026-04-02T18:52:49.312675+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"timestamp":"2026-04-02T18:52:49.313933+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"timestamp":"2026-04-02T18:52:49.313961+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"timestamp":"2026-04-02T18:52:49.314310+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:52:49.315154+00:00","agent_action":"Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "e357a12a1b71ff33",
+  "question": "test webhook provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:49.310488+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:49.315275+00:00",
+      "agent_action": "Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:49.315364+00:00",
+  "end_time": "2026-04-02T18:52:49.315371+00:00",
+  "status": "no_improvement"
+}
+{"iteration":1,"timestamp":"2026-04-02T18:52:49.316041+00:00","agent_action":"Proposed change for 'test email notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "65400a8a0696c9f1",
+  "question": "test email notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test email notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:49.312675+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:49.316181+00:00",
+      "agent_action": "Proposed change for 'test email notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:49.316202+00:00",
+  "end_time": "2026-04-02T18:52:49.316203+00:00",
+  "status": "no_improvement"
+}
+{"iteration":1,"timestamp":"2026-04-02T18:52:49.317536+00:00","agent_action":"Proposed change for 'test milestone notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"iteration":1,"timestamp":"2026-04-02T18:52:49.317855+00:00","agent_action":"Proposed change for 'test empty url': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "e81ed589f53f3480",
+  "question": "test empty url",
+  "design": {
+    "hypothesis": "Optimizing based on: test empty url",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:49.313933+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:49.317930+00:00",
+      "agent_action": "Proposed change for 'test empty url': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:49.317945+00:00",
+  "end_time": "2026-04-02T18:52:49.317946+00:00",
+  "status": "no_improvement"
+}
+{"iteration":1,"timestamp":"2026-04-02T18:52:49.319103+00:00","agent_action":"Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "b47d0002952956e4",
+  "question": "test notification aliases",
+  "design": {
+    "hypothesis": "Optimizing based on: test notification aliases",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:52:49.313961+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:52:49.319414+00:00",
+      "agent_action": "Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:52:49.319455+00:00",
+  "end_time": "2026-04-02T18:52:49.319458+00:00",
+  "status": "no_improvement"
+}
+{"iteration":2,"timestamp":"2026-04-02T18:52:49.322362+00:00","agent_action":"Proposed change for 'test milestone notification': Based on current state 'Iteration 2, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"timestamp":"2026-04-02T18:57:52.203985+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:57:52.209265+00:00","agent_action":"Proposed change for 'test export': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "240c4129534ae9c5",
+  "question": "test export",
+  "design": {
+    "hypothesis": "Optimizing based on: test export",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:57:52.203985+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:57:52.209670+00:00",
+      "agent_action": "Proposed change for 'test export': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:57:52.209715+00:00",
+  "end_time": "2026-04-02T18:57:52.209717+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:38.880231+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:38.883352+00:00","agent_action":"Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "102da2dce103dd29",
+  "question": "test notification aliases",
+  "design": {
+    "hypothesis": "Optimizing based on: test notification aliases",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:38.880231+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:38.883456+00:00",
+      "agent_action": "Proposed change for 'test notification aliases': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:38.883481+00:00",
+  "end_time": "2026-04-02T18:59:38.883482+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:38.894569+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:38.896779+00:00","agent_action":"Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "2b87894dc52ba97f",
+  "question": "test webhook provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:38.894569+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:38.896867+00:00",
+      "agent_action": "Proposed change for 'test webhook provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:38.896881+00:00",
+  "end_time": "2026-04-02T18:59:38.896882+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:38.908756+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:38.911108+00:00","agent_action":"Proposed change for 'test slack provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "acd23831ca5be5e4",
+  "question": "test slack provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test slack provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:38.908756+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:38.911204+00:00",
+      "agent_action": "Proposed change for 'test slack provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:38.911216+00:00",
+  "end_time": "2026-04-02T18:59:38.911217+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:38.923635+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:38.926117+00:00","agent_action":"Proposed change for 'test email provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "207b82c3b0db0aaf",
+  "question": "test email provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test email provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:38.923635+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:38.926215+00:00",
+      "agent_action": "Proposed change for 'test email provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:38.926229+00:00",
+  "end_time": "2026-04-02T18:59:38.926230+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:38.954745+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:38.956828+00:00","agent_action":"Proposed change for 'test email notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "e4ed2abad291b773",
+  "question": "test email notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test email notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:38.954745+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:38.956901+00:00",
+      "agent_action": "Proposed change for 'test email notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:38.956914+00:00",
+  "end_time": "2026-04-02T18:59:38.956915+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:38.967062+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:38.969020+00:00","agent_action":"Proposed change for 'test empty url': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "b863b2460e75e2cb",
+  "question": "test empty url",
+  "design": {
+    "hypothesis": "Optimizing based on: test empty url",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:38.967062+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:38.969104+00:00",
+      "agent_action": "Proposed change for 'test empty url': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:38.969117+00:00",
+  "end_time": "2026-04-02T18:59:38.969120+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:38.988453+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:38.990436+00:00","agent_action":"Proposed change for 'test milestone notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"iteration":2,"timestamp":"2026-04-02T18:59:38.992113+00:00","agent_action":"Proposed change for 'test milestone notification': Based on current state 'Iteration 2, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{"iteration":3,"timestamp":"2026-04-02T18:59:38.993789+00:00","agent_action":"Proposed change for 'test milestone notification': Based on current state 'Iteration 3, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "a3487593c76df831",
+  "question": "test milestone notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test milestone notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:38.988453+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:38.990521+00:00",
+      "agent_action": "Proposed change for 'test milestone notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    },
+    {
+      "iteration": 2,
+      "timestamp": "2026-04-02T18:59:38.992180+00:00",
+      "agent_action": "Proposed change for 'test milestone notification': Based on current state 'Iteration 2, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    },
+    {
+      "iteration": 3,
+      "timestamp": "2026-04-02T18:59:38.993873+00:00",
+      "agent_action": "Proposed change for 'test milestone notification': Based on current state 'Iteration 3, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:38.993890+00:00",
+  "end_time": "2026-04-02T18:59:38.993891+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:39.019093+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:39.021008+00:00","agent_action":"Proposed change for 'test default provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "1b21ed564bb01f24",
+  "question": "test default provider",
+  "design": {
+    "hypothesis": "Optimizing based on: test default provider",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:39.019093+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:39.021082+00:00",
+      "agent_action": "Proposed change for 'test default provider': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:39.021093+00:00",
+  "end_time": "2026-04-02T18:59:39.021093+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:39.044110+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:39.046438+00:00","agent_action":"Proposed change for 'test slack notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "9a486a355ab84ff8",
+  "question": "test slack notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test slack notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:39.044110+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:39.046522+00:00",
+      "agent_action": "Proposed change for 'test slack notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:39.046533+00:00",
+  "end_time": "2026-04-02T18:59:39.046533+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:39.056378+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:39.058721+00:00","agent_action":"Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "cc894409b078d0a2",
+  "question": "test webhook notification",
+  "design": {
+    "hypothesis": "Optimizing based on: test webhook notification",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:39.056378+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:39.058800+00:00",
+      "agent_action": "Proposed change for 'test webhook notification': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:39.058813+00:00",
+  "end_time": "2026-04-02T18:59:39.058814+00:00",
+  "status": "no_improvement"
+}
+{"timestamp":"2026-04-02T18:59:39.068559+00:00","git_commit":"40c693aafd6301b05778eb9fc40968a085d07deb","metric":"test_metric","measurement_command":"echo 50","value":50.0,"verification_runs":[50.0,50.0],"variance":0.0,"within_threshold":true}
+{"iteration":1,"timestamp":"2026-04-02T18:59:39.071151+00:00","agent_action":"Proposed change for 'test export': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.","metric_value":50.0,"improvement":0.0,"kept":false}
+{
+  "session_id": "6ddf4d2c070e0fcc",
+  "question": "test export",
+  "design": {
+    "hypothesis": "Optimizing based on: test export",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-02T18:59:39.068559+00:00",
+    "git_commit": "40c693aafd6301b05778eb9fc40968a085d07deb",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-02T18:59:39.071236+00:00",
+      "agent_action": "Proposed change for 'test export': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:59:39.071249+00:00",
+  "end_time": "2026-04-02T18:59:39.071249+00:00",
+  "status": "no_improvement"
+}
