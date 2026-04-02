@@ -2,6 +2,23 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-03 04:00 UTC: Decision Logging Clippy Warning Fixed (Priority 94.4)
+
+**Priority 94.4: AUDIT - Implement Decision Logging** - REVISE COMPLETE → REVIEW
+
+**Fix Summary**:
+- Fixed clippy warning in `src/audit.rs:1027`
+- Removed unnecessary `.write(true)` from `OpenOptions` chain
+- `.append(true)` already implies write access, making `.write(true)` redundant
+- All 67 audit tests pass, zero warnings after fix
+
+**Code Quality Lesson**:
+- When using `.append(true)` on `OpenOptions`, the `.write(true)` call is unnecessary
+- Clippy correctly identifies this redundancy
+- Keep file opening options minimal and explicit about intent
+
+---
+
 ## 2026-04-03 01:00 UTC: Action Logging Implementation Complete (Priority 94.3)
 
 **Priority 94.3: AUDIT - Implement Action Logging** - COMPLETE

@@ -747,8 +747,8 @@ pi-autoresearch --question "..." --audit-log-path audit.log --audit-log-format j
 ```
 
 ## Priority 94.4: AUDIT - Implement Decision Logging
-**Status**: REVISE 🔄
-**Feedback**: Clippy warning in `src/audit.rs:1027` - unnecessary `.write(true)` when `.append(true)` is used. See feedback.md for details.
+**Status**: REVIEW 🔄
+**Description**: Implement logging of experiment decisions
 **Description**: Implement logging of experiment decisions
 **Rationale**: Track why changes were kept or reverted
 **Implementation**:
