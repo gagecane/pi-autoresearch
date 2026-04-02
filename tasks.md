@@ -1624,3 +1624,31 @@
 **Review**: Research completed thoroughly - all major areas analyzed, code quality and test coverage are excellent, 7 actionable tasks created for future improvements
 
 
+
+## Priority 69: TEST - Add End-to-End Auto-Approve with Beads Test
+**Status**: COMPLETE ✅
+**Description**: Add integration test for `--auto-approve` with beads workflow end-to-end
+**Rationale**: Need to verify the complete workflow when both auto-approve and beads are enabled
+**Tests Added** (6 new integration tests):
+1. `test_auto_approve_with_beads_end_to_end`: Verifies basic workflow with both flags
+2. `test_auto_approve_beads_with_iterations`: Tests multiple iterations with beads
+3. `test_auto_approve_beads_config_file_integration`: Tests beads from config file
+4. `test_auto_approve_beads_cli_overrides_config`: Tests CLI and config interaction
+5. `test_auto_approve_beads_error_handling`: Tests graceful degradation when bd is unavailable
+6. `test_auto_approve_beads_complete_workflow`: Tests complete workflow with verify-baseline
+**Test Results**:
+- 6 new integration tests added
+- All 6 tests pass
+- All 90 integration tests pass (was 84)
+- All 162 lib tests still pass
+- All 103 main.rs tests still pass
+- All 13 mutation tests still pass
+- All 7 performance tests still pass
+- Total: 367 tests passing
+**Acceptance Criteria**:
+- ✅ Tests verify --auto-approve and --beads-enabled work together
+- ✅ Tests handle graceful degradation when bd command is not available
+- ✅ Tests verify config file integration
+- ✅ Tests verify complete workflow (baseline, iterations, finalization)
+- ✅ No panics or crashes when bd is unavailable
+**Review**: Implementation verified correct - all 6 end-to-end tests properly implemented, verify complete auto-approve + beads workflow, handle missing bd gracefully, test config file integration, test multiple iterations, all tests pass consistently
