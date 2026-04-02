@@ -1450,14 +1450,43 @@
 **Review**: Ready for review - progress bars properly implemented for baseline verification and iterations, all tests pass
 
 ## Priority 65: UX - Improve Error Messages
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Improve error messages with helpful suggestions
 **Rationale**: Better error messages help users resolve issues faster
 **Implementation**:
-- Add suggestions to error messages
-- Link to relevant documentation
-- Provide example fixes
-- Use colored output for better readability
+- Added `colored` crate for colored output
+- Enhanced `ConfigValidationError` Display implementation with suggestions:
+  - Each error type now includes SUGGESTION section
+  - Provides specific example fixes for each error
+  - Links to docs/CONFIG.md for more information
+- Enhanced `MetricError` Display implementation with suggestions:
+  - Context-aware suggestions based on error type
+  - Links to docs/TROUBLESHOOTING.md
+- Enhanced `StuckReason` Display implementation with suggestions:
+  - Each stuck reason includes relevant suggestions
+  - Links to docs/TROUBLESHOOTING.md
+- Improved error messages in main.rs:
+  - Session not found errors suggest --history flag
+  - Baseline verification errors suggest checking measurement command
+  - Iteration errors suggest reviewing agent changes
+- Added 5 new integration tests for error message features
+**Changes Made**:
+- Cargo.toml: Added colored v2.1 dependency
+- src/main.rs: Enhanced ConfigValidationError Display with suggestions
+- src/main.rs: Added colored suggestions to error messages throughout
+- src/metric_evaluator.rs: Enhanced MetricError Display with suggestions
+- src/stuck_detector.rs: Enhanced StuckReason Display with suggestions
+- tests/integration_tests.rs: Added 5 tests for error message features
+**Test Results**:
+- 5 new integration tests added
+- All 162 lib tests pass
+- All 103 main.rs tests pass
+- All 83 integration tests pass (was 78)
+- All 13 mutation tests pass
+- All 7 performance tests pass
+- Total: 368 tests passing
+- Zero clippy warnings
+**Review**: Ready for review - all error messages now include helpful suggestions, colored output for better readability, links to relevant documentation, and example fixes
 
 ## Priority 66: CI - Add GitHub Actions Workflow
 **Status**: TODO
