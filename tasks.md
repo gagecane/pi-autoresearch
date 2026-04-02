@@ -1300,3 +1300,99 @@
 - Priority 67: CI - Add Release Automation
 **Review**: Research completed thoroughly - all major areas analyzed, 9 actionable tasks created
 
+## Priority 59: CODE QUALITY - Fix Clippy Warnings
+**Status**: TODO
+**Description**: Fix 3 clippy warnings identified in codebase
+**Rationale**: Improve code quality and follow Rust best practices
+**Warnings to Fix**:
+1. Redundant field names in pi_agent.rs line 5: `Self { _simulated: _simulated }` → `Self { _simulated }`
+2. Too many arguments in phase1_design.rs line 31: BaselineRecord::new() has 8 arguments
+3. Large enum variant in session.rs line 36: SessionRecord enum has large size difference between variants
+**Implementation**:
+- Fix redundant field names using clippy suggestion
+- Consider using builder pattern or struct for BaselineRecord::new() arguments
+- Box the large variant in SessionRecord enum
+**Test**: `cargo clippy` passes with no warnings, all 277 tests still pass
+
+## Priority 60: DOCS - Add API Documentation
+**Status**: TODO
+**Description**: Create API documentation for library users
+**Rationale**: Developers who want to use pi-autoresearch as a library need API docs
+**Content to Create**:
+- Public API reference for lib.rs
+- Function signatures and parameters
+- Return values and error types
+- Usage examples for library integration
+- Module documentation
+
+## Priority 61: DOCS - Add Migration Guide
+**Status**: TODO
+**Description**: Create migration guide for config file changes
+**Rationale**: Users need help migrating between versions
+**Content to Create**:
+- Version-by-version migration instructions
+- Breaking changes documentation
+- Config file format changes
+- CLI argument changes
+
+## Priority 62: DOCS - Add More Examples
+**Status**: TODO
+**Description**: Expand docs/EXAMPLES.md with more comprehensive examples
+**Rationale**: Users need more practical examples for different use cases
+**Content to Add**:
+- Advanced configuration examples
+- Multi-metric optimization examples
+- CI/CD integration examples
+- Beads workflow examples
+- Common patterns and best practices
+
+## Priority 63: TEST - Add End-to-End Beads Tests
+**Status**: TODO
+**Description**: Add end-to-end integration tests for beads workflow
+**Rationale**: Beads integration is critical for issue tracking but lacks e2e tests
+**Tests to Add**:
+- Test beads task creation workflow
+- Test beads task update workflow
+- Test beads task completion workflow
+- Test beads integration with experiments
+
+## Priority 64: FEATURE - Add Progress Bars
+**Status**: TODO
+**Description**: Add progress bars for long operations
+**Rationale**: Improve UX by showing progress during long-running operations
+**Implementation**:
+- Add indicatif crate for progress bars
+- Show progress during iterations
+- Show progress during baseline verification
+- Show progress during session file operations
+
+## Priority 65: UX - Improve Error Messages
+**Status**: TODO
+**Description**: Improve error messages with helpful suggestions
+**Rationale**: Better error messages help users resolve issues faster
+**Implementation**:
+- Add suggestions to error messages
+- Link to relevant documentation
+- Provide example fixes
+- Use colored output for better readability
+
+## Priority 66: CI - Add GitHub Actions Workflow
+**Status**: TODO
+**Description**: Add GitHub Actions workflow for CI/CD
+**Rationale**: Automate testing and validation on pull requests
+**Implementation**:
+- Add .github/workflows/ci.yml
+- Run tests on push and PR
+- Run clippy and fmt checks
+- Build and test on multiple platforms
+
+## Priority 67: CI - Add Release Automation
+**Status**: TODO
+**Description**: Add release automation workflow
+**Rationale**: Simplify the release process
+**Implementation**:
+- Add release workflow to GitHub Actions
+- Auto-generate release notes from CHANGELOG.md
+- Create GitHub releases
+- Publish to crates.io
+
