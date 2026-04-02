@@ -6,6 +6,55 @@ use crate::metric_evaluator::MetricEvaluator;
 use crate::pi_agent::PiAgent;
 use crate::stuck_detector::{IterationState, StuckDetector, StuckDetectorConfig, StuckReason};
 
+/// Record of a single iteration in the autoresearch loop.
+///
+/// Contains all the information about what happened during an iteration,
+/// including the agent's action, the resulting metric value, and whether
+/// the change was kept or reverted.
+///
+/// # Fields
+///
+/// * `iteration` - The iteration number (1-indexed)
+/// * `timestamp` - ISO 8601 timestamp when the iteration completed
+/// * `agent_action` - Description of what the AI agent proposed to change
+/// * `metric_value` - The measured metric value after the change
+/// * `improvement` - Relative improvement over baseline (positive = better)
+/// * `kept` - Whether the change was kept (true) or reverted (false)
+///
+/// # Examples
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::IterationRecord;
+///
+/// // Create a record for a successful iteration
+/// let record = IterationRecord::new(
+///     1,
+///     "Optimized database query".to_string(),
+///     95.0,
+///     0.05,
+///     true
+/// );
+///
+/// assert_eq!(record.iteration, 1);
+/// assert_eq!(record.metric_value, 95.0);
+/// assert!(record.kept);
+/// ```
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::IterationRecord;
+///
+/// // Create a record for a failed iteration (change reverted)
+/// let record = IterationRecord::new(
+///     2,
+///     "Increased cache size".to_string(),
+///     105.0,
+///     -0.05,
+///     false
+/// );
+///
+/// assert_eq!(record.improvement, -0.05);
+/// assert!(!record.kept);
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct IterationRecord {
     pub iteration: usize,
@@ -17,11 +66,91 @@ pub struct IterationRecord {
 }
 
 impl IterationRecord {
+    /// Create a new iteration record with the given parameters.
+    ///
+    /// The timestamp is automatically set to the current UTC time.
+    ///
+    /// # Arguments
+    ///
+    /// * `iteration` - The iteration number (1-indexed)
+    /// * `agent_action` - Description of what the AI agent proposed
+    /// * `metric_value` - The measured metric value
+    /// * `improvement` - Relative improvement (positive = better, negative = worse)
+    /// * `kept` - Whether the change was kept or reverted
+    ///
+    /// # Returns
+    ///
+    /// A new `IterationRecord` with the current timestamp
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::phase2_iterate::IterationRecord;
+    ///
+    /// let record = IterationRecord::new(
+    ///     1,
+    ///     "Reduced memory allocation".to_string(),
+    ///     85.0,
+    ///     0.15,
+    ///     true
+    /// );
+    ///
+    /// assert_eq!(record.iteration, 1);
+    /// assert_eq!(record.agent_action, "Reduced memory allocation");
+    /// assert!(record.kept);
+    /// ```
     pub fn new(iteration: usize, agent_action: String, metric_value: f64, improvement: f64, kept: bool) -> Self {
         Self { iteration, timestamp: Utc::now().to_rfc3339(), agent_action, metric_value, improvement, kept }
     }
 }
 
+/// Configuration for the iterative exploration loop.
+///
+/// Controls how the autoresearch system runs experiments, including
+/// timeouts, convergence detection, and output verbosity.
+///
+/// # Fields
+///
+/// * `max_iterations` - Maximum number of iterations to run
+/// * `iteration_timeout_secs` - Timeout for a single iteration
+/// * `total_timeout_secs` - Total timeout for the entire loop
+/// * `stall_limit` - Number of consecutive non-improving iterations before backing off
+/// * `convergence_threshold` - Minimum improvement to consider as progress
+/// * `convergence_window` - Number of iterations to check for convergence
+/// * `verbose` - Enable verbose output
+/// * `quiet` - Suppress all output
+///
+/// # Examples
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::IterationConfig;
+///
+/// // Use default configuration
+/// let config = IterationConfig::default();
+///
+/// assert_eq!(config.max_iterations, 20);
+/// assert_eq!(config.iteration_timeout_secs, 600);
+/// assert_eq!(config.stall_limit, 5);
+/// ```
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::IterationConfig;
+///
+/// // Custom configuration for faster experiments
+/// let config = IterationConfig {
+///     max_iterations: 5,
+///     iteration_timeout_secs: 60,
+///     total_timeout_secs: 300,
+///     stall_limit: 3,
+///     convergence_threshold: 0.01,
+///     convergence_window: 3,
+///     verbose: false,
+///     quiet: true,
+/// };
+///
+/// assert_eq!(config.max_iterations, 5);
+/// assert!(config.quiet);
+/// ```
 #[derive(Debug, Clone)]
 pub struct IterationConfig {
     pub max_iterations: usize,
@@ -35,11 +164,90 @@ pub struct IterationConfig {
 }
 
 impl Default for IterationConfig {
+    /// Create a default `IterationConfig` with reasonable defaults.
+    ///
+    /// # Defaults
+    ///
+    /// * `max_iterations`: 20
+    /// * `iteration_timeout_secs`: 600 (10 minutes)
+    /// * `total_timeout_secs`: 7200 (2 hours)
+    /// * `stall_limit`: 5
+    /// * `convergence_threshold`: 0.01 (1%)
+    /// * `convergence_window`: 3
+    /// * `verbose`: false
+    /// * `quiet`: false
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::phase2_iterate::IterationConfig;
+    ///
+    /// let config = IterationConfig::default();
+    ///
+    /// assert_eq!(config.max_iterations, 20);
+    /// assert_eq!(config.iteration_timeout_secs, 600);
+    /// assert_eq!(config.total_timeout_secs, 7200);
+    /// assert_eq!(config.stall_limit, 5);
+    /// assert_eq!(config.convergence_threshold, 0.01);
+    /// assert_eq!(config.convergence_window, 3);
+    /// assert!(!config.verbose);
+    /// assert!(!config.quiet);
+    /// ```
     fn default() -> Self {
         Self { max_iterations: 20, iteration_timeout_secs: 600, total_timeout_secs: 7200, stall_limit: 5, convergence_threshold: 0.01, convergence_window: 3, verbose: false, quiet: false }
     }
 }
 
+/// Result of running the iterative exploration loop.
+///
+/// Contains all iteration records, information about the best iteration,
+/// and the reason why the loop terminated.
+///
+/// # Fields
+///
+/// * `iterations` - All iteration records from the loop
+/// * `best_iteration` - The iteration number with the best metric (if any)
+/// * `best_metric` - The best metric value achieved
+/// * `stuck_reason` - Why the loop terminated (timeout, convergence, etc.)
+///
+/// # Examples
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::{IterationRecord, IterationResult};
+/// use pi_autoresearch::stuck_detector::StuckReason;
+///
+/// // Create a result with successful iterations
+/// let iterations = vec![
+///     IterationRecord::new(1, "Action 1".to_string(), 95.0, 0.05, true),
+///     IterationRecord::new(2, "Action 2".to_string(), 90.0, 0.10, true),
+/// ];
+///
+/// let result = IterationResult {
+///     iterations,
+///     best_iteration: Some(2),
+///     best_metric: 90.0,
+///     stuck_reason: Some(StuckReason::MaxIterationsReached),
+/// };
+///
+/// assert_eq!(result.iterations.len(), 2);
+/// assert_eq!(result.best_iteration, Some(2));
+/// assert_eq!(result.best_metric, 90.0);
+/// ```
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::{IterationRecord, IterationResult};
+///
+/// // Create a result with no successful iterations
+/// let result = IterationResult {
+///     iterations: vec![],
+///     best_iteration: None,
+///     best_metric: 100.0,
+///     stuck_reason: None,
+/// };
+///
+/// assert!(result.iterations.is_empty());
+/// assert!(result.best_iteration.is_none());
+/// ```
 #[derive(Debug)]
 pub struct IterationResult {
     pub iterations: Vec<IterationRecord>,
@@ -48,6 +256,41 @@ pub struct IterationResult {
     pub stuck_reason: Option<StuckReason>,
 }
 
+/// Executor for running iterative exploration loops.
+///
+/// Coordinates the AI agent, metric evaluator, and stuck detector to
+/// run multiple iterations of experiments, tracking improvements and
+/// detecting when to stop.
+///
+/// # Examples
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::{IterationConfig, IterationExecutor};
+///
+/// // Create an executor with default configuration
+/// let config = IterationConfig::default();
+/// let executor = IterationExecutor::new(config, 0.1);
+///
+/// // The executor is ready to run iterations
+/// ```
+///
+/// ```
+/// use pi_autoresearch::phase2_iterate::{IterationConfig, IterationExecutor};
+///
+/// // Create an executor with custom configuration
+/// let config = IterationConfig {
+///     max_iterations: 10,
+///     iteration_timeout_secs: 300,
+///     total_timeout_secs: 3600,
+///     stall_limit: 3,
+///     convergence_threshold: 0.01,
+///     convergence_window: 3,
+///     verbose: false,
+///     quiet: true,
+/// };
+///
+/// let executor = IterationExecutor::new(config, 0.15);
+/// ```
 pub struct IterationExecutor {
     config: IterationConfig,
     metric_evaluator: MetricEvaluator,
@@ -56,6 +299,27 @@ pub struct IterationExecutor {
 }
 
 impl IterationExecutor {
+    /// Create a new `IterationExecutor` with the given configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The iteration configuration
+    /// * `max_variance` - Maximum acceptable variance for metric measurements
+    ///
+    /// # Returns
+    ///
+    /// A new `IterationExecutor` ready to run iterations
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::phase2_iterate::{IterationConfig, IterationExecutor};
+    ///
+    /// let config = IterationConfig::default();
+    /// let executor = IterationExecutor::new(config, 0.1);
+    ///
+    /// // Executor is ready to run iterations
+    /// ```
     pub fn new(config: IterationConfig, max_variance: f64) -> Self {
         let stuck_detector = StuckDetector::new(StuckDetectorConfig {
             max_iterations: config.max_iterations, iteration_timeout_secs: config.iteration_timeout_secs,
@@ -64,6 +328,62 @@ impl IterationExecutor {
         });
         Self { config, metric_evaluator: MetricEvaluator::new(max_variance), pi_agent: PiAgent::default(), stuck_detector }
     }
+    /// Run a single iteration of the exploration loop.
+    ///
+    /// Asks the AI agent to propose a change, measures the result,
+    /// and determines whether to keep or revert the change.
+    ///
+    /// # Arguments
+    ///
+    /// * `iteration` - The iteration number (1-indexed)
+    /// * `question` - The research question being explored
+    /// * `baseline_value` - The original baseline metric value
+    /// * `best_metric` - The best metric value seen so far
+    /// * `measure_command` - Shell command to measure the metric
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(IterationRecord)` - The record of what happened in this iteration
+    /// * `Err` - If the measurement command fails
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::phase2_iterate::{IterationConfig, IterationExecutor};
+    ///
+    /// let config = IterationConfig {
+    ///     max_iterations: 5,
+    ///     iteration_timeout_secs: 60,
+    ///     total_timeout_secs: 300,
+    ///     stall_limit: 3,
+    ///     convergence_threshold: 0.01,
+    ///     convergence_window: 3,
+    ///     verbose: false,
+    ///     quiet: true,
+    /// };
+    ///
+    /// let executor = IterationExecutor::new(config, 0.1);
+    ///
+    /// // Run a single iteration with a simple measurement command
+    /// let result = executor.run_iteration(
+    ///     1,
+    ///     "How can I reduce execution time?",
+    ///     100.0,
+    ///     100.0,
+    ///     "echo 90"
+    /// );
+    ///
+    /// assert!(result.is_ok());
+    /// let record = result.unwrap();
+    /// assert_eq!(record.iteration, 1);
+    /// assert_eq!(record.metric_value, 90.0);
+    /// assert!(record.kept); // 90 < 100, so it's an improvement
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the measurement command fails to execute
+    /// or produces invalid output.
     pub fn run_iteration(&self, iteration: usize, question: &str, baseline_value: f64, best_metric: f64, measure_command: &str) -> Result<IterationRecord> {
         let current_state = format!("Iteration {}, best metric: {:.2}", iteration, best_metric);
         let metric_feedback = format!("Baseline: {:.2}, current best: {:.2}", baseline_value, best_metric);
@@ -73,6 +393,66 @@ impl IterationExecutor {
         let kept = metric_value < best_metric;
         Ok(IterationRecord::new(iteration, agent_action, metric_value, improvement, kept))
     }
+    /// Run the complete iterative exploration loop.
+    ///
+    /// Runs multiple iterations until one of the stopping conditions is met:
+    /// - Maximum iterations reached
+    /// - Total timeout reached
+    /// - Convergence detected (no significant improvement)
+    /// - Stall limit reached (too many consecutive non-improving iterations)
+    ///
+    /// # Arguments
+    ///
+    /// * `question` - The research question being explored
+    /// * `baseline_value` - The original baseline metric value
+    /// * `measure_command` - Shell command to measure the metric
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(IterationResult)` - The complete result including all iterations and the best metric
+    /// * `Err` - If a critical error occurs (rare)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::phase2_iterate::{IterationConfig, IterationExecutor};
+    ///
+    /// let config = IterationConfig {
+    ///     max_iterations: 5,
+    ///     iteration_timeout_secs: 60,
+    ///     total_timeout_secs: 300,
+    ///     stall_limit: 3,
+    ///     convergence_threshold: 0.01,
+    ///     convergence_window: 3,
+    ///     verbose: false,
+    ///     quiet: true,
+    /// };
+    ///
+    /// let executor = IterationExecutor::new(config, 0.1);
+    ///
+    /// // Run the complete loop
+    /// let result = executor.run_loop(
+    ///     "How can I reduce memory usage?",
+    ///     100.0,
+    ///     "echo 95"
+    /// );
+    ///
+    /// assert!(result.is_ok());
+    /// let iter_result = result.unwrap();
+    /// assert!(!iter_result.iterations.is_empty());
+    /// assert!(iter_result.best_metric <= 100.0);
+    /// ```
+    ///
+    /// # Stopping Conditions
+    ///
+    /// The loop stops when any of these conditions is met:
+    ///
+    /// 1. **Max iterations**: Reached `config.max_iterations`
+    /// 2. **Total timeout**: Exceeded `config.total_timeout_secs`
+    /// 3. **Convergence**: No improvement > `config.convergence_threshold` for `config.convergence_window` iterations
+    /// 4. **Stall limit**: `config.stall_limit` consecutive non-improving iterations after 2 backoffs
+    ///
+    /// The `stuck_reason` field in the result indicates why the loop stopped.
     pub fn run_loop(&self, question: &str, baseline_value: f64, measure_command: &str) -> Result<IterationResult> {
         let mut state = IterationState::new(baseline_value);
         let mut iterations = Vec::new();
