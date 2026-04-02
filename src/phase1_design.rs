@@ -10,6 +10,33 @@ pub struct ExperimentDesign {
 }
 
 impl ExperimentDesign {
+    /// Creates a new `ExperimentDesign` with the given parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `hypothesis` - The hypothesis being tested
+    /// * `metric` - The metric to optimize
+    /// * `measurement` - The command or method to measure the metric
+    /// * `baseline` - The baseline value for the metric
+    /// * `target_improvement` - The target improvement ratio (e.g., 0.30 for 30%)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::ExperimentDesign;
+    ///
+    /// let design = ExperimentDesign::new(
+    ///     "Optimize memory usage".to_string(),
+    ///     "peak_memory_mb".to_string(),
+    ///     "run benchmark".to_string(),
+    ///     512.0,
+    ///     0.30
+    /// );
+    ///
+    /// assert_eq!(design.metric, "peak_memory_mb");
+    /// assert_eq!(design.baseline, 512.0);
+    /// assert_eq!(design.target_improvement, 0.30);
+    /// ```
     pub fn new(hypothesis: String, metric: String, measurement: String, baseline: f64, target_improvement: f64) -> Self {
         Self { hypothesis, metric, measurement, baseline, target_improvement }
     }
@@ -28,10 +55,71 @@ pub struct BaselineRecord {
 }
 
 impl BaselineRecord {
+    /// Creates a new `BaselineRecordBuilder` for constructing a `BaselineRecord`.
+    ///
+    /// The builder pattern provides a fluent API for creating baseline records with
+    /// all required fields.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let record = BaselineRecord::builder()
+    ///     .timestamp("2024-01-01T00:00:00Z".to_string())
+    ///     .git_commit("abc123".to_string())
+    ///     .metric("peak_memory_mb".to_string())
+    ///     .measurement_command("run benchmark".to_string())
+    ///     .value(512.0)
+    ///     .verification_runs(vec![510.0, 512.0, 514.0])
+    ///     .variance(0.01)
+    ///     .within_threshold(true)
+    ///     .build();
+    ///
+    /// assert_eq!(record.metric, "peak_memory_mb");
+    /// assert_eq!(record.value, 512.0);
+    /// ```
     pub fn builder() -> BaselineRecordBuilder {
         BaselineRecordBuilder::default()
     }
     
+    /// Creates a new `BaselineRecord` with the given parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `timestamp` - ISO 8601 timestamp of the measurement
+    /// * `git_commit` - Git commit hash at the time of measurement
+    /// * `metric` - The metric name
+    /// * `measurement_command` - The command used to measure
+    /// * `value` - The measured value
+    /// * `verification_runs` - Vector of verification run values
+    /// * `variance` - Variance of the verification runs
+    /// * `within_threshold` - Whether the variance is within acceptable threshold
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let record = BaselineRecord::new(
+    ///     "2024-01-01T00:00:00Z".to_string(),
+    ///     "abc123".to_string(),
+    ///     "peak_memory_mb".to_string(),
+    ///     "run benchmark".to_string(),
+    ///     512.0,
+    ///     vec![510.0, 512.0, 514.0],
+    ///     0.01,
+    ///     true
+    /// );
+    ///
+    /// assert_eq!(record.metric, "peak_memory_mb");
+    /// assert_eq!(record.value, 512.0);
+    /// assert!(record.within_threshold);
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// Consider using `BaselineRecord::builder()` for a more ergonomic API.
     #[allow(clippy::too_many_arguments)]
     pub fn new(timestamp: String, git_commit: String, metric: String, measurement_command: String, value: f64, verification_runs: Vec<f64>, variance: f64, within_threshold: bool) -> Self {
         Self { timestamp, git_commit, metric, measurement_command, value, verification_runs, variance, within_threshold }
@@ -51,38 +139,150 @@ pub struct BaselineRecordBuilder {
 }
 
 impl BaselineRecordBuilder {
+    /// Sets the timestamp field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .timestamp("2024-01-01T00:00:00Z".to_string());
+    /// ```
     pub fn timestamp(mut self, timestamp: String) -> Self {
         self.timestamp = Some(timestamp);
         self
     }
+    
+    /// Sets the git_commit field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .git_commit("abc123".to_string());
+    /// ```
     pub fn git_commit(mut self, git_commit: String) -> Self {
         self.git_commit = Some(git_commit);
         self
     }
+    
+    /// Sets the metric field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .metric("peak_memory_mb".to_string());
+    /// ```
     pub fn metric(mut self, metric: String) -> Self {
         self.metric = Some(metric);
         self
     }
+    
+    /// Sets the measurement_command field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .measurement_command("run benchmark".to_string());
+    /// ```
     pub fn measurement_command(mut self, measurement_command: String) -> Self {
         self.measurement_command = Some(measurement_command);
         self
     }
+    
+    /// Sets the value field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .value(512.0);
+    /// ```
     pub fn value(mut self, value: f64) -> Self {
         self.value = Some(value);
         self
     }
+    
+    /// Sets the verification_runs field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .verification_runs(vec![510.0, 512.0, 514.0]);
+    /// ```
     pub fn verification_runs(mut self, verification_runs: Vec<f64>) -> Self {
         self.verification_runs = Some(verification_runs);
         self
     }
+    
+    /// Sets the variance field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .variance(0.01);
+    /// ```
     pub fn variance(mut self, variance: f64) -> Self {
         self.variance = Some(variance);
         self
     }
+    
+    /// Sets the within_threshold field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let builder = BaselineRecord::builder()
+    ///     .within_threshold(true);
+    /// ```
     pub fn within_threshold(mut self, within_threshold: bool) -> Self {
         self.within_threshold = Some(within_threshold);
         self
     }
+    
+    /// Builds the `BaselineRecord` from the configured fields.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any required field has not been set.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineRecord;
+    ///
+    /// let record = BaselineRecord::builder()
+    ///     .timestamp("2024-01-01T00:00:00Z".to_string())
+    ///     .git_commit("abc123".to_string())
+    ///     .metric("peak_memory_mb".to_string())
+    ///     .measurement_command("run benchmark".to_string())
+    ///     .value(512.0)
+    ///     .verification_runs(vec![510.0, 512.0, 514.0])
+    ///     .variance(0.01)
+    ///     .within_threshold(true)
+    ///     .build();
+    ///
+    /// assert_eq!(record.metric, "peak_memory_mb");
+    /// ```
     pub fn build(self) -> BaselineRecord {
         BaselineRecord {
             timestamp: self.timestamp.expect("timestamp is required"),
@@ -105,17 +305,146 @@ pub struct BaselineVerificationResult {
 }
 
 impl BaselineVerificationResult {
+    /// Creates a successful verification result.
+    ///
+    /// # Arguments
+    ///
+    /// * `baseline_record` - The verified baseline record
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::{BaselineRecord, BaselineVerificationResult};
+    ///
+    /// let record = BaselineRecord::builder()
+    ///     .timestamp("2024-01-01T00:00:00Z".to_string())
+    ///     .git_commit("abc123".to_string())
+    ///     .metric("peak_memory_mb".to_string())
+    ///     .measurement_command("run benchmark".to_string())
+    ///     .value(512.0)
+    ///     .verification_runs(vec![510.0, 512.0])
+    ///     .variance(0.01)
+    ///     .within_threshold(true)
+    ///     .build();
+    ///
+    /// let result = BaselineVerificationResult::success(record);
+    ///
+    /// assert!(result.success);
+    /// assert!(result.baseline_record.is_some());
+    /// ```
     pub fn success(baseline_record: BaselineRecord) -> Self {
         Self { success: true, baseline_record: Some(baseline_record), error_message: None }
     }
+    
+    /// Creates a failure result without baseline data.
+    ///
+    /// # Arguments
+    ///
+    /// * `error_message` - Description of the failure
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::BaselineVerificationResult;
+    ///
+    /// let result = BaselineVerificationResult::failure("Command failed".to_string());
+    ///
+    /// assert!(!result.success);
+    /// assert!(result.baseline_record.is_none());
+    /// assert_eq!(result.error_message, Some("Command failed".to_string()));
+    /// ```
     pub fn failure(error_message: String) -> Self {
         Self { success: false, baseline_record: None, error_message: Some(error_message) }
     }
+    
+    /// Creates a failure result with baseline data.
+    ///
+    /// Use this when the baseline was recorded but verification failed (e.g., high variance).
+    ///
+    /// # Arguments
+    ///
+    /// * `baseline_record` - The baseline record that was created
+    /// * `error_message` - Description of why verification failed
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use pi_autoresearch::phase1_design::{BaselineRecord, BaselineVerificationResult};
+    ///
+    /// let record = BaselineRecord::builder()
+    ///     .timestamp("2024-01-01T00:00:00Z".to_string())
+    ///     .git_commit("abc123".to_string())
+    ///     .metric("peak_memory_mb".to_string())
+    ///     .measurement_command("run benchmark".to_string())
+    ///     .value(512.0)
+    ///     .verification_runs(vec![500.0, 600.0])
+    ///     .variance(0.15)
+    ///     .within_threshold(false)
+    ///     .build();
+    ///
+    /// let result = BaselineVerificationResult::failure_with_data(record, "High variance".to_string());
+    ///
+    /// assert!(!result.success);
+    /// assert!(result.baseline_record.is_some());
+    /// ```
     pub fn failure_with_data(baseline_record: BaselineRecord, error_message: String) -> Self {
         Self { success: false, baseline_record: Some(baseline_record), error_message: Some(error_message) }
     }
 }
 
+/// Generates an experiment design based on the user's question.
+///
+/// Analyzes the question to determine the appropriate metric, measurement method,
+/// and baseline values. Supports memory, speed, performance, and accuracy optimization.
+///
+/// # Arguments
+///
+/// * `question` - The user's optimization question
+///
+/// # Returns
+///
+/// An `ExperimentDesign` with appropriate metric and baseline values
+///
+/// # Metric Detection
+///
+/// * **Memory**: Questions containing "memory" → `peak_memory_mb` (baseline: 512.0)
+/// * **Speed/Performance**: Questions containing "speed" or "performance" → `execution_time_ms` (baseline: 1000.0)
+/// * **Accuracy**: Questions containing "accuracy" → `accuracy_percent` (baseline: 85.0)
+/// * **Default**: All other questions → `metric_value` (baseline: 100.0)
+///
+/// # Example
+///
+/// ```
+/// use pi_autoresearch::phase1_design::generate_design;
+///
+/// let design = generate_design("How can I reduce memory usage?");
+///
+/// assert_eq!(design.metric, "peak_memory_mb");
+/// assert_eq!(design.baseline, 512.0);
+/// assert!(design.hypothesis.contains("How can I reduce memory usage?"));
+/// ```
+///
+/// # Example - Speed Optimization
+///
+/// ```
+/// use pi_autoresearch::phase1_design::generate_design;
+///
+/// let design = generate_design("How can I improve speed?");
+///
+/// assert_eq!(design.metric, "execution_time_ms");
+/// assert_eq!(design.baseline, 1000.0);
+/// ```
+///
+/// # Example - Accuracy Optimization
+///
+/// ```
+/// use pi_autoresearch::phase1_design::generate_design;
+///
+/// let design = generate_design("Improve model accuracy");
+///
+/// assert_eq!(design.metric, "accuracy_percent");
+/// assert_eq!(design.baseline, 85.0);
+/// ```
 pub fn generate_design(question: &str) -> ExperimentDesign {
     let lower_question = question.to_lowercase();
     let (metric, measurement, baseline) = if lower_question.contains("memory") {
