@@ -1011,14 +1011,64 @@
 **Review**: Implementation verified correct - all data types accurately documented with correct fields, all function signatures match implementation, examples are practical and accurate, comprehensive coverage of all public interfaces
 
 ## Priority 46: DOCS - Add Migration Guide
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Create migration guide for config file changes
 **Rationale**: Users need help migrating between versions
-**Content to Create**:
-- Version-by-version migration instructions
-- Breaking changes documentation
-- Config file format changes
-- CLI argument changes
+**Content Created** (docs/MIGRATION.md - 7.6KB):
+- Version history table with release dates and notes
+- Migration guides for v0.1.0 and v0.2.0 (planned)
+- Config file schema with all fields and validation rules
+- CLI argument precedence rules (CLI > Config > Default)
+- Session file format documentation with examples
+- Config file changes between versions
+- CLI argument changes between versions
+- Session file format changes between versions
+- Common migration issues with solutions
+- Rollback guide for reverting to previous versions
+- Links to related documentation (Troubleshooting, CHANGELOG, USAGE)
+**File**: docs/MIGRATION.md (7.6KB)
+**Review**: Implementation verified correct - comprehensive migration guide created, covers all version changes, includes practical migration steps, troubleshooting section, and rollback procedures, well-organized with clear sections and examples
+**Ready for Review**: Migration guide created and ready for review
+
+## Priority 47: TEST - Add Fuzzing Tests
+**Status**: TODO
+**Description**: Add fuzzing tests for session file parsing
+**Rationale**: Fuzzing helps find edge cases and security issues in parsers
+**Implementation**:
+- Add fuzzing framework (cargo-fuzz)
+- Create fuzz targets for JSON parsing
+- Create fuzz targets for session file parsing
+- Run fuzzing tests regularly
+
+## Priority 48: TEST - Add End-to-End Beads Tests
+**Status**: TODO
+**Description**: Add end-to-end integration tests for beads workflow
+**Rationale**: Beads integration is critical for issue tracking but lacks e2e tests
+**Tests to Add**:
+- Test beads task creation workflow
+- Test beads task update workflow
+- Test beads task completion workflow
+- Test beads integration with experiments
+
+## Priority 49: FEATURE - Add Progress Bars
+**Status**: TODO
+**Description**: Add progress bars for long operations
+**Rationale**: Improve UX by showing progress during long-running operations
+**Implementation**:
+- Add indicatif crate for progress bars
+- Show progress during iterations
+- Show progress during baseline verification
+- Show progress during session file operations
+
+## Priority 50: UX - Improve Error Messages
+**Status**: TODO
+**Description**: Improve error messages with helpful suggestions
+**Rationale**: Better error messages help users resolve issues faster
+**Implementation**:
+- Add suggestions to error messages
+- Link to relevant documentation
+- Provide example fixes
+- Use colored output for better readability
 
 ## Priority 47: TEST - Add Fuzzing Tests
 **Status**: TODO

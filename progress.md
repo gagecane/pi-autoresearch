@@ -1,5 +1,29 @@
 # Progress
 
+## Session: 2026-04-02 02:12:09 UTC
+
+### Task Completed: Priority 46 - DOCS - Add Migration Guide
+- ✅ Created docs/MIGRATION.md (7.6KB)
+- ✅ Added version history table with release dates and notes
+- ✅ Added migration guides for v0.1.0 and v0.2.0 (planned)
+- ✅ Documented config file schema with all fields and validation rules
+- ✅ Documented CLI argument precedence rules (CLI > Config > Default)
+- ✅ Documented session file format with examples (JSONL and pretty-printed JSON)
+- ✅ Documented config file changes between versions
+- ✅ Documented CLI argument changes between versions
+- ✅ Documented session file format changes between versions
+- ✅ Added common migration issues with solutions
+- ✅ Added rollback guide for reverting to previous versions
+- ✅ Added links to related documentation (Troubleshooting, CHANGELOG, USAGE)
+- ✅ Updated tasks.md to mark Priority 46 as COMPLETE
+- ✅ Ready for REVIEW
+
+### Next Steps
+- Priority 47: TEST - Add Fuzzing Tests (TODO)
+- Priority 48: TEST - Add End-to-End Beads Tests (TODO)
+- Priority 49: FEATURE - Add Progress Bars (TODO)
+- Priority 50: UX - Improve Error Messages (TODO)
+
 ## Session: 2026-04-02 03:00:00 UTC
 
 ### Review Completed: Priority 45 - DOCS - Add API Documentation
