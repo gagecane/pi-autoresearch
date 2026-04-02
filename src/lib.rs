@@ -5,6 +5,7 @@ pub mod stuck_detector;
 pub mod metric_evaluator;
 pub mod pi_agent;
 pub mod session;
+pub mod export;
 
 pub use cli::{Cli, ExportFormat};
 pub use phase1_design::{ExperimentDesign, generate_design};

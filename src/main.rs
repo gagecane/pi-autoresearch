@@ -12,6 +12,10 @@ use tracing_subscriber::EnvFilter;
 use indicatif::{ProgressBar, ProgressStyle};
 use colored::Colorize;
 use pi_autoresearch::cli::ExportFormat;
+use pi_autoresearch::export::export;
+use pi_autoresearch::session::ExperimentSession as LibraryExperimentSession;
+use pi_autoresearch::phase1_design::{ExperimentDesign as LibraryExperimentDesign, BaselineRecord as LibraryBaselineRecord};
+use pi_autoresearch::phase2_iterate::IterationRecord as LibraryIterationRecord;
 
 
 #[derive(Parser, Debug, Default)]
@@ -3059,6 +3063,57 @@ async fn run() -> Result<()> {
                 }
             }
 
+            // Export results if requested
+            if let Some(export_format) = &cli.export {
+                let export_path = if let Some(ref path) = cli.export_path {
+                    path.clone()
+                } else {
+                    let format_ext = export_format.extension();
+                    format!("export_{}_{}.{}", merged_session.session_id, format_ext, format_ext)
+                };
+                // Convert local session to library session for export
+                let lib_design = LibraryExperimentDesign {
+                    hypothesis: merged_session.design.hypothesis.clone(),
+                    metric: merged_session.design.metric.clone(),
+                    measurement: merged_session.design.measurement.clone(),
+                    baseline: merged_session.design.baseline,
+                    target_improvement: merged_session.design.target_improvement,
+                };
+                let lib_baseline = LibraryBaselineRecord {
+                    timestamp: merged_session.baseline_record.timestamp.clone(),
+                    git_commit: merged_session.baseline_record.git_commit.clone(),
+                    metric: merged_session.baseline_record.metric.clone(),
+                    measurement_command: merged_session.baseline_record.measurement_command.clone(),
+                    value: merged_session.baseline_record.value,
+                    verification_runs: merged_session.baseline_record.verification_runs.clone(),
+                    variance: merged_session.baseline_record.variance,
+                    within_threshold: merged_session.baseline_record.within_threshold,
+                };
+                let lib_iterations: Vec<LibraryIterationRecord> = merged_session.iterations.iter().map(|it| {
+                    LibraryIterationRecord::new(
+                        it.iteration,
+                        it.agent_action.clone(),
+                        it.metric_value,
+                        it.improvement,
+                        it.kept,
+                    )
+                }).collect();
+                let lib_session = LibraryExperimentSession {
+                    session_id: merged_session.session_id.clone(),
+                    question: merged_session.question.clone(),
+                    design: lib_design,
+                    baseline_record: lib_baseline,
+                    iterations: lib_iterations,
+                    best_iteration: merged_session.best_iteration,
+                    start_time: merged_session.start_time.clone(),
+                    end_time: merged_session.end_time.clone(),
+                    status: merged_session.status.clone(),
+                };
+                if let Err(e) = export(&lib_session, export_format.clone(), &export_path) {
+                    warn!("Failed to export results: {}", e);
+                }
+            }
+
             if finalization_result.success {
                 return Ok(());
             } else {
@@ -3283,6 +3338,57 @@ async fn run() -> Result<()> {
                 }
             } else {
                 print_failure_report(&finalization_result, target_improvement);
+            }
+        }
+        
+        // Export results if requested
+        if let Some(export_format) = &cli.export {
+            let export_path = if let Some(ref path) = cli.export_path {
+                path.clone()
+            } else {
+                let format_ext = export_format.extension();
+                format!("export_{}_{}.{}", session.session_id, format_ext, format_ext)
+            };
+            // Convert local session to library session for export
+            let lib_design = LibraryExperimentDesign {
+                hypothesis: session.design.hypothesis.clone(),
+                metric: session.design.metric.clone(),
+                measurement: session.design.measurement.clone(),
+                baseline: session.design.baseline,
+                target_improvement: session.design.target_improvement,
+            };
+            let lib_baseline = LibraryBaselineRecord {
+                timestamp: session.baseline_record.timestamp.clone(),
+                git_commit: session.baseline_record.git_commit.clone(),
+                metric: session.baseline_record.metric.clone(),
+                measurement_command: session.baseline_record.measurement_command.clone(),
+                value: session.baseline_record.value,
+                verification_runs: session.baseline_record.verification_runs.clone(),
+                variance: session.baseline_record.variance,
+                within_threshold: session.baseline_record.within_threshold,
+            };
+            let lib_iterations: Vec<LibraryIterationRecord> = session.iterations.iter().map(|it| {
+                LibraryIterationRecord::new(
+                    it.iteration,
+                    it.agent_action.clone(),
+                    it.metric_value,
+                    it.improvement,
+                    it.kept,
+                )
+            }).collect();
+            let lib_session = LibraryExperimentSession {
+                session_id: session.session_id.clone(),
+                question: session.question.clone(),
+                design: lib_design,
+                baseline_record: lib_baseline,
+                iterations: lib_iterations,
+                best_iteration: session.best_iteration,
+                start_time: session.start_time.clone(),
+                end_time: session.end_time.clone(),
+                status: session.status.clone(),
+            };
+            if let Err(e) = export(&lib_session, export_format.clone(), &export_path) {
+                warn!("Failed to export results: {}", e);
             }
         }
         
