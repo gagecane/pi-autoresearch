@@ -858,18 +858,82 @@ pi-autoresearch --question "..." --audit-log-path audit.log --audit-log-format j
 **Note**: Full audit logging integration (iteration events, decision events, measurement events) is partially implemented in main.rs. The integration tests verify the current functionality (experiment_start logging). Additional integration work may be needed for complete audit trail coverage.
 
 ## Priority 95: FEATURE - Add Experiment Result Visualization
-**Status**: TODO
+**Status**: DECOMPOSED
 **Description**: Add experiment result visualization (charts, graphs, dashboards)
 **Rationale**: Visual representations help understand experiment results
+**Decomposed Into**:
+- Priority 95.1: CLI - Add Visualization Flags
+- Priority 95.2: VISUALIZATION - Implement Chart Generation Core
+- Priority 95.3: VISUALIZATION - Implement HTML Report Generation
+- Priority 95.4: VISUALIZATION - Implement PNG Chart Export
+- Priority 95.5: VISUALIZATION - Add Statistical Analysis
+- Priority 95.6: TEST - Add Visualization Integration Tests
+
+## Priority 95.1: CLI - Add Visualization Flags
+**Status**: TODO
+**Description**: Add CLI flags for visualization functionality
+**Rationale**: Users need CLI interface to configure visualization options
 **Implementation**:
-- Add `--visualize` flag to generate visualizations
-- Generate improvement trend chart (line chart)
-- Generate iteration comparison bar chart
-- Generate baseline vs final comparison
-- Generate distribution histogram of measurements
-- Output as HTML, PNG, or interactive dashboard
-- Include statistical analysis (mean, median, std dev)
-- Show confidence intervals
+- Add `VisualizationFormat` enum with variants: Html, Png, Both
+- Add `--visualize FORMAT` flag (html, png, both)
+- Add `--visualize-path PATH` for output file location
+- Add `--visualize-open` flag to automatically open in browser
+- Add helper methods on Cli struct
+
+## Priority 95.2: VISUALIZATION - Implement Chart Generation Core
+**Status**: TODO
+**Description**: Implement core chart generation functionality
+**Rationale**: Foundation for all visualization functionality
+**Implementation**:
+- Add plotting library dependency (plotters or similar)
+- Implement improvement trend line chart
+- Implement iteration comparison bar chart
+- Implement baseline vs final comparison chart
+- Implement measurement distribution histogram
+- Support both PNG output and SVG for HTML embedding
+
+## Priority 95.3: VISUALIZATION - Implement HTML Report Generation
+**Status**: TODO
+**Description**: Implement HTML report generation with embedded charts
+**Rationale**: HTML provides interactive, shareable reports
+**Implementation**:
+- Generate standalone HTML file with embedded CSS/JS
+- Include all charts as SVG or PNG
+- Add interactive elements (tooltips, zoom)
+- Include summary statistics and iteration timeline
+- Responsive design for different screen sizes
+
+## Priority 95.4: VISUALIZATION - Implement PNG Chart Export
+**Status**: TODO
+**Description**: Implement PNG chart export functionality
+**Rationale**: PNG provides static images for presentations and reports
+**Implementation**:
+- Generate high-resolution PNG charts
+- Support multiple chart types
+- Include legends and labels
+- Professional styling suitable for presentations
+
+## Priority 95.5: VISUALIZATION - Add Statistical Analysis
+**Status**: TODO
+**Description**: Add statistical analysis to visualizations
+**Rationale**: Statistical context helps interpret results
+**Implementation**:
+- Calculate mean, median, standard deviation
+- Calculate confidence intervals
+- Add trend line with R-squared value
+- Include statistical significance testing
+- Display statistics in reports
+
+## Priority 95.6: TEST - Add Visualization Integration Tests
+**Status**: TODO
+**Description**: Add integration tests for visualization functionality
+**Rationale**: Verify visualization works end-to-end with real experiments
+**Implementation**:
+- Test chart generation with various data sets
+- Test HTML report generation
+- Test PNG export
+- Test statistical calculations
+- Test integration with export functionality
 
 ## Priority 96: TEST - Add Mutation Testing Framework
 **Status**: TODO
