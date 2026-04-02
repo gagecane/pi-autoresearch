@@ -2355,7 +2355,7 @@
 
 **Test Results**:
 - All 6 new tests pass
-- Total: 367 tests passing (162 lib + 103 main + 90 integration + 13 mutation + 7 performance)
+- Total: 374 tests passing (162 lib + 103 main + 89 integration + 13 mutation + 7 performance)
 - Tests verify graceful degradation when bd command is not available
 - Tests verify config file integration
 - Tests verify complete workflow (baseline, iterations, finalization)
