@@ -2,6 +2,43 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 22:00 UTC: Error Messages Review Complete
+
+**Priority 65: UX - Improve Error Messages** - REVIEW COMPLETE
+
+**Implementation Reviewed**:
+1. ConfigValidationError: All 8 error types include SUGGESTION section with:
+   - Specific example fixes for each error type
+   - Colored output (yellow bold for SUGGESTION header)
+   - Links to docs/CONFIG.md
+2. MetricError: Context-aware suggestions based on error type:
+   - Empty measurement command → provide valid command example
+   - Command failed → check command exists and is executable
+   - Parse error → ensure numeric output
+   - Links to docs/TROUBLESHOOTING.md
+3. StuckReason: All 5 variants include relevant suggestions:
+   - IterationTimeout → increase timeout, check command speed
+   - StallLimitReached → increase limit, adjust target, review changes
+   - TotalTimeout → increase timeout, reduce iterations
+   - ConvergenceAchieved → note about metric stabilization
+   - MaxIterationsReached → increase limit or adjust target
+   - Links to docs/TROUBLESHOOTING.md
+
+**Key Learnings**:
+1. Error messages should be actionable with specific suggestions
+2. Colored output improves readability (yellow for suggestions, cyan for notes)
+3. Documentation links help users find more information
+4. Context-aware suggestions based on error type are more helpful
+5. All error types should follow consistent formatting
+
+**Test Results**:
+- All 162 lib tests pass
+- All 83 integration tests pass
+- All 13 mutation tests pass
+- All 7 performance tests pass
+- Total: 265 tests passing
+- Zero clippy warnings
+
 ## 2026-04-02 17:00 UTC: Beads E2E Tests Complete
 
 **Priority 63: TEST - Add End-to-End Beads Tests** - COMPLETE
