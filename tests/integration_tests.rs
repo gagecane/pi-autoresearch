@@ -407,3 +407,69 @@ fn test_session_file_path_configurable() {
     assert!(output.status.success());
     assert!(std::path::Path::new(&custom_session_file).exists());
 }
+
+// Beads integration tests
+
+#[test]
+fn test_beads_enabled_flag_accepted() {
+    let args = vec![
+        "--question",
+        "test beads integration",
+        "--auto-approve",
+        "--beads-enabled",
+    ];
+    let output = get_cli_output(&args);
+    assert!(output.status.success());
+    let json = parse_json_output(&output);
+    assert!(json["hypothesis"].as_str().unwrap().contains("test beads integration"));
+}
+
+#[test]
+fn test_beads_integration_with_question() {
+    let args = vec!["--question", "optimize database queries", "--auto-approve", "--beads-enabled"];
+    let output = get_cli_output(&args);
+    assert!(output.status.success());
+    let json = parse_json_output(&output);
+    assert_eq!(json["metric"].as_str().unwrap(), "metric_value");
+}
+
+#[test]
+fn test_beads_enabled_with_iterative_loop() {
+    let session_file = get_unique_session_file("beads_iter");
+    std::fs::remove_file(&session_file).ok();
+    let args = vec!["--question", "reduce memory with beads", "--auto-approve", "--max-iterations", "2",
+        "--metric", "peak_memory_mb", "--measure", "echo 400.0", "--baseline", "512.0",
+        "--target-improvement", "0.1", "--session-file", &session_file, "--quiet", "--beads-enabled"];
+    let output = get_cli_output(&args);
+    assert!(output.status.success());
+    assert!(std::path::Path::new(&session_file).exists());
+}
+
+#[test]
+fn test_beads_disabled_by_default() {
+    let args = vec!["--question", "test without beads", "--auto-approve"];
+    let output = get_cli_output(&args);
+    assert!(output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(!stderr.contains("Created bead issue"), "Beads should not be enabled by default");
+}
+
+#[test]
+fn test_beads_integration_memory_metric() {
+    let args = vec!["--question", "reduce memory usage", "--auto-approve", "--beads-enabled"];
+    let output = get_cli_output(&args);
+    assert!(output.status.success());
+    let json = parse_json_output(&output);
+    assert_eq!(json["metric"].as_str().unwrap(), "peak_memory_mb");
+    assert_eq!(json["baseline"].as_f64().unwrap(), 512.0);
+}
+
+#[test]
+fn test_beads_integration_performance_metric() {
+    let args = vec!["--question", "improve performance", "--auto-approve", "--beads-enabled"];
+    let output = get_cli_output(&args);
+    assert!(output.status.success());
+    let json = parse_json_output(&output);
+    assert_eq!(json["metric"].as_str().unwrap(), "execution_time_ms");
+    assert_eq!(json["baseline"].as_f64().unwrap(), 1000.0);
+}
