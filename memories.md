@@ -2,6 +2,50 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 23:59 UTC: Task Complete (Priority 87)
+
+**Priority 87: TEST - Add Doc Tests for session.rs** - COMPLETE
+
+**Changes Made**:
+- Added 16 doc tests for session.rs module
+- Documented all public types and functions with comprehensive doc comments:
+  - `session` module - 1 doc test (module-level example with ExperimentSession creation)
+  - `ExperimentSession` struct - 1 doc test with example
+  - `ExperimentSession::new()` - 1 doc test
+  - `ExperimentSession::add_iteration()` - 1 doc test
+  - `ExperimentSession::finalize()` - 1 doc test
+  - `ExperimentSession::calculate_final_improvement()` - 1 doc test
+  - `SessionRecord` enum - 1 doc test with example
+  - `SessionManager` struct - 1 doc test (no_run)
+  - `SessionManager::new()` - 1 doc test
+  - `SessionManager::save_baseline()` - 1 doc test (no_run)
+  - `SessionManager::save_iteration()` - 1 doc test (no_run)
+  - `SessionManager::save_session()` - 1 doc test (no_run)
+  - `SessionManager::read_all()` - 1 doc test
+  - `SessionManager::find_session()` - 1 doc test
+  - `SessionManager::list_history()` - 1 doc test
+  - `generate_session_id()` - 1 doc test with examples
+- Re-exported SessionManager, SessionRecord, and generate_session_id from lib.rs
+- Each doc comment includes Examples section with runnable code
+- Doc tests verify both basic usage and edge cases
+
+**Test Results**:
+- 16 new doc tests added (100 total doc tests now)
+- All 100 doc tests passing
+- All 162 lib tests passing
+- All 103 main.rs tests passing
+- All 84 of 89 integration tests passing (5 pre-existing failures unrelated to this change)
+- Zero clippy warnings
+- Zero compiler warnings
+
+**Key Learnings**:
+- Doc tests for ExperimentSession should show complete lifecycle (new -> add_iteration -> finalize -> calculate_final_improvement)
+- SessionManager examples should use no_run for file operations that would create actual files
+- SessionRecord enum doc tests should show pattern matching for all variants
+- generate_session_id examples should verify both format (hex) and uniqueness
+- Module-level doc comments provide good overview for library users
+- Complex JSON examples in doc tests should be simplified to avoid maintenance burden
+
 ## 2026-04-02 23:59 UTC: Task Ready for Review (Priority 85)
 
 **Priority 85: TEST - Add Doc Tests for metric_evaluator.rs** - READY FOR REVIEW
