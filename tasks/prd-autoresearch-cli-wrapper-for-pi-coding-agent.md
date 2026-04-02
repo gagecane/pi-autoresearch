@@ -237,13 +237,7 @@ pi-autoresearch \
 - On completion: close issue with results
 - Configurable via `--beads-enabled`
 
-### User Story 6.2: Ralph-TUI Compatibility
-**As a** ralph-tui user  
-**I want** experiments to be ralph-tui compatible  
-**So that** I can orchestrate via ralph
-
 **Acceptance Criteria:**
-- Output format compatible with ralph-tui parsing
 - Support reading task from `tasks/*.md` files
 - Update task status on completion
 
@@ -330,6 +324,6 @@ pi-autoresearch/
 ## References
 
 - Original autoresearch: https://github.com/karpathy/autoresearch
-- Current implementation: https://github.com/davebcn87/pi-autoresearch
+- Current implementation as a pi extension: https://github.com/davebcn87/pi-autoresearch
 - Beads (bd) task tracking: See AGENTS.md
-- Ralph-tui: Task orchestration framework
+- Ralph-tui: Task orchestration framework: https://github.com/subsy/ralph-tui
