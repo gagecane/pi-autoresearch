@@ -2,6 +2,43 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 20:28 UTC: Measurement Logging Implementation Complete (Priority 94.5)
+
+**Priority 94.5: AUDIT - Implement Measurement Logging** - COMPLETE → REVIEW
+
+**Implementation Summary**:
+- Implemented 3 measurement logging helper methods in `src/audit.rs`:
+  - `log_baseline_measurement(session_id, metric_name, value, command, output, duration_ms)`
+  - `log_measurement(session_id, metric_name, value, baseline, improvement, iteration_num, command, output, duration_ms)`
+  - `log_measurement_failed(session_id, metric_name, iteration_num, error_message, command, error_output, duration_ms)`
+- All methods support optional parameters (command, output, duration)
+- Long outputs automatically truncated to 1000 characters with truncation notice
+- Each method sets appropriate `measurement_type` ("baseline" or "iteration")
+- Failed measurements at iteration 0 are treated as baseline failures
+
+**Test Coverage**:
+- 16 new unit tests added:
+  - 3 baseline measurement tests (with fields, without optional, long output)
+  - 3 iteration measurement tests (with fields, negative improvement, without optional)
+  - 3 measurement failure tests (normal, baseline, long error)
+  - 1 complete workflow test
+  - 3 serialization tests
+  - 3 edge case tests (zero improvement, large values, small improvement)
+- All 83 audit-related tests pass
+- All 328 lib tests pass
+
+**Key Design Decisions**:
+- Truncate outputs to 1000 chars to prevent log bloat
+- Include `measurement_type` field to distinguish baseline vs iteration
+- Use iteration_num == 0 to indicate baseline in failure logging
+- Format improvement as both ratio and percentage
+- Include timing information (duration_ms) when available
+
+**Next Steps**:
+- Priority 94.6: Add Audit Log Integration Tests
+- Consider integrating measurement logging into main.rs experiment flow
+
+---
 ## 2026-04-03 05:00 UTC: Decision Logging Implementation Complete (Priority 94.4)
 
 **Priority 94.4: AUDIT - Implement Decision Logging** - REVIEW COMPLETE → COMPLETE

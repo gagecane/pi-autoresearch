@@ -787,16 +787,52 @@ pi-autoresearch --question "..." --audit-log-path audit.log --audit-log-format j
 **Review**: REVIEW COMPLETE - Decision logging properly implemented with comprehensive helper methods for all decision types (change kept/reverted) and termination reasons (target achieved/not achieved, stalled, converged, timeout, max iterations). Each method logs detailed information including metric values, improvements, and reasons. All tests pass, zero new warnings.
 
 ## Priority 94.5: AUDIT - Implement Measurement Logging
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Implement logging of measurement results
 **Rationale**: Track all measurement data for compliance
 **Implementation**:
-- Implement `AuditLogger::log_measurement(metric_name, value, baseline, improvement)`
-- Log baseline measurement
-- Log each iteration measurement
-- Include timing information for measurements
-- Include measurement command/output if available
-- Log measurement failures/errors
+- ✅ Implemented `AuditLogger::log_baseline_measurement(session_id, metric_name, value, command, output, duration_ms)`
+  - Logs baseline measurement with full details
+  - Includes metric name, value, command, output, and duration
+  - Truncates long outputs (1000 char limit)
+  - Sets measurement_type to "baseline"
+- ✅ Implemented `AuditLogger::log_measurement(session_id, metric_name, value, baseline, improvement, iteration_num, command, output, duration_ms)`
+  - Logs iteration measurements with improvement calculation
+  - Includes metric name, value, baseline, improvement, improvement_percent
+  - Includes iteration number, command, output, and duration
+  - Truncates long outputs (1000 char limit)
+  - Sets measurement_type to "iteration"
+- ✅ Implemented `AuditLogger::log_measurement_failed(session_id, metric_name, iteration_num, error_message, command, error_output, duration_ms)`
+  - Logs measurement failures with error details
+  - Includes metric name, iteration number, error message
+  - Includes command, error output, and duration before failure
+  - Truncates long error outputs (1000 char limit)
+  - Sets measurement_type to "baseline" (iteration 0) or "iteration"
+**Tests Added**:
+- `test_log_baseline_measurement` - Verifies baseline measurement with all fields
+- `test_log_baseline_measurement_no_command` - Verifies baseline without optional fields
+- `test_log_baseline_measurement_long_output` - Verifies output truncation
+- `test_log_measurement` - Verifies iteration measurement with all fields
+- `test_log_measurement_negative_improvement` - Verifies negative improvement handling
+- `test_log_measurement_no_command` - Verifies measurement without optional fields
+- `test_log_measurement_failed` - Verifies measurement failure logging
+- `test_log_measurement_failed_baseline` - Verifies baseline failure logging
+- `test_log_measurement_failed_long_error` - Verifies error output truncation
+- `test_measurement_logging_complete_workflow` - Tests complete measurement workflow
+- `test_measurement_logging_serialization` - Verifies JSON serialization
+- `test_baseline_measurement_serialization` - Verifies baseline JSON structure
+- `test_measurement_failed_serialization` - Verifies failure JSON structure
+- `test_measurement_logging_with_zero_improvement` - Edge case: zero improvement
+- `test_measurement_logging_with_large_values` - Edge case: large values
+- `test_measurement_logging_with_small_improvement` - Edge case: small improvement
+**Test Results**:
+- All 16 measurement-specific tests pass
+- All 328 lib tests pass (312 + 16 new)
+- `cargo build` completes with no new warnings
+- `cargo clippy` completes with no new warnings
+**Files Modified**:
+- `src/audit.rs`: Added 3 measurement logging helper methods with doc tests and 16 unit tests (200+ lines)
+**Review**: REVIEW COMPLETE - Measurement logging properly implemented with comprehensive helper methods for baseline measurements, iteration measurements, and measurement failures. Each method logs detailed information including metric values, command details, timing information, and handles edge cases (long outputs, negative improvements, zero improvements). All 16 tests pass, zero new warnings.
 
 ## Priority 94.6: TEST - Add Audit Log Integration Tests
 **Status**: TODO

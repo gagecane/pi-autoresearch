@@ -978,6 +978,202 @@ impl AuditLogger {
     }
 }
 
+// ==================== Measurement Logging Helper Functions ====================
+
+impl AuditLogger {
+    /// Logs a baseline measurement
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `metric_name` - Name of the metric being measured
+    /// * `value` - The measured baseline value
+    /// * `command` - Optional command used to measure
+    /// * `output` - Optional output from the measurement command
+    /// * `duration_ms` - Optional duration of the measurement in milliseconds
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_baseline_measurement("session-123", "cpu_time", 100.0, Some("./measure.sh"), None, Some(150)).unwrap();
+    /// ```
+    pub fn log_baseline_measurement(
+        &mut self,
+        session_id: &str,
+        metric_name: &str,
+        value: f64,
+        command: Option<&str>,
+        output: Option<&str>,
+        duration_ms: Option<u64>,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("metric_name".to_string(), metric_name.to_string());
+        details.insert("value".to_string(), value.to_string());
+        details.insert("measurement_type".to_string(), "baseline".to_string());
+        
+        if let Some(cmd) = command {
+            details.insert("command".to_string(), cmd.to_string());
+        }
+        
+        if let Some(out) = output {
+            // Truncate output if too long
+            let truncated = if out.len() > 1000 {
+                format!("{}... (truncated from {} chars)", &out[..1000], out.len())
+            } else {
+                out.to_string()
+            };
+            details.insert("output".to_string(), truncated);
+        }
+        
+        if let Some(duration) = duration_ms {
+            details.insert("duration_ms".to_string(), duration.to_string());
+        }
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::BaselineMeasured,
+            format!("Baseline measured: {} = {}", metric_name, value),
+            details,
+        )
+    }
+    
+    /// Logs an iteration measurement
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `metric_name` - Name of the metric being measured
+    /// * `value` - The measured value
+    /// * `baseline` - Baseline value for comparison
+    /// * `improvement` - Improvement over baseline (as a ratio, e.g., 0.15 for 15%)
+    /// * `iteration_num` - Current iteration number (1-indexed)
+    /// * `command` - Optional command used to measure
+    /// * `output` - Optional output from the measurement command
+    /// * `duration_ms` - Optional duration of the measurement in milliseconds
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_measurement("session-123", "cpu_time", 85.0, 100.0, 0.15, 1, Some("./measure.sh"), None, Some(145)).unwrap();
+    /// ```
+    pub fn log_measurement(
+        &mut self,
+        session_id: &str,
+        metric_name: &str,
+        value: f64,
+        baseline: f64,
+        improvement: f64,
+        iteration_num: usize,
+        command: Option<&str>,
+        output: Option<&str>,
+        duration_ms: Option<u64>,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("metric_name".to_string(), metric_name.to_string());
+        details.insert("value".to_string(), value.to_string());
+        details.insert("baseline".to_string(), baseline.to_string());
+        details.insert("improvement".to_string(), improvement.to_string());
+        details.insert("improvement_percent".to_string(), format!("{:+.2}%", improvement * 100.0));
+        details.insert("iteration".to_string(), iteration_num.to_string());
+        details.insert("measurement_type".to_string(), "iteration".to_string());
+        
+        if let Some(cmd) = command {
+            details.insert("command".to_string(), cmd.to_string());
+        }
+        
+        if let Some(out) = output {
+            // Truncate output if too long
+            let truncated = if out.len() > 1000 {
+                format!("{}... (truncated from {} chars)", &out[..1000], out.len())
+            } else {
+                out.to_string()
+            };
+            details.insert("output".to_string(), truncated);
+        }
+        
+        if let Some(duration) = duration_ms {
+            details.insert("duration_ms".to_string(), duration.to_string());
+        }
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::MeasurementTaken,
+            format!("Measurement taken in iteration {}: {} = {} (baseline: {}, improvement: {:+.2}%)",
+                    iteration_num, metric_name, value, baseline, improvement * 100.0),
+            details,
+        )
+    }
+    
+    /// Logs a measurement failure
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `metric_name` - Name of the metric that failed to measure
+    /// * `iteration_num` - Current iteration number (1-indexed), or 0 for baseline
+    /// * `error_message` - Description of the error
+    /// * `command` - Optional command that failed
+    /// * `error_output` - Optional error output from the command
+    /// * `duration_ms` - Optional duration before failure in milliseconds
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_measurement_failed("session-123", "cpu_time", 1, "Command timed out", Some("./measure.sh"), Some("Timeout after 30s"), Some(30000)).unwrap();
+    /// ```
+    pub fn log_measurement_failed(
+        &mut self,
+        session_id: &str,
+        metric_name: &str,
+        iteration_num: usize,
+        error_message: &str,
+        command: Option<&str>,
+        error_output: Option<&str>,
+        duration_ms: Option<u64>,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("metric_name".to_string(), metric_name.to_string());
+        details.insert("iteration".to_string(), iteration_num.to_string());
+        details.insert("error_message".to_string(), error_message.to_string());
+        details.insert("measurement_type".to_string(), if iteration_num == 0 { "baseline" } else { "iteration" }.to_string());
+        
+        if let Some(cmd) = command {
+            details.insert("command".to_string(), cmd.to_string());
+        }
+        
+        if let Some(out) = error_output {
+            // Truncate output if too long
+            let truncated = if out.len() > 1000 {
+                format!("{}... (truncated from {} chars)", &out[..1000], out.len())
+            } else {
+                out.to_string()
+            };
+            details.insert("error_output".to_string(), truncated);
+        }
+        
+        if let Some(duration) = duration_ms {
+            details.insert("duration_ms".to_string(), duration.to_string());
+        }
+        
+        let iteration_desc = if iteration_num == 0 { "baseline".to_string() } else { format!("iteration {}", iteration_num) };
+        self.log_with_session(
+            session_id,
+            AuditEventType::MeasurementFailed,
+            format!("Measurement failed during {}: {} - {}", iteration_desc, metric_name, error_message),
+            details,
+        )
+    }
+}
+
 /// Formats a duration in seconds as a human-readable string
 fn format_duration(seconds: u64) -> String {
     if seconds < 60 {
@@ -2069,6 +2265,498 @@ mod tests {
         assert!(entry.details.contains_key("improvement"));
         assert!(entry.details.contains_key("decision"));
         assert_eq!(entry.details.get("decision"), Some(&"kept".to_string()));
+    }
+
+    // ==================== Measurement Logging Tests ====================
+
+    #[test]
+    fn test_log_baseline_measurement() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_baseline_measurement(
+            "session-123",
+            "cpu_time",
+            100.0,
+            Some("./measure.sh"),
+            Some("Baseline measurement complete"),
+            Some(150),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("baseline_measured"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("cpu_time"));
+        assert!(content.contains("100"));
+        assert!(content.contains("./measure.sh"));
+        assert!(content.contains("Baseline measurement complete"));
+        assert!(content.contains("150"));
+        assert!(content.contains("baseline")); // measurement_type
+    }
+
+    #[test]
+    fn test_log_baseline_measurement_no_command() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_baseline_measurement(
+            "session-123",
+            "memory_usage",
+            256.0,
+            None,
+            None,
+            None,
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("baseline_measured"));
+        assert!(content.contains("memory_usage"));
+        assert!(content.contains("256"));
+        // Should not have command, output, or duration
+        assert!(!content.contains("command"));
+        assert!(!content.contains("output"));
+        assert!(!content.contains("duration_ms"));
+    }
+
+    #[test]
+    fn test_log_baseline_measurement_long_output() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        let long_output = "x".repeat(2000);
+        logger.log_baseline_measurement(
+            "session-123",
+            "test_metric",
+            50.0,
+            Some("./test.sh"),
+            Some(&long_output),
+            Some(100),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("truncated"));
+        assert!(content.contains("2000 chars"));
+        // Should have first 1000 chars
+        assert!(content.contains(&"x".repeat(100)));
+    }
+
+    #[test]
+    fn test_log_measurement() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_measurement(
+            "session-123",
+            "cpu_time",
+            85.0,
+            100.0,
+            0.15,
+            1,
+            Some("./measure.sh"),
+            Some("Iteration 1 measurement"),
+            Some(145),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_taken"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("cpu_time"));
+        assert!(content.contains("85"));
+        assert!(content.contains("100"));
+        assert!(content.contains("0.15"));
+        assert!(content.contains("15.00")); // improvement_percent
+        assert!(content.contains("iteration\": \"1\""));
+        assert!(content.contains("./measure.sh"));
+        assert!(content.contains("Iteration 1 measurement"));
+        assert!(content.contains("145"));
+        assert!(content.contains("iteration")); // measurement_type
+    }
+
+    #[test]
+    fn test_log_measurement_negative_improvement() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_measurement(
+            "session-123",
+            "cpu_time",
+            110.0,
+            100.0,
+            -0.10,
+            2,
+            Some("./measure.sh"),
+            None,
+            Some(160),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_taken"));
+        assert!(content.contains("-0.1")); // -0.10 serializes as -0.1
+        assert!(content.contains("-10.00")); // negative improvement_percent
+        assert!(content.contains("iteration\": \"2\""));
+    }
+
+    #[test]
+    fn test_log_measurement_no_command() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_measurement(
+            "session-123",
+            "memory",
+            200.0,
+            256.0,
+            0.22,
+            1,
+            None,
+            None,
+            None,
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_taken"));
+        assert!(content.contains("memory"));
+        assert!(content.contains("200"));
+        assert!(content.contains("256"));
+        assert!(!content.contains("command"));
+        assert!(!content.contains("output"));
+        assert!(!content.contains("duration_ms"));
+    }
+
+    #[test]
+    fn test_log_measurement_failed() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_measurement_failed(
+            "session-123",
+            "cpu_time",
+            1,
+            "Command timed out",
+            Some("./measure.sh"),
+            Some("Timeout after 30s"),
+            Some(30000),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_failed"));
+        assert!(content.contains("session-123"));
+        assert!(content.contains("cpu_time"));
+        assert!(content.contains("iteration\": \"1\""));
+        assert!(content.contains("Command timed out"));
+        assert!(content.contains("./measure.sh"));
+        assert!(content.contains("Timeout after 30s"));
+        assert!(content.contains("30000"));
+    }
+
+    #[test]
+    fn test_log_measurement_failed_baseline() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_measurement_failed(
+            "session-123",
+            "cpu_time",
+            0,
+            "Command not found",
+            Some("./measure.sh"),
+            Some("No such file or directory"),
+            Some(5),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_failed"));
+        assert!(content.contains("baseline")); // measurement_type for iteration 0
+        assert!(content.contains("Command not found"));
+    }
+
+    #[test]
+    fn test_log_measurement_failed_long_error() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        let long_error = "E".repeat(2000);
+        logger.log_measurement_failed(
+            "session-123",
+            "test_metric",
+            5,
+            "Unknown error",
+            Some("./test.sh"),
+            Some(&long_error),
+            Some(500),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("truncated"));
+        assert!(content.contains("2000 chars"));
+        assert!(content.contains("error_output"));
+    }
+
+    #[test]
+    fn test_measurement_logging_complete_workflow() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Baseline measurement
+        logger.log_baseline_measurement(
+            "session-123",
+            "cpu_time",
+            100.0,
+            Some("./measure.sh"),
+            Some("Baseline complete"),
+            Some(150),
+        ).unwrap();
+        
+        // Iteration 1: successful measurement
+        logger.log_measurement(
+            "session-123",
+            "cpu_time",
+            85.0,
+            100.0,
+            0.15,
+            1,
+            Some("./measure.sh"),
+            Some("Iter 1 complete"),
+            Some(145),
+        ).unwrap();
+        
+        // Iteration 2: failed measurement
+        logger.log_measurement_failed(
+            "session-123",
+            "cpu_time",
+            2,
+            "Command failed with exit code 1",
+            Some("./measure.sh"),
+            Some("Error: something went wrong"),
+            Some(200),
+        ).unwrap();
+        
+        // Iteration 3: successful measurement
+        logger.log_measurement(
+            "session-123",
+            "cpu_time",
+            75.0,
+            100.0,
+            0.25,
+            3,
+            Some("./measure.sh"),
+            Some("Iter 3 complete"),
+            Some(140),
+        ).unwrap();
+        
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Verify all measurement events
+        assert!(content.contains("baseline_measured"));
+        assert!(content.contains("measurement_taken"));
+        assert!(content.contains("measurement_failed"));
+        
+        // Count entries (4 total: baseline, iter1, iter2_failed, iter3)
+        let entry_count = content.matches("event_type").count();
+        assert_eq!(entry_count, 4);
+    }
+
+    #[test]
+    fn test_measurement_logging_serialization() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_measurement(
+            "session-123",
+            "cpu_time",
+            85.0,
+            100.0,
+            0.15,
+            1,
+            Some("./measure.sh"),
+            Some("Output"),
+            Some(145),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Parse JSON to verify structure
+        let entry: AuditEntry = serde_json::from_str(content.trim()).unwrap();
+        assert_eq!(entry.event_type, AuditEventType::MeasurementTaken);
+        assert_eq!(entry.session_id, "session-123");
+        assert!(entry.details.contains_key("metric_name"));
+        assert!(entry.details.contains_key("value"));
+        assert!(entry.details.contains_key("baseline"));
+        assert!(entry.details.contains_key("improvement"));
+        assert!(entry.details.contains_key("iteration"));
+        assert_eq!(entry.details.get("metric_name"), Some(&"cpu_time".to_string()));
+    }
+
+    #[test]
+    fn test_baseline_measurement_serialization() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_baseline_measurement(
+            "session-123",
+            "memory",
+            256.0,
+            Some("./measure.sh"),
+            Some("Baseline"),
+            Some(150),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Parse JSON to verify structure
+        let entry: AuditEntry = serde_json::from_str(content.trim()).unwrap();
+        assert_eq!(entry.event_type, AuditEventType::BaselineMeasured);
+        assert_eq!(entry.session_id, "session-123");
+        assert!(entry.details.contains_key("metric_name"));
+        assert!(entry.details.contains_key("value"));
+        assert_eq!(entry.details.get("measurement_type"), Some(&"baseline".to_string()));
+    }
+
+    #[test]
+    fn test_measurement_failed_serialization() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_measurement_failed(
+            "session-123",
+            "cpu_time",
+            1,
+            "Timeout",
+            Some("./measure.sh"),
+            Some("Error output"),
+            Some(30000),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Parse JSON to verify structure
+        let entry: AuditEntry = serde_json::from_str(content.trim()).unwrap();
+        assert_eq!(entry.event_type, AuditEventType::MeasurementFailed);
+        assert_eq!(entry.session_id, "session-123");
+        assert!(entry.details.contains_key("metric_name"));
+        assert!(entry.details.contains_key("error_message"));
+        assert!(entry.details.contains_key("iteration"));
+        assert_eq!(entry.details.get("error_message"), Some(&"Timeout".to_string()));
+    }
+
+    #[test]
+    fn test_measurement_logging_with_zero_improvement() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Test with zero improvement (edge case)
+        logger.log_measurement(
+            "session-123",
+            "cpu_time",
+            100.0,
+            100.0,
+            0.0,
+            1,
+            Some("./measure.sh"),
+            None,
+            Some(150),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_taken"));
+        assert!(content.contains("0.0")); // zero improvement
+        assert!(content.contains("0.00")); // 0.00%
+    }
+
+    #[test]
+    fn test_measurement_logging_with_large_values() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Test with large values
+        logger.log_measurement(
+            "session-123",
+            "memory_bytes",
+            1073741824.0,
+            2147483648.0,
+            0.50,
+            1,
+            Some("./measure.sh"),
+            None,
+            Some(1000),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_taken"));
+        assert!(content.contains("50.00")); // 50% improvement
+    }
+
+    #[test]
+    fn test_measurement_logging_with_small_improvement() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Test with very small improvement
+        logger.log_measurement(
+            "session-123",
+            "cpu_time",
+            99.9,
+            100.0,
+            0.001,
+            1,
+            Some("./measure.sh"),
+            None,
+            Some(150),
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("measurement_taken"));
+        assert!(content.contains("0.001"));
+        assert!(content.contains("0.10")); // 0.10%
     }
 }
 
