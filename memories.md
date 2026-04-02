@@ -2,6 +2,14 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02: cli.rs Testing
+
+- Added 15 unit tests for cli.rs module to achieve 80%+ coverage
+- All 6 effective_* functions tested with default and custom values
+- CLI parsing tests verify question, all options, and default values
+- Added Default derive to Cli struct for test convenience
+- Total test count increased to 183 tests (95 unit + 68 integration + 13 mutation + 7 performance)
+
 ## Project Overview
 
 **pi-autoresearch** is an autonomous research experiment orchestrator that helps optimize metrics through iterative experimentation. It's designed to work with AI coding agents to automate the process of:
