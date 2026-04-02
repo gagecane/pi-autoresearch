@@ -2311,3 +2311,43 @@ Created 8 new actionable tasks:
 - 89.73% line coverage (exceeds 85% target)
 - 0 doc tests (opportunity for improvement)
 
+
+---
+
+## 2026-04-02 23:59 UTC - Doc Tests Implementation
+
+### Learnings
+
+**Doc Tests for cli.rs**:
+- All 6 effective_* functions now have comprehensive doc tests
+- Doc tests verify both default and custom values
+- Using ` ``` ` (not ` ```ignore`) makes tests executable
+- Doc tests need proper imports: `use pi_autoresearch::cli::Cli;`
+- Each doc test example should be self-contained and compile independently
+
+**Doc Test Format**:
+```
+/// Function description
+///
+/// # Examples
+///
+/// ```
+/// use pi_autoresearch::cli::Cli;
+/// let cli = Cli { max_iterations: None, ..Default::default() };
+/// assert_eq!(cli.effective_max_iterations(), 20);
+/// ```
+pub fn effective_max_iterations(&self) -> usize { ... }
+```
+
+**Test Results**:
+- 6 doc tests added for cli.rs
+- All 380 tests pass (6 doc + 162 lib + 103 main + 89 integration + 13 mutation + 7 performance)
+- Doc tests run with `cargo test --doc`
+
+**Next Steps**:
+- Priority 82: Add doc tests for phase1_design.rs
+- Priority 83: Add doc tests for phase2_iterate.rs
+- Priority 84: Add doc tests for stuck_detector.rs
+- Priority 85: Add doc tests for metric_evaluator.rs
+- Priority 86: Add doc tests for pi_agent.rs
+- Priority 87: Add doc tests for session.rs

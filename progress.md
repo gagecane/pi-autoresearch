@@ -1,5 +1,36 @@
 # Progress
 
+## Session: 2026-04-02 23:59 UTC - COMPLETE (Priority 81)
+
+### Completed
+- ✅ **Priority 81: TEST - Add Doc Tests for cli.rs** - COMPLETE
+  - Added comprehensive doc tests for all 6 effective_* functions in cli.rs:
+    - `effective_max_iterations()` - Returns effective max iterations (default 20)
+    - `effective_iteration_timeout_secs()` - Returns effective iteration timeout in seconds (default 600)
+    - `effective_total_timeout_secs()` - Returns effective total timeout in seconds (default 7200)
+    - `effective_stall_limit()` - Returns effective stall limit (default 5)
+    - `effective_convergence_threshold()` - Returns effective convergence threshold (default 0.01)
+    - `effective_convergence_window()` - Returns effective convergence window (default 3)
+  - Each doc comment includes Examples section with runnable code
+  - Doc tests verify both default and custom values
+  - **Test Results**:
+    - 6 doc tests added
+    - All 6 doc tests pass
+    - All 162 lib tests still pass
+    - All 103 main.rs tests still pass
+    - All 89 integration tests still pass
+    - All 13 mutation tests still pass
+    - All 7 performance tests still pass
+    - Total: 380 tests passing (was 374)
+  - **Changes Made**:
+    - src/cli.rs: Added doc comments with examples to all 6 effective_* functions
+  - **Files Modified**:
+    - src/cli.rs
+    - tasks.md (marked Priority 81 as COMPLETE)
+  - **Next Task**: Priority 82 - TEST - Add Doc Tests for phase1_design.rs
+
+## Session: 2026-04-02 23:45 UTC - REVIEW WITH FEEDBACK (Priority 69)
+
 ## Session: 2026-04-02 23:45 UTC - REVIEW WITH FEEDBACK (Priority 69)
 
 ### Review Completed
