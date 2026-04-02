@@ -902,20 +902,27 @@
 **Review**: Research completed thoroughly - all major areas analyzed, 8 actionable tasks created
 
 ## Priority 43: TEST - Increase Test Coverage to 85%
-**Status**: TODO
-**Description**: Increase line coverage from 80.20% to 85% target
+**Status**: DECOMPOSED
+**Description**: Increase line coverage from 75.45% to 85% target
 **Rationale**: Improve code coverage to identify and test untested code paths
-**Current Coverage**: 80.20% line (427 missed lines out of 2157)
+**Current Coverage**: 75.45% line (632 missed lines out of 2574)
 **Target Coverage**: 85% line coverage
-**Approach**:
-- Analyze coverage report to identify missed lines
-- Add targeted tests for uncovered code paths
-- Focus on edge cases and error handling
-- Update coverage report after adding tests
-**Acceptance Criteria**:
-- Line coverage reaches 85%
-- All new tests pass
-- No regressions in existing tests
+**Files with 0% Coverage**:
+- cli.rs: 6 functions, 6 lines
+- metric_evaluator.rs: 8 functions, 44 lines
+- phase1_design.rs: 6 functions, 26 lines
+- phase2_iterate.rs: 5 functions, 81 lines
+- pi_agent.rs: 8 functions, 14 lines
+- session.rs: 16 functions, 67 lines
+- stuck_detector.rs: 16 functions, 39 lines
+**Decomposed Into**:
+- Priority 51: TEST - Add Unit Tests for cli.rs
+- Priority 52: TEST - Add Unit Tests for metric_evaluator.rs
+- Priority 53: TEST - Add Unit Tests for phase1_design.rs
+- Priority 54: TEST - Add Unit Tests for phase2_iterate.rs
+- Priority 55: TEST - Add Unit Tests for pi_agent.rs
+- Priority 56: TEST - Add Unit Tests for session.rs
+- Priority 57: TEST - Add Unit Tests for stuck_detector.rs
 
 ## Priority 44: DOCS - Add More Examples to EXAMPLES.md
 **Status**: TODO
@@ -987,4 +994,81 @@
 - Link to relevant documentation
 - Provide example fixes
 - Use colored output for better readability
+
+## Priority 51: TEST - Add Unit Tests for cli.rs
+**Status**: TODO
+**Description**: Add unit tests for cli.rs module functions
+**Rationale**: cli.rs has 0% coverage (6 functions, 6 lines)
+**Functions to Test**:
+- All 6 functions in cli.rs module
+**Acceptance Criteria**:
+- All 6 functions have dedicated unit tests
+- All tests pass
+- cli.rs coverage reaches 80%+
+
+## Priority 52: TEST - Add Unit Tests for metric_evaluator.rs
+**Status**: TODO
+**Description**: Add unit tests for metric_evaluator.rs module functions
+**Rationale**: metric_evaluator.rs has 0% coverage (8 functions, 44 lines)
+**Functions to Test**:
+- All 8 functions in metric_evaluator.rs module
+**Acceptance Criteria**:
+- All 8 functions have dedicated unit tests
+- All tests pass
+- metric_evaluator.rs coverage reaches 80%+
+
+## Priority 53: TEST - Add Unit Tests for phase1_design.rs
+**Status**: TODO
+**Description**: Add unit tests for phase1_design.rs module functions
+**Rationale**: phase1_design.rs has 0% coverage (6 functions, 26 lines)
+**Functions to Test**:
+- All 6 functions in phase1_design.rs module
+**Acceptance Criteria**:
+- All 6 functions have dedicated unit tests
+- All tests pass
+- phase1_design.rs coverage reaches 80%+
+
+## Priority 54: TEST - Add Unit Tests for phase2_iterate.rs
+**Status**: TODO
+**Description**: Add unit tests for phase2_iterate.rs module functions
+**Rationale**: phase2_iterate.rs has 0% coverage (5 functions, 81 lines)
+**Functions to Test**:
+- All 5 functions in phase2_iterate.rs module
+**Acceptance Criteria**:
+- All 5 functions have dedicated unit tests
+- All tests pass
+- phase2_iterate.rs coverage reaches 80%+
+
+## Priority 55: TEST - Add Unit Tests for pi_agent.rs
+**Status**: TODO
+**Description**: Add unit tests for pi_agent.rs module functions
+**Rationale**: pi_agent.rs has 0% coverage (8 functions, 14 lines)
+**Functions to Test**:
+- All 8 functions in pi_agent.rs module
+**Acceptance Criteria**:
+- All 8 functions have dedicated unit tests
+- All tests pass
+- pi_agent.rs coverage reaches 80%+
+
+## Priority 56: TEST - Add Unit Tests for session.rs
+**Status**: TODO
+**Description**: Add unit tests for session.rs module functions
+**Rationale**: session.rs has 0% coverage (16 functions, 67 lines)
+**Functions to Test**:
+- All 16 functions in session.rs module
+**Acceptance Criteria**:
+- All 16 functions have dedicated unit tests
+- All tests pass
+- session.rs coverage reaches 80%+
+
+## Priority 57: TEST - Add Unit Tests for stuck_detector.rs
+**Status**: TODO
+**Description**: Add unit tests for stuck_detector.rs module functions
+**Rationale**: stuck_detector.rs has 0% coverage (16 functions, 39 lines)
+**Functions to Test**:
+- All 16 functions in stuck_detector.rs module
+**Acceptance Criteria**:
+- All 16 functions have dedicated unit tests
+- All tests pass
+- stuck_detector.rs coverage reaches 80%+
 
