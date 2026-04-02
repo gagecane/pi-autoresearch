@@ -10,7 +10,7 @@ pub use cli::Cli;
 pub use phase1_design::{ExperimentDesign, generate_design};
 pub use phase2_iterate::IterationRecord;
 pub use stuck_detector::{StuckReason, StuckDetector, StuckDetectorConfig, IterationState};
-pub use session::ExperimentSession;
+pub use session::{ExperimentSession, SessionManager, SessionRecord, generate_session_id};
 pub use pi_agent::{PiAgent, BranchManager, generate_uuid};
 
 #[cfg(test)]
