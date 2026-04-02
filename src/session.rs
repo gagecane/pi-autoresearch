@@ -101,3 +101,352 @@ pub fn generate_session_id() -> String {
     format!("{:?}{}", Instant::now(), std::process::id()).hash(&mut hasher);
     format!("{:x}", hasher.finish())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_baseline() -> BaselineRecord {
+        BaselineRecord::new(
+            "2024-01-01T00:00:00Z".to_string(),
+            "abc123".to_string(),
+            "test-metric".to_string(),
+            "test-command".to_string(),
+            100.0,
+            vec![100.0, 101.0],
+            0.01,
+            true,
+        )
+    }
+
+    fn create_test_design() -> ExperimentDesign {
+        ExperimentDesign::new(
+            "test hypothesis".to_string(),
+            "test-metric".to_string(),
+            "test-command".to_string(),
+            100.0,
+            10.0,
+        )
+    }
+
+    fn create_test_iteration() -> IterationRecord {
+        IterationRecord::new(
+            1,
+            "test-action".to_string(),
+            90.0,
+            10.0,
+            true,
+        )
+    }
+
+    // ExperimentSession tests
+    #[test]
+    fn test_experiment_session_new() {
+        let session_id = "test-session".to_string();
+        let question = "test question".to_string();
+        let design = create_test_design();
+        let baseline = create_test_baseline();
+
+        let session = ExperimentSession::new(session_id.clone(), question.clone(), design, baseline);
+
+        assert_eq!(session.session_id, session_id);
+        assert_eq!(session.question, question);
+        assert_eq!(session.status, "running");
+        assert!(session.iterations.is_empty());
+        assert!(session.end_time.is_none());
+    }
+
+    #[test]
+    fn test_experiment_session_add_iteration() {
+        let session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+
+        let mut session = session;
+        let iteration = create_test_iteration();
+
+        session.add_iteration(iteration);
+
+        assert_eq!(session.iterations.len(), 1);
+    }
+
+    #[test]
+    fn test_experiment_session_finalize() {
+        let mut session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+
+        session.finalize(Some(1), "completed".to_string());
+
+        assert_eq!(session.best_iteration, Some(1));
+        assert!(session.end_time.is_some());
+        assert_eq!(session.status, "completed");
+    }
+
+    #[test]
+    fn test_experiment_session_calculate_final_improvement_with_improvement() {
+        let mut session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+
+        let iteration = IterationRecord::new(
+            1,
+            "cmd".to_string(),
+            80.0, // 20% improvement from baseline of 100.0
+            20.0,
+            true,
+        );
+        session.add_iteration(iteration);
+
+        let improvement = session.calculate_final_improvement();
+        assert!((improvement - 0.2).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_experiment_session_calculate_final_improvement_no_iterations() {
+        let session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+
+        let improvement = session.calculate_final_improvement();
+        assert_eq!(improvement, 0.0);
+    }
+
+    #[test]
+    fn test_experiment_session_clone() {
+        let session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+
+        let session_clone = session.clone();
+        assert_eq!(session.session_id, session_clone.session_id);
+    }
+
+    #[test]
+    fn test_experiment_session_debug() {
+        let session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+
+        let debug_str = format!("{:?}", session);
+        assert!(debug_str.contains("test"));
+    }
+
+    // SessionRecord tests
+    #[test]
+    fn test_session_record_baseline() {
+        let baseline = create_test_baseline();
+        let record = SessionRecord::Baseline(baseline);
+
+        match record {
+            SessionRecord::Baseline(b) => assert_eq!(b.measurement_command, "test-command"),
+            _ => panic!("Expected Baseline variant"),
+        }
+    }
+
+    #[test]
+    fn test_session_record_iteration() {
+        let iteration = create_test_iteration();
+        let record = SessionRecord::Iteration(iteration);
+
+        match record {
+            SessionRecord::Iteration(i) => assert_eq!(i.iteration, 1),
+            _ => panic!("Expected Iteration variant"),
+        }
+    }
+
+    #[test]
+    fn test_session_record_experiment() {
+        let session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+        let record = SessionRecord::Experiment(session);
+
+        match record {
+            SessionRecord::Experiment(s) => assert_eq!(s.session_id, "test"),
+            _ => panic!("Expected Experiment variant"),
+        }
+    }
+
+    // SessionManager tests
+    #[test]
+    fn test_session_manager_new() {
+        let manager = SessionManager::new("test-session.jsonl".to_string());
+        // Just verify it creates without error
+        assert!(!manager.session_file.is_empty());
+    }
+
+    #[test]
+    fn test_session_manager_save_baseline() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+        let baseline = create_test_baseline();
+
+        let result = manager.save_baseline(&baseline);
+
+        assert!(result.is_ok());
+        assert!(temp_file.path().exists());
+    }
+
+    #[test]
+    fn test_session_manager_save_iteration() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+        let iteration = create_test_iteration();
+
+        let result = manager.save_iteration(&iteration);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_session_manager_save_session() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+        let session = ExperimentSession::new(
+            "test".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+
+        let result = manager.save_session(&session);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_session_manager_read_all_empty_file() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+
+        let records = manager.read_all().unwrap();
+        assert!(records.is_empty());
+    }
+
+    #[test]
+    fn test_session_manager_read_all_nonexistent_file() {
+        let manager = SessionManager::new("/nonexistent/path/file.jsonl".to_string());
+
+        let records = manager.read_all().unwrap();
+        assert!(records.is_empty());
+    }
+
+    #[test]
+    fn test_session_manager_read_all_with_data() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let baseline = create_test_baseline();
+        let json_line = serde_json::to_string(&baseline).unwrap();
+        std::fs::write(&temp_file, json_line).unwrap();
+
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+        let records = manager.read_all().unwrap();
+
+        assert_eq!(records.len(), 1);
+        match &records[0] {
+            SessionRecord::Baseline(b) => assert_eq!(b.measurement_command, "test-command"),
+            _ => panic!("Expected Baseline record"),
+        }
+    }
+
+    #[test]
+    fn test_session_manager_find_session_not_found() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+
+        let session = manager.find_session("nonexistent-id").unwrap();
+        assert!(session.is_none());
+    }
+
+    #[test]
+    fn test_session_manager_find_session_found() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let session = ExperimentSession::new(
+            "test-id".to_string(),
+            "question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+        let json_line = serde_json::to_string(&session).unwrap();
+        std::fs::write(&temp_file, json_line).unwrap();
+
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+        let found = manager.find_session("test-id").unwrap();
+
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().session_id, "test-id");
+    }
+
+    #[test]
+    fn test_session_manager_list_history_empty() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+
+        let history = manager.list_history().unwrap();
+        assert!(history.contains("No experiments found"));
+    }
+
+    #[test]
+    fn test_session_manager_list_history_with_experiments() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let session = ExperimentSession::new(
+            "test-id".to_string(),
+            "test question".to_string(),
+            create_test_design(),
+            create_test_baseline(),
+        );
+        let json_line = serde_json::to_string(&session).unwrap();
+        std::fs::write(&temp_file, json_line).unwrap();
+
+        let manager = SessionManager::new(temp_file.path().to_string_lossy().to_string());
+        let history = manager.list_history().unwrap();
+
+        assert!(history.contains("Experiment History"));
+        assert!(history.contains("test-id"));
+    }
+
+    // generate_session_id tests
+    #[test]
+    fn test_generate_session_id_format() {
+        let id = generate_session_id();
+        // Should be a hex string
+        assert!(!id.is_empty());
+        assert!(id.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_generate_session_id_uniqueness() {
+        let id1 = generate_session_id();
+        let id2 = generate_session_id();
+
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn test_generate_session_id_length() {
+        let id = generate_session_id();
+        // DefaultHasher produces u64, so hex string should be up to 16 chars
+        assert!(id.len() <= 16);
+    }
+}

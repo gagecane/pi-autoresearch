@@ -332,4 +332,5 @@ pi-autoresearch/
 - Original autoresearch: https://github.com/karpathy/autoresearch
 - Current implementation: https://github.com/davebcn87/pi-autoresearch
 - Beads (bd) task tracking: See AGENTS.md
-- Ralph-tui: Task orchestration framework
+- Ralph-tui: Task orchestration framework: https://github.com/subsy/ralph-tui
+- pi coding agent: https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent
