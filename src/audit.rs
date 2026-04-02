@@ -246,6 +246,385 @@ pub struct AuditLogger {
     current_session_id: Option<String>,
 }
 
+// ==================== Action Logging Helper Functions ====================
+
+impl AuditLogger {
+    /// Logs experiment start with configuration details
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `question` - Research question being explored
+    /// * `metric` - Metric name being optimized
+    /// * `baseline` - Baseline measurement value
+    /// * `target_improvement` - Target improvement ratio
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::{AuditLogger, AuditEventType};
+    /// use std::collections::HashMap;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_experiment_start(
+    ///     "session-123",
+    ///     "Can we improve performance?",
+    ///     "cpu_time",
+    ///     100.0,
+    ///     0.20,
+    /// ).unwrap();
+    /// ```
+    pub fn log_experiment_start(
+        &mut self,
+        session_id: &str,
+        question: &str,
+        metric: &str,
+        baseline: f64,
+        target_improvement: f64,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("question".to_string(), question.to_string());
+        details.insert("metric".to_string(), metric.to_string());
+        details.insert("baseline".to_string(), baseline.to_string());
+        details.insert("target_improvement".to_string(), target_improvement.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::ExperimentStarted,
+            format!("Starting experiment: {}", question),
+            details,
+        )
+    }
+    
+    /// Logs experiment completion
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `target_achieved` - Whether the target improvement was achieved
+    /// * `final_improvement` - Final improvement achieved
+    /// * `iterations` - Number of iterations performed
+    /// * `termination_reason` - Why the experiment terminated
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_experiment_end("session-123", true, 0.25, 10, "target_achieved").unwrap();
+    /// ```
+    pub fn log_experiment_end(
+        &mut self,
+        session_id: &str,
+        target_achieved: bool,
+        final_improvement: f64,
+        iterations: usize,
+        termination_reason: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("target_achieved".to_string(), target_achieved.to_string());
+        details.insert("final_improvement".to_string(), final_improvement.to_string());
+        details.insert("iterations".to_string(), iterations.to_string());
+        details.insert("termination_reason".to_string(), termination_reason.to_string());
+        
+        let event_type = if target_achieved {
+            AuditEventType::ExperimentCompleted
+        } else {
+            AuditEventType::ExperimentFailed
+        };
+        
+        self.log_with_session(
+            session_id,
+            event_type,
+            format!("Experiment {}", if target_achieved { "completed" } else { "failed" }),
+            details,
+        )
+    }
+    
+    /// Logs iteration start
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `iteration_num` - Current iteration number (1-indexed)
+    /// * `branch_name` - Name of the branch being created
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_iteration_start("session-123", 1, "autoresearch/iter-1-abc").unwrap();
+    /// ```
+    pub fn log_iteration_start(
+        &mut self,
+        session_id: &str,
+        iteration_num: usize,
+        branch_name: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("iteration".to_string(), iteration_num.to_string());
+        details.insert("branch_name".to_string(), branch_name.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::IterationStarted,
+            format!("Starting iteration {}", iteration_num),
+            details,
+        )
+    }
+    
+    /// Logs iteration completion
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `iteration_num` - Current iteration number (1-indexed)
+    /// * `improvement` - Improvement achieved in this iteration
+    /// * `kept` - Whether the change was kept
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_iteration_end("session-123", 1, 0.15, true).unwrap();
+    /// ```
+    pub fn log_iteration_end(
+        &mut self,
+        session_id: &str,
+        iteration_num: usize,
+        improvement: f64,
+        kept: bool,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("iteration".to_string(), iteration_num.to_string());
+        details.insert("improvement".to_string(), improvement.to_string());
+        details.insert("kept".to_string(), kept.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::IterationCompleted,
+            format!("Completed iteration {} (improvement: {:+.2}%, kept: {})", 
+                    iteration_num, improvement * 100.0, kept),
+            details,
+        )
+    }
+    
+    /// Logs branch creation
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `branch_name` - Name of the created branch
+    /// * `base_commit` - Base commit hash the branch was created from
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_branch_created("session-123", "autoresearch/iter-1-abc", "abc123").unwrap();
+    /// ```
+    pub fn log_branch_created(
+        &mut self,
+        session_id: &str,
+        branch_name: &str,
+        base_commit: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("branch_name".to_string(), branch_name.to_string());
+        details.insert("base_commit".to_string(), base_commit.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::BranchCreated,
+            format!("Created branch: {}", branch_name),
+            details,
+        )
+    }
+    
+    /// Logs commit creation
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `commit_hash` - Hash of the created commit
+    /// * `commit_message` - Message of the commit
+    /// * `branch_name` - Branch where the commit was created
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_commit_created("session-123", "def456", "Iter 1 changes", "autoresearch/iter-1-abc").unwrap();
+    /// ```
+    pub fn log_commit_created(
+        &mut self,
+        session_id: &str,
+        commit_hash: &str,
+        commit_message: &str,
+        branch_name: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("commit_hash".to_string(), commit_hash.to_string());
+        details.insert("commit_message".to_string(), commit_message.to_string());
+        details.insert("branch_name".to_string(), branch_name.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::CommitCreated,
+            format!("Created commit: {}", commit_hash),
+            details,
+        )
+    }
+    
+    /// Logs branch merge
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `branch_name` - Name of the branch being merged
+    /// * `target_branch` - Target branch to merge into
+    /// * `merge_commit` - Hash of the merge commit
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_branch_merged("session-123", "autoresearch/iter-1-abc", "main", "ghi789").unwrap();
+    /// ```
+    pub fn log_branch_merged(
+        &mut self,
+        session_id: &str,
+        branch_name: &str,
+        target_branch: &str,
+        merge_commit: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("branch_name".to_string(), branch_name.to_string());
+        details.insert("target_branch".to_string(), target_branch.to_string());
+        details.insert("merge_commit".to_string(), merge_commit.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::BranchMerged,
+            format!("Merged branch {} into {}", branch_name, target_branch),
+            details,
+        )
+    }
+    
+    /// Logs branch deletion
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `branch_name` - Name of the deleted branch
+    /// * `reason` - Reason for deletion
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_branch_deleted("session-123", "autoresearch/iter-1-abc", "Change reverted").unwrap();
+    /// ```
+    pub fn log_branch_deleted(
+        &mut self,
+        session_id: &str,
+        branch_name: &str,
+        reason: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("branch_name".to_string(), branch_name.to_string());
+        details.insert("reason".to_string(), reason.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::BranchDeleted,
+            format!("Deleted branch: {}", branch_name),
+            details,
+        )
+    }
+    
+    /// Logs branch checkout
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `branch_name` - Name of the checked out branch
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_branch_checked_out("session-123", "main").unwrap();
+    /// ```
+    pub fn log_branch_checked_out(
+        &mut self,
+        session_id: &str,
+        branch_name: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("branch_name".to_string(), branch_name.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::BranchCheckedOut,
+            format!("Checked out branch: {}", branch_name),
+            details,
+        )
+    }
+    
+    /// Logs configuration change
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - Unique identifier for the experiment session
+    /// * `config_key` - Configuration key that changed
+    /// * `old_value` - Old value (if known)
+    /// * `new_value` - New value
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::audit::AuditLogger;
+    ///
+    /// let mut logger = AuditLogger::new("audit.log").unwrap();
+    /// logger.log_config_changed("session-123", "max_iterations", "10", "20").unwrap();
+    /// ```
+    pub fn log_config_changed(
+        &mut self,
+        session_id: &str,
+        config_key: &str,
+        old_value: &str,
+        new_value: &str,
+    ) -> Result<()> {
+        let mut details = HashMap::new();
+        details.insert("config_key".to_string(), config_key.to_string());
+        details.insert("old_value".to_string(), old_value.to_string());
+        details.insert("new_value".to_string(), new_value.to_string());
+        
+        self.log_with_session(
+            session_id,
+            AuditEventType::ConfigChanged,
+            format!("Config changed: {} = {}", config_key, new_value),
+            details,
+        )
+    }
+}
+
 impl AuditLogger {
     /// Creates a new audit logger for the specified path
     ///
@@ -743,5 +1122,255 @@ mod tests {
         
         let content = fs::read_to_string(&path).unwrap();
         assert!(content.contains("session-123"));
+    }
+
+    // ==================== Action Logging Tests ====================
+
+    #[test]
+    fn test_log_experiment_start() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_experiment_start(
+            "session-123",
+            "Can we improve performance?",
+            "cpu_time",
+            100.0,
+            0.20,
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("session-123"));
+        assert!(content.contains("experiment_started"));
+        assert!(content.contains("Can we improve performance?"));
+        assert!(content.contains("cpu_time"));
+        assert!(content.contains("100"));
+        assert!(content.contains("0.2"));
+    }
+
+    #[test]
+    fn test_log_experiment_end_success() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_experiment_end("session-123", true, 0.25, 10, "target_achieved").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("session-123"));
+        assert!(content.contains("experiment_completed"));
+        assert!(content.contains("true"));
+        assert!(content.contains("0.25"));
+        assert!(content.contains("10"));
+        assert!(content.contains("target_achieved"));
+    }
+
+    #[test]
+    fn test_log_experiment_end_failure() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_experiment_end("session-456", false, 0.10, 15, "max_iterations").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("session-456"));
+        assert!(content.contains("experiment_failed"));
+        assert!(content.contains("false"));
+        assert!(content.contains("max_iterations"));
+    }
+
+    #[test]
+    fn test_log_iteration_start() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_iteration_start("session-123", 1, "autoresearch/iter-1-abc").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("iteration_started"));
+        assert!(content.contains("autoresearch/iter-1-abc"));
+        assert!(content.contains("1"));
+    }
+
+    #[test]
+    fn test_log_iteration_end_kept() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_iteration_end("session-123", 1, 0.15, true).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("iteration_completed"));
+        assert!(content.contains("0.15"));
+        assert!(content.contains("true"));
+    }
+
+    #[test]
+    fn test_log_iteration_end_reverted() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_iteration_end("session-123", 2, -0.05, false).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("iteration_completed"));
+        assert!(content.contains("-0.05"));
+        assert!(content.contains("false"));
+    }
+
+    #[test]
+    fn test_log_branch_created() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_branch_created("session-123", "autoresearch/iter-1-abc", "abc123def456").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("branch_created"));
+        assert!(content.contains("autoresearch/iter-1-abc"));
+        assert!(content.contains("abc123def456"));
+    }
+
+    #[test]
+    fn test_log_commit_created() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_commit_created(
+            "session-123",
+            "def456ghi789",
+            "Iteration 1: Optimized function",
+            "autoresearch/iter-1-abc",
+        ).unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("commit_created"));
+        assert!(content.contains("def456ghi789"));
+        assert!(content.contains("Iteration 1: Optimized function"));
+    }
+
+    #[test]
+    fn test_log_branch_merged() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_branch_merged("session-123", "autoresearch/iter-1-abc", "main", "ghi789jkl012").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("branch_merged"));
+        assert!(content.contains("autoresearch/iter-1-abc"));
+        assert!(content.contains("main"));
+        assert!(content.contains("ghi789jkl012"));
+    }
+
+    #[test]
+    fn test_log_branch_deleted() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_branch_deleted("session-123", "autoresearch/iter-1-abc", "Change reverted").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("branch_deleted"));
+        assert!(content.contains("autoresearch/iter-1-abc"));
+        assert!(content.contains("Change reverted"));
+    }
+
+    #[test]
+    fn test_log_branch_checked_out() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_branch_checked_out("session-123", "main").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("branch_checked_out"));
+        assert!(content.contains("main"));
+    }
+
+    #[test]
+    fn test_log_config_changed() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        logger.log_config_changed("session-123", "max_iterations", "10", "20").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("config_changed"));
+        assert!(content.contains("max_iterations"));
+        assert!(content.contains("10"));
+        assert!(content.contains("20"));
+    }
+
+    #[test]
+    fn test_action_logging_workflow() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_path(&temp_dir, "audit.log");
+        
+        let mut logger = AuditLogger::new(&path).unwrap();
+        
+        // Simulate a complete experiment workflow
+        logger.log_experiment_start("session-123", "Test question", "cpu_time", 100.0, 0.20).unwrap();
+        logger.log_branch_created("session-123", "autoresearch/iter-1-abc", "abc123").unwrap();
+        logger.log_branch_checked_out("session-123", "autoresearch/iter-1-abc").unwrap();
+        logger.log_iteration_start("session-123", 1, "autoresearch/iter-1-abc").unwrap();
+        logger.log_commit_created("session-123", "def456", "Iter 1", "autoresearch/iter-1-abc").unwrap();
+        logger.log_iteration_end("session-123", 1, 0.15, true).unwrap();
+        logger.log_branch_merged("session-123", "autoresearch/iter-1-abc", "main", "ghi789").unwrap();
+        logger.log_branch_deleted("session-123", "autoresearch/iter-1-abc", "Merged").unwrap();
+        logger.log_experiment_end("session-123", true, 0.15, 1, "target_achieved").unwrap();
+        logger.flush().unwrap();
+        
+        let content = fs::read_to_string(&path).unwrap();
+        
+        // Verify all events are logged
+        assert!(content.contains("experiment_started"));
+        assert!(content.contains("branch_created"));
+        assert!(content.contains("branch_checked_out"));
+        assert!(content.contains("iteration_started"));
+        assert!(content.contains("commit_created"));
+        assert!(content.contains("iteration_completed"));
+        assert!(content.contains("branch_merged"));
+        assert!(content.contains("branch_deleted"));
+        assert!(content.contains("experiment_completed"));
+        
+        // Count entries (should be 9)
+        let entry_count = content.matches("event_type").count();
+        assert_eq!(entry_count, 9);
     }
 }

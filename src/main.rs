@@ -16,6 +16,7 @@ use pi_autoresearch::export::export;
 use pi_autoresearch::session::ExperimentSession as LibraryExperimentSession;
 use pi_autoresearch::phase1_design::{ExperimentDesign as LibraryExperimentDesign, BaselineRecord as LibraryBaselineRecord};
 use pi_autoresearch::phase2_iterate::IterationRecord as LibraryIterationRecord;
+use pi_autoresearch::audit::AuditLogger;
 
 
 #[derive(Parser, Debug, Default)]
@@ -1463,6 +1464,7 @@ fn run_iteration(
     measure_command: &str,
     session_file: &str,
     dry_run: bool,
+    _audit_logger: &mut Option<AuditLogger>,
 ) -> Result<(f64, String, bool)> {
     let current_state = format!("Iteration {}, best metric: {:.2}", iteration, best_metric);
     let metric_feedback = format!("Baseline: {:.2}, current best: {:.2}", baseline_value, best_metric);
@@ -1520,6 +1522,7 @@ fn run_iterative_loop(
     notify_url: Option<String>,
     _notify_email: Option<String>,
     notify_milestone: Option<usize>,
+    audit_logger: &mut Option<AuditLogger>,
 ) -> Result<(ExperimentSession, Option<StuckReason>)> {
     let max_iterations = get_max_iterations(cli, config, 20);
     let baseline_value = baseline_record.value;
@@ -1528,6 +1531,17 @@ fn run_iterative_loop(
     let stall_limit = get_stall_limit(cli, config, 5);
     let convergence_threshold = get_convergence_threshold(cli, config, 0.01);
     let convergence_window = get_convergence_window(cli, config, 3);
+    
+    // Log experiment start (session_id will be generated later, use placeholder for now)
+    if let Some(ref mut logger) = audit_logger {
+        let _ = logger.log_experiment_start(
+            "pre-session", // Will be updated after session is created
+            question,
+            &design.metric,
+            baseline_value,
+            design.target_improvement,
+        );
+    }
     
     let mut state = IterationState {
         current_iteration: 0,
@@ -1599,6 +1613,7 @@ fn run_iterative_loop(
             &design.measurement,
             &session_file,
             dry_run,
+            audit_logger,
         );
         
         if iteration_start.elapsed() > iteration_timeout {
@@ -3103,6 +3118,22 @@ async fn run() -> Result<()> {
                 save_to_session_file(&session_file, &baseline_record)?;
             }
 
+            // Initialize audit logger if requested
+            let mut audit_logger: Option<AuditLogger> = if let Some(ref audit_path) = cli.audit_log_path {
+                match AuditLogger::new(audit_path) {
+                    Ok(logger) => {
+                        info!("Audit logging enabled: {}", audit_path);
+                        Some(logger)
+                    }
+                    Err(e) => {
+                        warn!("Failed to initialize audit logger: {}", e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+
             let mut beads_resume = if cli.beads_enabled { Some(BeadsIntegration::new(true)) } else { None };
             let (new_session, stuck_reason) = run_iterative_loop(
                 &session.question,
@@ -3116,6 +3147,7 @@ async fn run() -> Result<()> {
                 cli.notify_url.clone(),
                 cli.notify_email.clone(),
                 cli.notify_milestone,
+                &mut audit_logger,
             )?;
 
             // Merge the new iterations with the old session
@@ -3380,6 +3412,22 @@ async fn run() -> Result<()> {
         design_to_use.measurement = measure_to_use;
         design_to_use.baseline = baseline_to_use;
         
+        // Initialize audit logger if requested
+        let mut audit_logger: Option<AuditLogger> = if let Some(ref audit_path) = cli.audit_log_path {
+            match AuditLogger::new(audit_path) {
+                Ok(logger) => {
+                    info!("Audit logging enabled: {}", audit_path);
+                    Some(logger)
+                }
+                Err(e) => {
+                    warn!("Failed to initialize audit logger: {}", e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        
         let mut beads_opt = Some(beads);
         let (session, stuck_reason) = run_iterative_loop(
             &question, &design_to_use, &baseline_record, &cli, &config, &mut beads_opt, cli.dry_run,
@@ -3387,6 +3435,7 @@ async fn run() -> Result<()> {
             cli.notify_url.clone(),
             cli.notify_email.clone(),
             cli.notify_milestone,
+            &mut audit_logger,
         )?;
         let mut beads = beads_opt;
         
