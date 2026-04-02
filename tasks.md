@@ -95,18 +95,20 @@
 - Priority 92.6: TEST - Add Export Integration Tests
 
 ## Priority 92.1: CLI - Add Export Flags
-**Status**: READY FOR REVIEW ✅
+**Status**: COMPLETE ✅
 **Description**: Add CLI flags for export functionality
 **Rationale**: Users need CLI interface to request experiment result exports
 **Implementation**:
 - ✅ Added `ExportFormat` enum with variants: Csv, Json, Pdf, Markdown
-  - Added to both `src/cli.rs` (for library usage) and `src/main.rs` (for binary)
+  - Added to `src/cli.rs` (for library usage)
+  - Exported from `src/lib.rs` for use in main.rs
   - Implemented `extension()` method to return file extension for each format
   - Default format is Json
 - ✅ Added `--export FORMAT` flag to cli.rs and main.rs (csv, json, pdf, markdown)
 - ✅ Added `--export-path PATH` flag for output file location (with alias `export_path`)
-- ✅ Added helper function `get_export_format()` in cli.rs
-- ✅ Added helper functions `get_export_format()` and `get_export_path()` in main.rs
+- ✅ Added helper methods on Cli struct:
+  - `get_export_format()` - Returns the export format if specified
+  - `get_export_path(session_id)` - Returns export path with default generation
 - ✅ Default export path format: "export_{session_id}_{format}.{ext}"
 **Tests Added**:
 - `test_export_format_extension` - Verifies correct extension for each format
@@ -125,19 +127,12 @@
 - All 27 cli.rs tests pass (12 new tests added)
 - All 174 lib tests pass
 - All 103 main.rs tests pass
-- `cargo build` completes successfully (2 warnings for unused helper functions - expected)
+- `cargo build` completes with no warnings
+- `cargo clippy` completes with no warnings
 - `--help` shows new flags correctly:
   - `--export <EXPORT>` with possible values: csv, json, pdf, markdown
   - `--export-path <EXPORT_PATH>` with default description
-**Review**: READY FOR REVIEW - Export flags properly implemented in both cli.rs and main.rs, comprehensive tests added, all tests pass, help output shows new options correctly
-**Revised**: Fixed code duplication issues:
-- ✅ Removed duplicate `ExportFormat` enum from main.rs (now imported from cli.rs)
-- ✅ Removed unused standalone functions `get_export_format()` and `get_export_path()` from main.rs
-- ✅ Updated lib.rs to export `ExportFormat` for use in main.rs
-- ✅ All 174 lib tests pass
-- ✅ All 103 main.rs tests pass
-- ✅ `cargo build` completes with no warnings
-- ✅ `cargo clippy` completes with no warnings
+**Review**: REVIEW COMPLETE - Export flags properly implemented in cli.rs and main.rs, ExportFormat enum defined once in cli.rs and exported from lib.rs, comprehensive tests added, all tests pass, help output shows new options correctly, zero warnings
 
 ## Priority 92.2: EXPORT - Implement JSON Export
 **Status**: TODO

@@ -2,6 +2,42 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 14:45 UTC: Export Flags Review Complete (Priority 92.1)
+
+**Priority 92.1: CLI - Add Export Flags** - REVIEW COMPLETE
+
+**Review Findings**:
+- ✅ ExportFormat enum properly defined in cli.rs with 4 variants (Csv, Json, Pdf, Markdown)
+- ✅ ExportFormat exported from lib.rs for use in main.rs
+- ✅ main.rs imports ExportFormat from pi_autoresearch::cli (no duplication)
+- ✅ CLI flags `--export` and `--export-path` properly added to both cli.rs and main.rs
+- ✅ Helper methods on Cli struct work correctly
+- ✅ 12 comprehensive tests added to cli.rs
+- ✅ All tests pass (174 lib, 103 main.rs)
+- ✅ Zero warnings from cargo build and cargo clippy
+- ✅ `--help` shows new flags correctly
+
+**Code Quality Verified**:
+- ✅ No code duplication (ExportFormat defined once in cli.rs)
+- ✅ No unused functions or warnings
+- ✅ Proper separation of concerns (library code in cli.rs, binary imports from library)
+- ✅ DRY principle followed
+- ✅ Clean architecture with library exporting types for binary use
+
+**Implementation Pattern**:
+- Define enums in cli.rs (library module)
+- Export from lib.rs for external use
+- Import in main.rs (binary) from library
+- Add helper methods on Cli struct for clean abstraction
+- Generate default paths with sensible format: `export_{session_id}_{format}.{ext}`
+
+**Next Steps**:
+- Priority 92.2: Implement JSON export (uses ExportFormat::Json)
+- Priority 92.3: Implement CSV export (uses ExportFormat::Csv)
+- Priority 92.4: Implement Markdown export (uses ExportFormat::Markdown)
+- Priority 92.5: Implement PDF export (uses ExportFormat::Pdf)
+- Priority 92.6: Add export integration tests
+
 ## 2026-04-02 13:53 UTC: Export Flags Revision (Priority 92.1)
 
 **Priority 92.1: CLI - Add Export Flags** - REVISE COMPLETE
