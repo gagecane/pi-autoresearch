@@ -575,6 +575,109 @@ fn test_beads_enabled_with_auto_approve() {
 }
 
 #[test]
+fn test_beads_integration_creates_issue() {
+    // Test that beads integration creates an issue and parses the ID correctly
+    // This test verifies the fix for parsing "✓ Created issue: <id> — <title>" format
+    let args = vec![
+        "--question",
+        "test beads create issue",
+        "--auto-approve",
+        "--beads-enabled",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "100",
+        "--target-improvement",
+        "0.50",
+        "--skip-git",
+        "--session-file",
+        "/tmp/test_beads_create.jsonl",
+    ];
+    
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.success(), "Command failed: {}", String::from_utf8_lossy(&output.stderr));
+    
+    // Check that the output mentions creating a bead issue
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Created bead issue:"), 
+            "Should log that a bead issue was created. Stderr: {}", stderr);
+}
+
+#[test]
+fn test_beads_integration_closes_issue_on_success() {
+    // Test that beads integration closes the issue when experiment succeeds
+    let args = vec![
+        "--question",
+        "test beads close success",
+        "--auto-approve",
+        "--beads-enabled",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 40",
+        "--baseline",
+        "100",
+        "--target-improvement",
+        "0.50",
+        "--skip-git",
+        "--session-file",
+        "/tmp/test_beads_close_success.jsonl",
+    ];
+    
+    let output = get_cli_output(&args);
+    
+    // Should succeed
+    assert!(output.status.success(), "Command failed: {}", String::from_utf8_lossy(&output.stderr));
+    
+    // Check that the output mentions closing the bead issue
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Closed bead issue:"), 
+            "Should log that a bead issue was closed. Stderr: {}", stderr);
+}
+
+#[test]
+fn test_beads_integration_handles_failure() {
+    // Test that beads integration closes the issue even when experiment fails
+    let args = vec![
+        "--question",
+        "test beads close failure",
+        "--auto-approve",
+        "--beads-enabled",
+        "--max-iterations",
+        "1",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 90",
+        "--baseline",
+        "100",
+        "--target-improvement",
+        "0.50",
+        "--skip-git",
+        "--session-file",
+        "/tmp/test_beads_close_failure.jsonl",
+    ];
+    
+    let output = get_cli_output(&args);
+    
+    // Should fail (target not met)
+    assert!(!output.status.success());
+    
+    // Check that the output mentions closing the bead issue
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Closed bead issue:"), 
+            "Should log that a bead issue was closed even on failure. Stderr: {}", stderr);
+}
+
+#[test]
 fn test_list_branches_flag() {
     let args = vec!["--list-branches"];
     let output = get_cli_output(&args);

@@ -1611,11 +1611,32 @@ impl BeadsIntegration {
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if let Some(id) = stdout.lines().next().and_then(|line| {
-            line.trim().strip_prefix("Created ").or_else(|| line.trim().strip_prefix("Created: "))
-        }) {
-            self.bead_id = Some(id.to_string());
+        // Parse the bead ID from output formats like:
+        // "✓ Created issue: pi-autoresearch-b5b — test"
+        // "Created pi-autoresearch-b5b"
+        // "Created: pi-autoresearch-b5b"
+        let bead_id = stdout.lines().next().and_then(|line| {
+            // Try "✓ Created issue: <id> — <title>" format
+            if let Some(after_prefix) = line.trim().strip_prefix("✓ Created issue: ") {
+                // Extract ID before the em-dash separator
+                return after_prefix.split(" — ").next().map(|s| s.trim().to_string());
+            }
+            // Try "Created <id>" format
+            if let Some(after_prefix) = line.trim().strip_prefix("Created ") {
+                return Some(after_prefix.trim().to_string());
+            }
+            // Try "Created: <id>" format
+            if let Some(after_prefix) = line.trim().strip_prefix("Created: ") {
+                return Some(after_prefix.trim().to_string());
+            }
+            None
+        });
+        
+        if let Some(id) = bead_id {
+            self.bead_id = Some(id.clone());
             info!("Created bead issue: {}", id);
+        } else {
+            warn!("Could not parse bead ID from output: {}", stdout.lines().next().unwrap_or(""));
         }
 
         Ok(())
