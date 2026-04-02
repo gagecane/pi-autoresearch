@@ -2493,3 +2493,39 @@ pub fn effective_max_iterations(&self) -> usize { ... }
 - Doc tests should use the re-exported path (pi_autoresearch::PiAgent) not the internal path (pi_autoresearch::pi_agent::PiAgent)
 - Private struct fields cannot be accessed in doc tests, need to test through public methods instead
 - Doc tests are a great way to provide executable documentation that stays in sync with the code
+
+## 2026-04-02 23:59 UTC: Review Complete (Priority 86)
+
+**Priority 86: TEST - Add Doc Tests for pi_agent.rs** - COMPLETE ✅
+
+**Review Summary**:
+- Reviewed all 13 doc tests for pi_agent.rs module
+- Verified comprehensive documentation for:
+  - `PiAgent` struct: 3 examples (simulated, real, default)
+  - `PiAgent::new()`: 1 example showing constructor usage
+  - `PiAgent::propose_change()`: 2 examples (basic usage, empty strings)
+  - `BranchManager` struct: 3 examples (default, apply changes, revert/keep)
+  - `BranchManager::apply_changes_in_branch()`: 1 example
+  - `BranchManager::revert_changes()`: 1 example
+  - `BranchManager::keep_changes()`: 1 example
+  - `generate_uuid()`: 2 examples (format validation, uniqueness)
+- Verified all types properly re-exported from lib.rs
+- Confirmed generate_uuid() made public and re-exported
+
+**Test Results**:
+- All 84 doc tests passing
+- All 162 lib tests passing
+- All 103 main.rs tests passing
+- All 89 integration tests passing
+- All 13 mutation tests passing
+- All 7 performance tests passing
+- Total: 458 tests passing
+
+**Key Learnings**:
+- Doc tests for PiAgent should show both simulated and real mode usage
+- BranchManager examples should demonstrate complete workflow (apply, keep/revert)
+- generate_uuid() documentation should show format validation and uniqueness
+- Module-level doc comments provide good overview for library users
+- Doc tests serve as both documentation and regression tests
+
+**Next Task**: Priority 87 - Add Doc Tests for session.rs
