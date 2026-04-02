@@ -1,6 +1,16 @@
 use assert_cmd::Command;
 use serde_json::Value;
 use std::process::Output;
+use std::process::id;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static TEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+/// Generate a unique session file path for parallel test execution
+fn get_unique_session_file(name: &str) -> String {
+    let counter = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+    format!("/tmp/test_{}_{}_{}.jsonl", name, id(), counter)
+}
 
 fn get_cli_output(args: &[&str]) -> Output {
     let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
@@ -100,6 +110,7 @@ fn test_json_output_structure() {
 
 #[test]
 fn test_baseline_verification_success() {
+    let session_file = get_unique_session_file("baseline_success");
     let args = vec![
         "--verify-baseline",
         "--metric",
@@ -107,7 +118,7 @@ fn test_baseline_verification_success() {
         "--measure",
         "echo 100.0",
         "--session-file",
-        "/tmp/test_baseline.jsonl",
+        &session_file,
     ];
     let output = get_cli_output(&args);
 
@@ -123,6 +134,7 @@ fn test_baseline_verification_success() {
 
 #[test]
 fn test_baseline_verification_records_timestamp() {
+    let session_file = get_unique_session_file("baseline_timestamp");
     let args = vec![
         "--verify-baseline",
         "--metric",
@@ -130,7 +142,7 @@ fn test_baseline_verification_records_timestamp() {
         "--measure",
         "echo 100.0",
         "--session-file",
-        "/tmp/test_baseline_timestamp.jsonl",
+        &session_file,
     ];
     let output = get_cli_output(&args);
 
@@ -147,6 +159,7 @@ fn test_baseline_verification_records_timestamp() {
 
 #[test]
 fn test_baseline_verification_records_git_commit() {
+    let session_file = get_unique_session_file("baseline_git");
     let args = vec![
         "--verify-baseline",
         "--metric",
@@ -154,7 +167,7 @@ fn test_baseline_verification_records_git_commit() {
         "--measure",
         "echo 100.0",
         "--session-file",
-        "/tmp/test_baseline_git.jsonl",
+        &session_file,
     ];
     let output = get_cli_output(&args);
 
@@ -171,6 +184,7 @@ fn test_baseline_verification_records_git_commit() {
 
 #[test]
 fn test_baseline_verification_within_variance() {
+    let session_file = get_unique_session_file("baseline_variance");
     let args = vec![
         "--verify-baseline",
         "--metric",
@@ -178,7 +192,7 @@ fn test_baseline_verification_within_variance() {
         "--measure",
         "echo 100.0",
         "--session-file",
-        "/tmp/test_baseline_variance.jsonl",
+        &session_file,
     ];
     let output = get_cli_output(&args);
 
@@ -198,6 +212,7 @@ fn test_baseline_verification_within_variance() {
 
 #[test]
 fn test_baseline_verification_exceeds_variance() {
+    let session_file = get_unique_session_file("baseline_fail");
     let args = vec![
         "--verify-baseline",
         "--metric",
@@ -207,7 +222,7 @@ fn test_baseline_verification_exceeds_variance() {
         "--max-variance",
         "0.01",
         "--session-file",
-        "/tmp/test_baseline_fail.jsonl",
+        &session_file,
     ];
     let output = get_cli_output(&args);
 
@@ -219,8 +234,8 @@ fn test_baseline_verification_exceeds_variance() {
 
 #[test]
 fn test_iterative_loop_single_iteration() {
-    let session_file = "/tmp/test_iter_single.jsonl";
-    std::fs::remove_file(session_file).ok();
+    let session_file = get_unique_session_file("iter_single");
+    std::fs::remove_file(&session_file).ok();
 
     let args = vec![
         "--question",
@@ -237,16 +252,16 @@ fn test_iterative_loop_single_iteration() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        session_file,
+        &session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
 
-    assert!(std::path::Path::new(session_file).exists());
+    assert!(std::path::Path::new(&session_file).exists());
 
-    let contents = std::fs::read_to_string(session_file).unwrap();
+    let contents = std::fs::read_to_string(&session_file).unwrap();
     let lines: Vec<&str> = contents.lines().collect();
     assert!(lines.len() >= 1);
 }
@@ -269,8 +284,8 @@ fn test_baseline_verification_missing_measure() {
 
 #[test]
 fn test_iterative_loop_logs_iteration_record() {
-    let session_file = "/tmp/test_iter_log.jsonl";
-    std::fs::remove_file(session_file).ok();
+    let session_file = get_unique_session_file("iter_log");
+    std::fs::remove_file(&session_file).ok();
 
     let args = vec![
         "--question",
@@ -287,14 +302,14 @@ fn test_iterative_loop_logs_iteration_record() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        session_file,
+        &session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
 
-    let contents = std::fs::read_to_string(session_file).unwrap();
+    let contents = std::fs::read_to_string(&session_file).unwrap();
     let lines: Vec<&str> = contents.lines().collect();
 
     let mut found_iteration = false;
@@ -326,8 +341,8 @@ fn test_max_iterations_default_is_20() {
 
 #[test]
 fn test_iteration_keeps_improvement() {
-    let session_file = "/tmp/test_iter_keep.jsonl";
-    std::fs::remove_file(session_file).ok();
+    let session_file = get_unique_session_file("iter_keep");
+    std::fs::remove_file(&session_file).ok();
 
     let args = vec![
         "--question",
@@ -344,14 +359,14 @@ fn test_iteration_keeps_improvement() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        session_file,
+        &session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
 
-    let contents = std::fs::read_to_string(session_file).unwrap();
+    let contents = std::fs::read_to_string(&session_file).unwrap();
     let lines: Vec<&str> = contents.lines().collect();
 
     for line in &lines {
@@ -366,8 +381,8 @@ fn test_iteration_keeps_improvement() {
 
 #[test]
 fn test_session_file_path_configurable() {
-    let custom_session_file = "/tmp/test_custom_session.jsonl";
-    std::fs::remove_file(custom_session_file).ok();
+    let custom_session_file = get_unique_session_file("custom_session");
+    std::fs::remove_file(&custom_session_file).ok();
 
     let args = vec![
         "--question",
@@ -384,11 +399,11 @@ fn test_session_file_path_configurable() {
         "--target-improvement",
         "0.1",
         "--session-file",
-        custom_session_file,
+        &custom_session_file,
         "--quiet",
     ];
     let output = get_cli_output(&args);
 
     assert!(output.status.success());
-    assert!(std::path::Path::new(custom_session_file).exists());
+    assert!(std::path::Path::new(&custom_session_file).exists());
 }
