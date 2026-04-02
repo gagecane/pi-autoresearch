@@ -58,3 +58,212 @@ impl MetricEvaluator {
 }
 
 impl Default for MetricEvaluator { fn default() -> Self { Self::new(0.05) } }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::error::Error;
+
+    #[test]
+    fn test_metric_error_display() {
+        let error = MetricError { message: "Test error message".to_string() };
+        assert_eq!(format!("{}", error), "Test error message");
+    }
+
+    #[test]
+    fn test_metric_error_source() {
+        let error = MetricError { message: "Test error".to_string() };
+        assert!(error.source().is_none());
+    }
+
+    #[test]
+    fn test_metric_evaluator_new() {
+        let evaluator = MetricEvaluator::new(0.1);
+        assert_eq!(evaluator.max_variance, 0.1);
+    }
+
+    #[test]
+    fn test_metric_evaluator_default() {
+        let evaluator = MetricEvaluator::default();
+        assert_eq!(evaluator.max_variance, 0.05);
+    }
+
+    #[test]
+    fn test_execute_measurement_valid_output() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("echo 42.5");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 42.5);
+    }
+
+    #[test]
+    fn test_execute_measurement_integer_output() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("echo 100");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 100.0);
+    }
+
+    #[test]
+    fn test_execute_measurement_negative_output() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("echo -25.75");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), -25.75);
+    }
+
+    #[test]
+    fn test_execute_measurement_empty_command() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Empty measurement command"));
+    }
+
+    #[test]
+    fn test_execute_measurement_invalid_output() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("echo not_a_number");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Could not parse measurement output"));
+    }
+
+    #[test]
+    fn test_execute_measurement_command_not_found() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("nonexistent_command_12345");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_execute_measurement_whitespace_handling() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("echo   123.45   ");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 123.45);
+    }
+
+    #[test]
+    fn test_execute_measurement_scientific_notation() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.execute_measurement("echo 1.5e2");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 150.0);
+    }
+
+    #[test]
+    fn test_get_git_commit_hash_returns_string() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.get_git_commit_hash();
+        assert!(result.is_ok());
+        let hash = result.unwrap();
+        assert!(!hash.is_empty());
+    }
+
+    #[test]
+    fn test_verify_baseline_successful() {
+        let evaluator = MetricEvaluator::new(0.1); // 10% max variance
+        let result = evaluator.verify_baseline("test_metric", "echo 100");
+        assert!(result.is_ok());
+        let baseline_result = result.unwrap();
+        assert!(baseline_result.success);
+        assert!(baseline_result.baseline_record.is_some());
+        assert!(baseline_result.error_message.is_none());
+        let record = baseline_result.baseline_record.unwrap();
+        assert_eq!(record.metric, "test_metric");
+        assert_eq!(record.value, 100.0);
+        assert_eq!(record.verification_runs.len(), 2);
+        assert!(record.within_threshold);
+    }
+
+    #[test]
+    fn test_verify_baseline_with_metric_name() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("performance_metric", "echo 50");
+        assert!(result.is_ok());
+        let baseline_result = result.unwrap();
+        assert!(baseline_result.success);
+        let record = baseline_result.baseline_record.unwrap();
+        assert_eq!(record.metric, "performance_metric");
+    }
+
+    #[test]
+    fn test_verify_baseline_failed_command() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("test_metric", "nonexistent_command_xyz");
+        assert!(result.is_ok()); // Returns Ok with failure result
+        let baseline_result = result.unwrap();
+        assert!(!baseline_result.success);
+        assert!(baseline_result.error_message.is_some());
+    }
+
+    #[test]
+    fn test_verify_baseline_empty_command() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("test_metric", "");
+        assert!(result.is_ok()); // Returns Ok with failure result
+        let baseline_result = result.unwrap();
+        assert!(!baseline_result.success);
+        assert!(baseline_result.error_message.is_some());
+    }
+
+    #[test]
+    fn test_verify_baseline_record_has_timestamp() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("test", "echo 100");
+        assert!(result.is_ok());
+        let record = result.unwrap().baseline_record.unwrap();
+        assert!(!record.timestamp.is_empty());
+    }
+
+    #[test]
+    fn test_verify_baseline_record_has_git_commit() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("test", "echo 100");
+        assert!(result.is_ok());
+        let record = result.unwrap().baseline_record.unwrap();
+        assert!(!record.git_commit.is_empty());
+    }
+
+    #[test]
+    fn test_verify_baseline_record_has_command() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("test", "echo 100");
+        assert!(result.is_ok());
+        let record = result.unwrap().baseline_record.unwrap();
+        assert_eq!(record.measurement_command, "echo 100");
+    }
+
+    #[test]
+    fn test_verify_baseline_variance_calculation() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("test", "echo 100");
+        assert!(result.is_ok());
+        let record = result.unwrap().baseline_record.unwrap();
+        // With echo 100, both runs should return 100, so variance should be 0
+        assert_eq!(record.variance, 0.0);
+    }
+
+    #[test]
+    fn test_verify_baseline_within_threshold_is_true_for_zero_variance() {
+        let evaluator = MetricEvaluator::default();
+        let result = evaluator.verify_baseline("test", "echo 100");
+        assert!(result.is_ok());
+        let record = result.unwrap().baseline_record.unwrap();
+        assert!(record.within_threshold);
+    }
+
+    #[test]
+    fn test_metric_evaluator_debug() {
+        let evaluator = MetricEvaluator::new(0.15);
+        let debug_str = format!("{:?}", evaluator);
+        assert!(debug_str.contains("MetricEvaluator"));
+    }
+
+    #[test]
+    fn test_metric_evaluator_clone() {
+        let evaluator1 = MetricEvaluator::new(0.2);
+        let evaluator2 = evaluator1.clone();
+        assert_eq!(evaluator2.max_variance, 0.2);
+    }
+}
