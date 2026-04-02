@@ -2,6 +2,22 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 23:58 UTC: Revise Complete (Priority 69)
+
+**Priority 69: TEST - Add End-to-End Auto-Approve with Beads Test** - REVISE COMPLETE
+
+**Changes Made**:
+1. Fixed duplicate comment on line 2710 in tests/integration_tests.rs
+   - Removed duplicate `// Ignore errors if directory is in use` comment
+   - Comment was accidentally duplicated during implementation
+
+**Test Results**:
+- All 6 auto-approve + beads tests pass consistently
+- All 374 total tests pass (162 lib + 103 main + 89 integration + 13 mutation + 7 performance)
+- No regressions introduced
+
+**Status**: Ready for final REVIEW
+
 ## 2026-04-02 23:45 UTC: Research Complete (Priority 68)
 
 **Project Status Summary**:
