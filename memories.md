@@ -2486,3 +2486,10 @@ pub fn effective_max_iterations(&self) -> usize { ... }
 - Priority 85: Add doc tests for metric_evaluator.rs
 - Priority 86: Add doc tests for pi_agent.rs
 - Priority 87: Add doc tests for session.rs
+## Doc Tests for pi_agent.rs
+
+- Learned that doc tests require public functions to be testable from outside the module
+- Made generate_uuid() public and re-exported it from lib.rs
+- Doc tests should use the re-exported path (pi_autoresearch::PiAgent) not the internal path (pi_autoresearch::pi_agent::PiAgent)
+- Private struct fields cannot be accessed in doc tests, need to test through public methods instead
+- Doc tests are a great way to provide executable documentation that stays in sync with the code
