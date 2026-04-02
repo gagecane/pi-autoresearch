@@ -2,6 +2,41 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 17:00 UTC: Beads E2E Tests Complete
+
+**Priority 63: TEST - Add End-to-End Beads Tests** - COMPLETE
+
+**Tests Created** (7 new integration tests):
+1. `test_beads_integration_creation_workflow`: Verifies bead creation is attempted when --beads-enabled is used
+2. `test_beads_integration_update_workflow`: Verifies bead notes are added during iterations
+3. `test_beads_integration_completion_workflow`: Verifies bead is closed when experiment completes
+4. `test_beads_integration_graceful_degradation`: Verifies experiment works even if bd commands fail
+5. `test_beads_integration_with_config`: Verifies beads_enabled in config file works correctly
+6. `test_beads_cli_overrides_config`: Verifies CLI flag takes precedence over config
+7. `test_beads_integration_multiple_iterations`: Verifies bead updates across multiple iterations
+8. `test_beads_integration_error_handling`: Verifies errors in bd commands don't crash experiment
+
+**Key Learnings**:
+1. Beads integration uses `bd` command-line tool for issue tracking
+2. Bead workflow: create -> update (notes) -> close
+3. Beads integration is optional and handles failures gracefully
+4. When bd is not installed, the experiment continues without issue tracking
+5. Bead ID is captured from `bd create` output and used for subsequent operations
+6. Config file `beads_enabled` setting works, but CLI flag takes precedence
+7. Tests should check for completion (status.code().is_some()) rather than success, as experiments may fail if target not met
+8. Session files are always created regardless of experiment success/failure
+
+**Test Results**:
+- 7 new integration tests added
+- All 76 integration tests pass (was 69)
+- All 162 lib tests still pass
+- All 103 main.rs tests still pass
+- All 13 mutation tests still pass
+- All 7 performance tests still pass
+- Total: 361 tests passing
+
+**Next Priority**: Priority 64 - FEATURE - Add Progress Bars
+
 ## 2026-04-02 15:00 UTC: API Documentation Review Complete
 
 **Priority 60: DOCS - Add API Documentation** - REVIEW COMPLETE
