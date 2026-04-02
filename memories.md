@@ -2,6 +2,186 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 25:00 UTC: Audit Log Core Implementation Complete (Priority 94.2)
+
+**Priority 94.2: AUDIT - Implement Audit Log Core** - COMPLETE
+
+**Implementation Summary**:
+- Created `src/audit.rs` module with comprehensive audit logging functionality (600+ lines)
+- Implemented `AuditLogger` struct with append-only file logging
+- Implemented `AuditEntry` struct with full serialization support
+- Implemented `AuditEventType` enum with 22 variants covering all audit scenarios
+- Implemented `UserInfo` struct for capturing user and environment information
+- Added automatic flush on drop for data integrity
+- Exported all types from `src/lib.rs`
+
+**Key Design Decisions**:
+1. **Append-Only Logging**: Files opened in append mode for compliance and data integrity
+   - Prevents accidental overwrites of audit data
+   - Multiple loggers can append to same file safely
+   - Atomic-like writes (write to buffer, then flush)
+
+2. **AuditEventType Enum**: 22 variants organized by category
+   - Experiment lifecycle: ExperimentStarted, ExperimentCompleted, ExperimentFailed
+   - Iteration events: IterationStarted, IterationCompleted
+   - Git operations: BranchCreated, BranchMerged, BranchDeleted, BranchCheckedOut, CommitCreated, ConfigChanged
+   - Decision events: ChangeKept, ChangeReverted
+   - Termination reasons: TargetAchieved, TargetNotAchieved, Stalled, Converged, Timeout, MaxIterationsReached
+   - Measurement events: MeasurementTaken, MeasurementFailed, BaselineMeasured
+   - All variants use snake_case for JSON serialization
+
+3. **UserInfo Struct**: Captures environment context for each audit entry
+   - username: From USER or USERNAME environment variable
+   - git_user_name: From git config (if available)
+   - git_user_email: From git config (if available)
+   - cwd: Current working directory
+   - hostname: From HOSTNAME or COMPUTERNAME environment variable
+   - Gracefully handles missing information (defaults to "unknown")
+
+4. **AuditEntry Struct**: Complete event record with all metadata
+   - timestamp: RFC3339 format via chrono
+   - event_type: AuditEventType enum
+   - session_id: Links entry to experiment session
+   - user_info: UserInfo struct
+   - action: Human-readable description
+   - details: HashMap for flexible additional data
+   - Full JSON serialization/deserialization support
+
+5. **AuditLogger Struct**: Simple, safe logging interface
+   - `new(path)`: Creates logger, creates parent directories if needed
+   - `set_session_id(session_id)`: Sets session context for all subsequent logs
+   - `log(event_type, action, details)`: Logs with current session ID
+   - `log_with_session(session_id, event_type, action, details)`: Logs with explicit session ID
+   - `flush()`: Ensures data is written to disk
+   - `Drop`: Automatic flush on scope exit
+   - Append mode prevents data loss
+
+6. **Error Handling**:
+   - Parent directory creation on logger initialization
+   - File errors propagate as Result for caller handling
+   - Drop implementation doesn't panic on flush failure
+   - Empty session ID defaults to "unknown"
+
+**Public API**:
+```rust
+pub enum AuditEventType {
+    // Experiment lifecycle
+    ExperimentStarted,
+    ExperimentCompleted,
+    ExperimentFailed,
+    // Iteration events
+    IterationStarted,
+    IterationCompleted,
+    // Git operations
+    BranchCreated,
+    BranchMerged,
+    BranchDeleted,
+    BranchCheckedOut,
+    CommitCreated,
+    ConfigChanged,
+    // Decision events
+    ChangeKept,
+    ChangeReverted,
+    // Termination reasons
+    TargetAchieved,
+    TargetNotAchieved,
+    Stalled,
+    Converged,
+    Timeout,
+    MaxIterationsReached,
+    // Measurement events
+    MeasurementTaken,
+    MeasurementFailed,
+    BaselineMeasured,
+}
+
+pub struct AuditEntry {
+    pub timestamp: String,
+    pub event_type: AuditEventType,
+    pub session_id: String,
+    pub user_info: UserInfo,
+    pub action: String,
+    pub details: HashMap<String, String>,
+}
+
+pub struct UserInfo {
+    pub username: String,
+    pub git_user_name: Option<String>,
+    pub git_user_email: Option<String>,
+    pub cwd: String,
+    pub hostname: String,
+}
+
+pub struct AuditLogger {
+    // Private fields
+}
+
+impl AuditLogger {
+    pub fn new(path: &str) -> Result<Self>
+    pub fn set_session_id(&mut self, session_id: &str)
+    pub fn log(&mut self, event_type: AuditEventType, action: String, details: HashMap<String, String>) -> Result<()>
+    pub fn log_with_session(&mut self, session_id: &str, event_type: AuditEventType, action: String, details: HashMap<String, String>) -> Result<()>
+    pub fn flush(&mut self) -> Result<()>
+    pub fn path(&self) -> &str
+    pub fn session_id(&self) -> Option<&str>
+}
+```
+
+**Test Coverage**:
+- 24 comprehensive tests covering:
+  - UserInfo: capture, creation, clone, debug (4 tests)
+  - AuditEventType: display, debug, clone, equality, serialization (5 tests)
+  - AuditEntry: new, with_timestamp, clone, serialization (4 tests)
+  - AuditLogger: new, parent directory creation, session_id, log, log_with_session, multiple_entries, append_mode, flush, drop, edge_cases (11 tests)
+
+**Test Results**:
+- All 24 audit-specific tests pass
+- All 282 lib tests pass (258 + 24 new)
+- `cargo build` completes with no warnings
+- `cargo clippy` completes with no new warnings
+
+**Files Modified**:
+- `src/audit.rs`: Created new module (600+ lines, 24 tests)
+- `src/lib.rs`: Added `pub mod audit` and exports for AuditLogger, AuditEntry, AuditEventType, UserInfo
+- `tasks.md`: Updated Priority 94.2 as COMPLETE
+- `progress.md`: Added session summary
+- `memories.md`: Added this entry
+
+**JSON Output Example**:
+```json
+{
+  "timestamp": "2026-04-02T25:00:00+00:00",
+  "event_type": "experiment_started",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "developer",
+    "git_user_name": "Developer Name",
+    "git_user_email": "dev@example.com",
+    "cwd": "/path/to/project",
+    "hostname": "dev-machine"
+  },
+  "action": "Starting experiment",
+  "details": {
+    "metric": "cpu_time",
+    "baseline": "100.0",
+    "target": "10.0"
+  }
+}
+```
+
+**Next Steps**:
+- Priority 94.3: Implement Action Logging (use AuditLogger to log experiment actions)
+- Priority 94.4: Implement Decision Logging (log why changes kept/reverted)
+- Priority 94.5: Implement Measurement Logging (log all measurement data)
+- Priority 94.6: Add Audit Log Integration Tests (end-to-end testing)
+
+**Future Considerations**:
+- Audit log rotation for long-running experiments
+- Audit log compression for archival
+- Audit log export in different formats (CSV, text per AuditLogFormat enum)
+- Audit log validation and integrity checking
+- Audit log query and search capabilities
+
 ## 2026-04-02 24:30 UTC: Audit Log Flags Implementation Complete (Priority 94.1)
 
 **Priority 94.1: CLI - Add Audit Log Flags** - COMPLETE

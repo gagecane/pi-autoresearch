@@ -7,6 +7,7 @@ pub mod pi_agent;
 pub mod session;
 pub mod export;
 pub mod notification;
+pub mod audit;
 
 pub use cli::{Cli, ExportFormat, NotificationProvider, AuditLogFormat};
 pub use phase1_design::{ExperimentDesign, BaselineRecord, generate_design};
@@ -15,6 +16,7 @@ pub use stuck_detector::{StuckReason, StuckDetector, StuckDetectorConfig, Iterat
 pub use session::{ExperimentSession, SessionManager, SessionRecord, generate_session_id};
 pub use pi_agent::{PiAgent, BranchManager, generate_uuid};
 pub use notification::{send_webhook, send_milestone_notification, send_slack, send_slack_milestone, send_email, send_email_milestone, WebhookPayload, EmailConfig};
+pub use audit::{AuditLogger, AuditEntry, AuditEventType, UserInfo};
 
 #[cfg(test)]
 mod tests {
