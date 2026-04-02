@@ -2769,3 +2769,14 @@ Yes - Research completed, 10 new tasks created for future work
 ### Ready for Review
 Yes - Task decomposed into 7 smaller, actionable tasks
 
+## 2026-04-02 - Priority 86: Add Doc Tests for pi_agent.rs
+
+- Added comprehensive doc tests for pi_agent.rs module
+- Documented PiAgent struct with 3 examples (simulated, real, default)
+- Documented PiAgent::new() and PiAgent::propose_change() methods
+- Documented BranchManager struct with 3 examples
+- Documented all BranchManager methods (apply_changes_in_branch, revert_changes, keep_changes)
+- Documented generate_uuid() function
+- Made generate_uuid() public and re-exported from lib.rs
+- All 84 doc tests passing
+- Total test count: 458 tests (162 lib + 103 main + 89 integration + 84 doc + 13 mutation + 7 performance)

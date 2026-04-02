@@ -1947,14 +1947,38 @@
 **Review**: Implementation verified correct - all 12 doc tests properly implemented, cover all public types and functions with comprehensive examples, verify both basic usage and error handling, all 70 doc tests pass consistently
 
 ## Priority 86: TEST - Add Doc Tests for pi_agent.rs
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add doc tests for pi_agent.rs module functions
 **Rationale**: Doc tests verify that code examples in documentation work correctly
-**Functions to Document**:
-- `PiAgent::new()`
-- `PiAgent::propose_change()`
-- `BranchManager` methods
-- `generate_uuid()`
+**Functions Documented**:
+- `PiAgent` struct - 3 doc tests (simulated agent, real agent, default)
+- `PiAgent::new()` - 1 doc test
+- `PiAgent::propose_change()` - 2 doc tests (basic usage, empty strings)
+- `BranchManager` struct - 3 doc tests (default, apply changes, revert/keep)
+- `BranchManager::apply_changes_in_branch()` - 1 doc test
+- `BranchManager::revert_changes()` - 1 doc test
+- `BranchManager::keep_changes()` - 1 doc test
+- `generate_uuid()` - 2 doc tests (format validation, uniqueness)
+**Implementation**:
+- Added comprehensive doc comments to `PiAgent` struct with Examples sections
+- Added doc comments to `PiAgent::new()` and `PiAgent::propose_change()` methods
+- Added comprehensive doc comments to `BranchManager` struct with Examples sections
+- Added doc comments to all `BranchManager` methods with Examples sections
+- Added doc comments to `generate_uuid()` function with Examples sections
+- Made `generate_uuid()` public and re-exported from lib.rs
+- Re-exported `PiAgent`, `BranchManager`, and `generate_uuid` from lib.rs
+**Test Results**:
+- 13 new doc tests added (84 total doc tests now)
+- All 84 doc tests passing
+- All 162 lib tests passing
+- All 103 main.rs tests passing
+- All 89 integration tests passing
+- Zero clippy warnings
+- Zero compiler warnings
+**Changes Made**:
+- src/pi_agent.rs: Added comprehensive doc comments with examples to PiAgent, BranchManager, and generate_uuid
+- src/lib.rs: Added re-exports for PiAgent, BranchManager, and generate_uuid
+**Review**: Implementation verified correct - all 13 doc tests properly implemented, cover all public types and functions with comprehensive examples, verify both basic usage and edge cases, all 84 doc tests pass consistently
 
 ## Priority 87: TEST - Add Doc Tests for session.rs
 **Status**: TODO
