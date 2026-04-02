@@ -2537,3 +2537,33 @@
 
 ### Ready for Review
 Yes - Research completed, 10 new tasks created for future work
+
+---
+
+## 2026-04-02 23:59 UTC - Decomposed Priority 71
+
+### Task: Priority 71 - Add Doc Tests for Library Functions
+
+### Actions Taken
+- Read PROMPT.md and followed instructions
+- Read tasks.md to identify next highest priority task
+- Analyzed Priority 71: "Add Doc Tests for Library Functions"
+- Determined task is too abstract and needs decomposition
+- Read all 7 library modules to understand scope:
+  - cli.rs: 6 public functions
+  - phase1_design.rs: ExperimentDesign, BaselineRecord, BaselineRecordBuilder, generate_design
+  - phase2_iterate.rs: IterationRecord, IterationConfig, IterationExecutor
+  - stuck_detector.rs: StuckReason, IterationState, StuckDetectorConfig, StuckDetector
+  - metric_evaluator.rs: MetricError, MetricEvaluator
+  - pi_agent.rs: PiAgent, BranchManager, generate_uuid
+  - session.rs: ExperimentSession, SessionManager, generate_session_id
+- Decomposed Priority 71 into 7 smaller tasks (Priority 81-87)
+- Updated tasks.md with decomposition
+
+### Changes Made
+- tasks.md: Updated Priority 71 status to DECOMPOSED, added Priority 81-87
+- progress.md: Updated with timestamp
+
+### Ready for Review
+Yes - Task decomposed into 7 smaller, actionable tasks
+

@@ -1770,3 +1770,25 @@
 - Priority 79: FEATURE - Add Experiment Templates Marketplace
 - Priority 80: FEATURE - Add Experiment Collaboration Features
 **Review**: Research completed thoroughly - all major areas analyzed, code quality and test coverage are excellent, 10 actionable tasks created for future improvements
+
+## Priority 71: TEST - Add Doc Tests for Library Functions
+**Status**: DECOMPOSED
+**Description**: Add doc tests for library functions
+**Rationale**: Doc tests verify that code examples in documentation work correctly and provide executable documentation
+**Current State**: 0 doc tests exist for the library
+**Modules to Cover**:
+- cli.rs: 6 functions (effective_max_iterations, effective_iteration_timeout_secs, effective_total_timeout_secs, effective_stall_limit, effective_convergence_threshold, effective_convergence_window)
+- phase1_design.rs: ExperimentDesign::new, BaselineRecord::new, BaselineRecord::builder, BaselineRecordBuilder methods, generate_design
+- phase2_iterate.rs: IterationRecord::new, IterationConfig, IterationExecutor::new, IterationExecutor::run_iteration, IterationExecutor::run_loop
+- stuck_detector.rs: StuckReason enum, IterationState methods, StuckDetectorConfig, StuckDetector methods
+- metric_evaluator.rs: MetricError, MetricEvaluator::new, MetricEvaluator::execute_measurement, MetricEvaluator::get_git_commit_hash, MetricEvaluator::verify_baseline
+- pi_agent.rs: PiAgent::new, PiAgent::propose_change, BranchManager methods, generate_uuid
+- session.rs: ExperimentSession methods, SessionManager methods, generate_session_id
+**Decomposed Into**:
+- Priority 81: TEST - Add Doc Tests for cli.rs
+- Priority 82: TEST - Add Doc Tests for phase1_design.rs
+- Priority 83: TEST - Add Doc Tests for phase2_iterate.rs
+- Priority 84: TEST - Add Doc Tests for stuck_detector.rs
+- Priority 85: TEST - Add Doc Tests for metric_evaluator.rs
+- Priority 86: TEST - Add Doc Tests for pi_agent.rs
+- Priority 87: TEST - Add Doc Tests for session.rs

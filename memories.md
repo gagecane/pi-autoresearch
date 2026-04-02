@@ -2283,3 +2283,31 @@ Created 8 new actionable tasks:
 - Mutation testing framework would improve test quality
 - Doc tests would improve library documentation
 - Performance regression alerts would catch degradation early
+
+---
+
+## 2026-04-02 23:59 UTC - Task Decomposition
+
+### Learnings
+
+**Task Decomposition Strategy**:
+- Priority 71 "Add Doc Tests for Library Functions" was too abstract
+- Decomposed into 7 module-specific tasks (Priority 81-87)
+- Each module has distinct public API that needs doc tests
+
+**Library Structure**:
+- 7 public modules in lib.rs: cli, phase1_design, phase2_iterate, stuck_detector, metric_evaluator, pi_agent, session
+- Each module has 5-16 public functions/types
+- Total: ~60+ public functions that could benefit from doc tests
+
+**Doc Test Benefits**:
+- Executable documentation that verifies examples work
+- Catches breaking changes to public API
+- Provides usage examples for library consumers
+- Improves code quality by documenting intended usage
+
+**Current State**:
+- 374 total tests (162 lib + 103 main + 89 integration + 13 mutation + 7 performance)
+- 89.73% line coverage (exceeds 85% target)
+- 0 doc tests (opportunity for improvement)
+
