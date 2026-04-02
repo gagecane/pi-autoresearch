@@ -625,7 +625,7 @@ mod tests {
     #[test]
     fn test_iteration_executor_new() {
         let config = IterationConfig::default();
-        let executor = IterationExecutor::new(config, 0.1);
+        let _executor = IterationExecutor::new(config, 0.1);
         // Just verify it doesn't panic
         assert!(true);
     }
@@ -642,7 +642,7 @@ mod tests {
             verbose: false,
             quiet: true,
         };
-        let executor = IterationExecutor::new(config, 0.2);
+        let _executor = IterationExecutor::new(config, 0.2);
         // Just verify it doesn't panic
         assert!(true);
     }

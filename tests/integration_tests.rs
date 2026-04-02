@@ -2289,7 +2289,7 @@ fn test_progress_bar_shown_during_iterations() {
         String::from_utf8_lossy(&output.stderr));
     
     // Progress bars use stderr for output with ANSI escape codes
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let _stderr = String::from_utf8_lossy(&output.stderr);
     
     // Verify session file was created
     assert!(std::path::Path::new(session_file).exists(),
