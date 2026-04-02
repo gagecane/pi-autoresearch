@@ -1,0 +1,117 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump-type:
+        description: 'Type of version bump'
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+        default: 'patch'
+
+jobs:
+  bump-version:
+    name: Bump Version and Create PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Get current version
+        id: current-version
+        run: |
+          CURRENT_VERSION=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Calculate new version
+        id: new-version
+        run: |
+          IFS='.' read -r major minor patch <<< "${{ steps.current-version.outputs.version }}"
+          
+          case "${{ github.event.inputs.bump-type }}" in
+            major)
+              NEW_VERSION="$((major + 1)).0.0"
+              ;;
+            minor)
+              NEW_VERSION="${major}.$((minor + 1)).0"
+              ;;
+            patch)
+              NEW_VERSION="${major}.${minor}.$((patch + 1))"
+              ;;
+          esac
+          
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update Cargo.toml
+        run: |
+          sed -i "s/^version = \"${{ steps.current-version.outputs.version }}\"/version = \"${{ steps.new-version.outputs.new_version }}\"/" Cargo.toml
+          echo "Updated Cargo.toml to version ${{ steps.new-version.outputs.new_version }}"
+
+      - name: Update CHANGELOG.md
+        run: |
+          # Add new version section to CHANGELOG.md
+          cat >> CHANGELOG.md << EOF
+
+## [Unreleased] - $(date +%Y-%m-%d)
+
+### Added
+- 
+
+### Changed
+- 
+
+### Fixed
+- 
+
+EOF
+          
+          # Update the "Unreleased" section header with the new version
+          sed -i "0,/^## \[Unreleased\]/s//## [${{ steps.new-version.outputs.new_version }}] - $(date +%Y-%m-%d)/" CHANGELOG.md
+          
+          echo "Updated CHANGELOG.md"
+
+      - name: Create Git commit and push
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git add Cargo.toml CHANGELOG.md
+          git commit -m "chore: bump version to ${{ steps.new-version.outputs.new_version }}"
+          git push origin HEAD:version-bump-${{ steps.new-version.outputs.new_version }}
+          
+          echo "Created branch: version-bump-${{ steps.new-version.outputs.new_version }}"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: version-bump-${{ steps.new-version.outputs.new_version }}
+          base: main
+          title: "chore: bump version to ${{ steps.new-version.outputs.new_version }}"
+          body: |
+            This PR bumps the version from ${{ steps.current-version.outputs.version }} to ${{ steps.new-version.outputs.new_version }}.
+            
+            **Changes:**
+            - Updated `Cargo.toml` version
+            - Updated `CHANGELOG.md` with new version section
+            
+            **Next steps:**
+            1. Review and merge this PR
+            2. Create a release tag: `git tag v${{ steps.new-version.outputs.new_version }}`
+            3. Push the tag: `git push origin v${{ steps.new-version.outputs.new_version }}`
+            4. The release workflow will automatically build and publish
+          labels: |n
+            chore
+            dependencies
+          assignees: ${{ github.actor }}
