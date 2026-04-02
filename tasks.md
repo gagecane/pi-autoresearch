@@ -95,19 +95,41 @@
 - Priority 92.6: TEST - Add Export Integration Tests
 
 ## Priority 92.1: CLI - Add Export Flags
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add CLI flags for export functionality
 **Rationale**: Users need CLI interface to request experiment result exports
 **Implementation**:
-- Add `--export FORMAT` flag to cli.rs (csv, json, pdf, markdown)
-- Add `--export-path PATH` flag for output file location
-- Add ExportFormat enum with variants: Csv, Json, Pdf, Markdown
-- Add helper function `get_export_format()` and `get_export_path()`
-- Default export path: "export_{session_id}_{format}.{ext}"
-**Test**:
-- Verify flags are recognized in --help
-- Verify default export path is generated correctly
-- Verify custom export path is used when provided
+- ✅ Added `ExportFormat` enum with variants: Csv, Json, Pdf, Markdown
+  - Added to both `src/cli.rs` (for library usage) and `src/main.rs` (for binary)
+  - Implemented `extension()` method to return file extension for each format
+  - Default format is Json
+- ✅ Added `--export FORMAT` flag to cli.rs and main.rs (csv, json, pdf, markdown)
+- ✅ Added `--export-path PATH` flag for output file location (with alias `export_path`)
+- ✅ Added helper function `get_export_format()` in cli.rs
+- ✅ Added helper functions `get_export_format()` and `get_export_path()` in main.rs
+- ✅ Default export path format: "export_{session_id}_{format}.{ext}"
+**Tests Added**:
+- `test_export_format_extension` - Verifies correct extension for each format
+- `test_export_format_default` - Verifies Json is default
+- `test_cli_parse_export_format` - Verifies all formats can be parsed from CLI
+- `test_cli_parse_export_path` - Verifies custom export path parsing
+- `test_get_export_format_none` - Verifies None when no export specified
+- `test_get_export_format_some` - Verifies format retrieval when specified
+- `test_get_export_path_custom` - Verifies custom path is used
+- `test_get_export_path_default_json` - Verifies default JSON path generation
+- `test_get_export_path_default_csv` - Verifies default CSV path generation
+- `test_get_export_path_default_markdown` - Verifies default Markdown path generation
+- `test_get_export_path_default_when_no_format` - Verifies fallback to JSON
+- `test_cli_parse_export_and_path` - Verifies both flags work together
+**Test Results**:
+- All 27 cli.rs tests pass (12 new tests added)
+- All 174 lib tests pass
+- All 103 main.rs tests pass
+- `cargo build` completes successfully (2 warnings for unused helper functions - expected)
+- `--help` shows new flags correctly:
+  - `--export <EXPORT>` with possible values: csv, json, pdf, markdown
+  - `--export-path <EXPORT_PATH>` with default description
+**Review**: READY FOR REVIEW - Export flags properly implemented in both cli.rs and main.rs, comprehensive tests added, all tests pass, help output shows new options correctly
 
 ## Priority 92.2: EXPORT - Implement JSON Export
 **Status**: TODO

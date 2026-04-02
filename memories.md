@@ -2,6 +2,35 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 13:44 UTC: Export Flags Implementation (Priority 92.1)
+
+**Priority 92.1: CLI - Add Export Flags** - COMPLETE
+
+**Key Learnings**:
+- ExportFormat enum needs to be defined in both cli.rs (library) and main.rs (binary) since main.rs has its own Cli struct
+- Used clap's ValueEnum derive for enum parsing from CLI
+- Default export format is JSON (most common for programmatic access)
+- Default export path format: `export_{session_id}_{format}.{ext}` provides clear, organized output
+- Helper functions get_export_format() and get_export_path() provide clean abstraction for export logic
+- Tests verify both individual components (enum, parsing) and integration (combined flags)
+
+**Implementation Pattern**:
+- ExportFormat enum with ValueEnum derive enables clap to parse string values automatically
+- extension() method provides DRY access to file extensions
+- get_export_path() generates sensible defaults when user doesn't specify path
+- All tests use Cli::parse_from() for CLI parsing tests and direct struct construction for helper function tests
+
+**Changes**:
+- src/cli.rs: +ExportFormat enum, +2 fields, +2 helper functions, +12 tests
+- src/main.rs: +ExportFormat enum, +2 fields, +2 helper functions
+- Total: ~100 lines of code added
+
+**Next Steps**:
+- Priority 92.2: Implement JSON export (uses ExportFormat::Json)
+- Priority 92.3: Implement CSV export (uses ExportFormat::Csv)
+- Priority 92.4: Implement Markdown export (uses ExportFormat::Markdown)
+- Priority 92.5: Implement PDF export (uses ExportFormat::Pdf)
+
 ## 2026-04-02 07:00 UTC: Task Decomposition (Priority 92)
 
 **Priority 92: FEATURE - Add Experiment Result Export** - DECOMPOSED

@@ -1,5 +1,41 @@
 # Progress
 
+## Session: 2026-04-02 13:44 UTC - COMPLETE (Priority 92.1)
+
+### Task Complete
+- ✅ **Priority 92.1: CLI - Add Export Flags** - COMPLETE
+  - **Implementation**:
+    - Added `ExportFormat` enum with variants: Csv, Json, Pdf, Markdown
+      - Added to both `src/cli.rs` (library) and `src/main.rs` (binary)
+      - Implemented `extension()` method for file extension lookup
+      - Default format is Json
+    - Added `--export FORMAT` flag (csv, json, pdf, markdown)
+    - Added `--export-path PATH` flag for custom output location
+    - Added helper functions:
+      - `get_export_format()` - Returns the export format if specified
+      - `get_export_path(session_id)` - Returns export path with default generation
+    - Default export path format: `export_{session_id}_{format}.{ext}`
+  - **Tests Added**: 12 new tests in cli.rs
+    - `test_export_format_extension` - Verifies extensions for all formats
+    - `test_export_format_default` - Verifies Json is default
+    - `test_cli_parse_export_format` - Verifies CLI parsing for all formats
+    - `test_cli_parse_export_path` - Verifies custom path parsing
+    - `test_get_export_format_none/some` - Verifies format retrieval
+    - `test_get_export_path_custom/default_*` - Verifies path generation
+    - `test_cli_parse_export_and_path` - Verifies both flags together
+  - **Test Results**:
+    - All 27 cli.rs tests pass (12 new)
+    - All 174 lib tests pass
+    - All 103 main.rs tests pass
+    - `cargo build` completes successfully
+    - `--help` shows new flags correctly
+  - **Changes Made**:
+    - src/cli.rs: Added ExportFormat enum, export/export_path fields, helper functions, 12 tests
+    - src/main.rs: Added ExportFormat enum, export/export_path fields, helper functions
+    - tasks.md: Marked Priority 92.1 as COMPLETE
+    - progress.md: Updated with this session
+  - **Next Task**: Priority 92.2 - EXPORT - Implement JSON Export
+
 ## Session: 2026-04-02 07:00 UTC - COMPLETE (Priority 92 DECOMPOSITION)
 
 ### Task Decomposition Complete
