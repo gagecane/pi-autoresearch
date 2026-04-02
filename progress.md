@@ -1,5 +1,33 @@
 # Progress
 
+## Session: 2026-04-02 14:30 UTC - REVIEW WITH FEEDBACK (Priority 92.1)
+
+### Review Completed
+- ⚠️ **Priority 92.1: CLI - Add Export Flags** - REVIEW WITH FEEDBACK
+  - Reviewed implementation of export flags for experiment result export
+  - **Implementation Verified**:
+    - ✅ `ExportFormat` enum with 4 variants (Csv, Json, Pdf, Markdown)
+    - ✅ `extension()` method returns correct file extensions
+    - ✅ CLI flags `--export` and `--export-path` properly added
+    - ✅ Helper functions `get_export_format()` and `get_export_path()` implemented
+    - ✅ Default format is Json
+    - ✅ 12 comprehensive tests added to cli.rs
+    - ✅ All tests pass (174 lib, 103 main.rs, 89 integration, 102 doc)
+  - **Issues Found**:
+    - ❌ **Unused functions in main.rs**: `get_export_format()` (line 985) and `get_export_path()` (line 1009) generate compiler warnings:
+      ```
+      warning: function `get_export_format` is never used
+      warning: function `get_export_path` is never used
+      ```
+      These duplicate functionality already available as `Cli` methods in cli.rs
+    - ❌ **Duplicate ExportFormat enum**: Defined in both `src/cli.rs` (lines 5-30) and `src/main.rs` (lines 16-42)
+  - **Recommendations**:
+    1. Remove unused standalone functions from main.rs (use Cli methods instead)
+    2. Keep ExportFormat in cli.rs only, export from lib.rs, import in main.rs
+  - **Feedback Written**: feedback.md updated with detailed issues and recommendations
+  - **Status**: Task marked as REVISE in tasks.md
+  - **Next Task**: Priority 92.1 - REVISE (fix feedback issues)
+
 ## Session: 2026-04-02 13:44 UTC - COMPLETE (Priority 92.1)
 
 ### Task Complete

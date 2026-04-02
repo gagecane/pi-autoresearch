@@ -95,7 +95,7 @@
 - Priority 92.6: TEST - Add Export Integration Tests
 
 ## Priority 92.1: CLI - Add Export Flags
-**Status**: COMPLETE ✅
+**Status**: REVISE ⚠️
 **Description**: Add CLI flags for export functionality
 **Rationale**: Users need CLI interface to request experiment result exports
 **Implementation**:
