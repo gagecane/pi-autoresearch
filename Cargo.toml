@@ -34,3 +34,9 @@ rand = "0.8"
 # Install with: cargo install cargo-llvm-cov
 # Run with: cargo llvm-cov --lcov --output-path coverage_report/lcov.info
 # Or use: ./scripts/run-coverage.sh
+
+# Fuzz testing support
+# Install with: rustup update nightly && cargo install cargo-fuzz
+# Build: cd fuzz && cargo fuzz build
+# Run: cd fuzz && cargo fuzz run fuzz_session_file
+# See fuzz/README.md for more details

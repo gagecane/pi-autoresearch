@@ -1126,6 +1126,84 @@ assert!(stdout.contains("beads-enabled"), "Flag should be documented in help tex
 
 **Task Status**: Priority 28 marked as COMPLETE in tasks.md
 
+## 2026-04-02 10:30 UTC - Fuzz Testing Infrastructure Implementation
+
+**Task**: Priority 47.1-47.5 - Add Fuzz Testing Infrastructure and Targets
+
+**Implementation**:
+- Created `fuzz/` directory structure with `fuzz/fuzz_targets/`
+- Created `fuzz/Cargo.toml` with dependencies:
+  - libfuzzer-sys (0.4) - Fuzzing engine
+  - serde (1.0) with derive feature
+  - serde_json (1.0)
+- Created 4 fuzz targets:
+  1. `fuzz_baseline_record.rs` - Tests BaselineRecord JSON parsing
+  2. `fuzz_iteration_record.rs` - Tests IterationRecord JSON parsing
+  3. `fuzz_experiment_session.rs` - Tests ExperimentSession JSON parsing  
+  4. `fuzz_session_file.rs` - Tests full session file parsing (includes simplified parse_session_file implementation)
+- Created comprehensive `fuzz/README.md` (5.1KB) with:
+  - Setup instructions (rustup update nightly, cargo install cargo-fuzz)
+  - Running fuzz tests (individual targets, all targets, custom options)
+  - Corpus management (initial corpus, generation, seeding with valid inputs)
+  - Crash analysis (artifact location, common crash types)
+  - CI/CD integration (GitHub Actions workflow example)
+  - Best practices and troubleshooting
+- Updated main `Cargo.toml` with fuzz testing instructions
+- All fuzz targets compile successfully with `cargo check`
+
+**Fuzz Target Design**:
+- Each fuzz target accepts raw bytes as input
+- Converts to UTF-8 string (gracefully handles non-UTF-8)
+- Attempts JSON parsing with serde_json::from_str
+- Also parses as serde_json::Value to catch malformed JSON
+- Uses `_` prefix to ignore results (we only care about crashes)
+- fuzz_session_file.rs includes simplified implementation of parse_session_file() to test multi-line JSON parsing
+
+**Session File Parsing Fuzz Target**:
+- Implements simplified version of parse_session_file() function
+- Tests both multi-line JSON parsing (brace counting) and JSONL parsing
+- Tests SessionRecord enum handling (Baseline, Iteration, Experiment variants)
+- Includes all necessary struct definitions (BaselineRecord, IterationRecord, ExperimentDesign, ExperimentSession)
+- Tests edge cases: malformed JSON, nested structures, large inputs, invalid UTF-8
+
+**Testing**:
+- `cd fuzz && cargo check` completes successfully
+- All 4 fuzz targets compile without errors
+- Minor warnings about unused fields in SessionRecord enum (expected for fuzzing)
+- 183 total tests still pass (95 unit + 68 integration + 13 mutation + 7 performance)
+
+**Fuzzing Best Practices**:
+- Fuzz targets should be simple and focused on specific parsing logic
+- Use `_` prefix for ignored results (we only care about crashes/panics)
+- Include both type-specific and generic JSON parsing
+- Corpus should be seeded with valid inputs for better coverage
+- Run fuzzers regularly (daily recommended) with increasing duration
+- Analyze crashes quickly and add regression tests
+
+**CI/CD Integration**:
+- GitHub Actions workflow provided in README
+- Schedule daily fuzzing runs at midnight
+- Run for 60 seconds on each PR and push to main
+- Collect crash artifacts for analysis
+- Can be extended to run all 4 targets in parallel
+
+**Next Steps**:
+- Priority 47.6: Add fuzzing to CI/CD pipeline
+- Seed corpus with valid session file examples
+- Run initial fuzzing to discover any issues
+- Set up artifact collection for crashes
+- Consider adding afl or honggfuzz as alternative fuzzers
+
+**Code Quality Learnings**:
+- Fuzz testing complements unit and integration tests
+- Fuzzing finds edge cases that manual testing misses
+- JSON parsing is a good candidate for fuzzing (untrusted input)
+- Session file format complexity benefits from fuzz testing
+- Fuzz targets should be isolated from main codebase (fuzz/ directory)
+- Documentation is critical for fuzz testing adoption
+
+**Task Status**: Priority 47.1-47.5 marked as COMPLETE in tasks.md
+
 ## 2026-04-01 18:30 UTC - Performance Benchmarks Implementation
 
 **Implementation**:
