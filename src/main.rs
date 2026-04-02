@@ -3327,6 +3327,149 @@ mod tests {
         // Branch doesn't exist, so operation may fail gracefully
         assert!(success == false || error.is_some());
     }
+
+    // Tests for error handling in load_config()
+    #[test]
+    fn test_load_config_home_env_not_set() {
+        // Test when HOME environment variable is not set
+        std::env::remove_var("HOME");
+        let result = load_config(None, false);
+        // Should return error about HOME not being set
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("HOME") || err.contains("environment variable"));
+        // Restore HOME for other tests
+        std::env::set_var("HOME", "/tmp/test-home");
+    }
+
+    #[test]
+    fn test_load_config_read_error() {
+        // Test when config file cannot be read (permissions error)
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+        
+        // Create a file and make it unreadable
+        std::fs::write(&config_path, "{}").unwrap();
+        #[cfg(unix)]
+        std::fs::set_permissions(&config_path, std::os::unix::fs::PermissionsExt::from_mode(0o000)).unwrap();
+        
+        let result = load_config(Some(config_path.to_str().unwrap()), true);
+        // Should return error (either file not found or permission denied)
+        assert!(result.is_err());
+        
+        // Cleanup (ignore errors on Unix due to permissions)
+        let _ = std::fs::set_permissions(&config_path, std::os::unix::fs::PermissionsExt::from_mode(0o644));
+        let _ = temp_dir.close();
+    }
+
+    #[test]
+    fn test_load_config_parse_error_explicit() {
+        // Test when config file has invalid JSON (explicit config path)
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+        std::fs::write(&config_path, "invalid json {").unwrap();
+        
+        let result = load_config(Some(config_path.to_str().unwrap()), true);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("parse") || err.contains("JSON"));
+    }
+
+    #[test]
+    fn test_load_config_validate_error_explicit() {
+        // Test when config file has invalid values (explicit config path)
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.json");
+        std::fs::write(&config_path, r#"{"max_variance": 2.0}"#).unwrap();
+        
+        let result = load_config(Some(config_path.to_str().unwrap()), true);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("validation") || err.contains("max_variance"));
+    }
+
+    // Tests for format_branch_age edge cases
+    #[test]
+    fn test_format_branch_age_zero_days() {
+        assert_eq!(format_branch_age(0), "0 days old");
+    }
+
+    #[test]
+    fn test_format_branch_age_one_day() {
+        assert_eq!(format_branch_age(1), "1 days old");
+    }
+
+    #[test]
+    fn test_format_branch_age_large_number() {
+        assert_eq!(format_branch_age(365), "365 days old");
+    }
+
+    // Tests for is_valid_session_path edge cases
+    #[test]
+    fn test_is_valid_session_path_current_dir() {
+        // Test with just a filename (no directory component)
+        assert!(is_valid_session_path("test.json"));
+    }
+
+    #[test]
+    fn test_is_valid_session_path_valid_dir() {
+        // Test with current directory
+        assert!(is_valid_session_path("./test.json"));
+    }
+
+    #[test]
+    fn test_is_valid_session_path_nonexistent_dir() {
+        // Test with non-existent directory
+        assert!(!is_valid_session_path("/nonexistent/directory/test.json"));
+    }
+
+    // Tests for StuckReason Display implementation
+    #[test]
+    fn test_stuck_reason_display_iteration_timeout() {
+        let reason = StuckReason::IterationTimeout;
+        assert_eq!(format!("{}", reason), "Iteration timeout exceeded");
+    }
+
+    #[test]
+    fn test_stuck_reason_display_stall_limit() {
+        let reason = StuckReason::StallLimitReached;
+        assert_eq!(format!("{}", reason), "No improvement after multiple iterations (stall limit reached)");
+    }
+
+    #[test]
+    fn test_stuck_reason_display_total_timeout() {
+        let reason = StuckReason::TotalTimeout;
+        assert_eq!(format!("{}", reason), "Total experiment timeout exceeded");
+    }
+
+    #[test]
+    fn test_stuck_reason_display_convergence() {
+        let reason = StuckReason::ConvergenceAchieved;
+        assert_eq!(format!("{}", reason), "Metric convergence achieved");
+    }
+
+    #[test]
+    fn test_get_measure_default() {
+        let cli = Cli {
+            measure: None,
+            ..Default::default()
+        };
+        let config: Option<Config> = None;
+        assert_eq!(get_measure(&cli, &config, "default_measure"), "default_measure");
+    }
+
+    #[test]
+    fn test_get_beads_enabled_config_false() {
+        let cli = Cli {
+            beads_enabled: false,
+            ..Default::default()
+        };
+        let config = Some(Config {
+            beads_enabled: Some(false),
+            ..Default::default()
+        });
+        assert!(!get_beads_enabled(&cli, &config));
+    }  
 }
 
 #[tokio::main]

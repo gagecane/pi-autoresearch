@@ -901,3 +901,90 @@
 - Priority 50: UX - Improve Error Messages
 **Review**: Research completed thoroughly - all major areas analyzed, 8 actionable tasks created
 
+## Priority 43: TEST - Increase Test Coverage to 85%
+**Status**: TODO
+**Description**: Increase line coverage from 80.20% to 85% target
+**Rationale**: Improve code coverage to identify and test untested code paths
+**Current Coverage**: 80.20% line (427 missed lines out of 2157)
+**Target Coverage**: 85% line coverage
+**Approach**:
+- Analyze coverage report to identify missed lines
+- Add targeted tests for uncovered code paths
+- Focus on edge cases and error handling
+- Update coverage report after adding tests
+**Acceptance Criteria**:
+- Line coverage reaches 85%
+- All new tests pass
+- No regressions in existing tests
+
+## Priority 44: DOCS - Add More Examples to EXAMPLES.md
+**Status**: TODO
+**Description**: Expand docs/EXAMPLES.md with more comprehensive examples
+**Rationale**: Users need more practical examples for different use cases
+**Content to Add**:
+- Advanced configuration examples
+- Multi-metric optimization examples
+- CI/CD integration examples
+- Beads workflow examples
+- Common patterns and best practices
+
+## Priority 45: DOCS - Add API Documentation
+**Status**: TODO
+**Description**: Create API documentation for library users
+**Rationale**: Developers who want to use pi-autoresearch as a library need API docs
+**Content to Create**:
+- Public API reference
+- Function signatures and parameters
+- Return values and error types
+- Usage examples for library integration
+
+## Priority 46: DOCS - Add Migration Guide
+**Status**: TODO
+**Description**: Create migration guide for config file changes
+**Rationale**: Users need help migrating between versions
+**Content to Create**:
+- Version-by-version migration instructions
+- Breaking changes documentation
+- Config file format changes
+- CLI argument changes
+
+## Priority 47: TEST - Add Fuzzing Tests
+**Status**: TODO
+**Description**: Add fuzzing tests for session file parsing
+**Rationale**: Fuzzing helps find edge cases and security issues in parsers
+**Implementation**:
+- Add fuzzing framework (cargo-fuzz)
+- Create fuzz targets for JSON parsing
+- Create fuzz targets for session file parsing
+- Run fuzzing tests regularly
+
+## Priority 48: TEST - Add End-to-End Beads Tests
+**Status**: TODO
+**Description**: Add end-to-end integration tests for beads workflow
+**Rationale**: Beads integration is critical for issue tracking but lacks e2e tests
+**Tests to Add**:
+- Test beads task creation workflow
+- Test beads task update workflow
+- Test beads task completion workflow
+- Test beads integration with experiments
+
+## Priority 49: FEATURE - Add Progress Bars
+**Status**: TODO
+**Description**: Add progress bars for long operations
+**Rationale**: Improve UX by showing progress during long-running operations
+**Implementation**:
+- Add indicatif crate for progress bars
+- Show progress during iterations
+- Show progress during baseline verification
+- Show progress during session file operations
+
+## Priority 50: UX - Improve Error Messages
+**Status**: TODO
+**Description**: Improve error messages with helpful suggestions
+**Rationale**: Better error messages help users resolve issues faster
+**Implementation**:
+- Add suggestions to error messages
+- Link to relevant documentation
+- Provide example fixes
+- Use colored output for better readability
+
