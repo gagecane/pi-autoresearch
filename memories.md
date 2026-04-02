@@ -2,6 +2,119 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02 22:00 UTC: Milestone Notifications Implementation Complete (Priority 93.5)
+
+**Priority 93.5: NOTIFICATION - Add Iteration Milestone Notifications** - COMPLETE
+
+**Implementation Summary**:
+- Added `send_slack_milestone(webhook_url, session, current_iteration)` function
+- Added `send_email_milestone(to, config, session, current_iteration)` function
+- Added `build_email_milestone_html()` and `build_email_milestone_text()` helper functions
+- Integrated milestone notifications into `run_iterative_loop()` in main.rs
+- Sends notification every N iterations (configurable via `--notify-milestone`)
+- Supports Webhook and Slack providers (Email skipped due to SMTP config requirements)
+
+**Key Design Decisions**:
+1. **Milestone Tracking**: Added `last_milestone_notified` variable to track which milestones have been notified
+   - Prevents duplicate notifications on the same milestone
+   - Only sends when `current_iteration % milestone == 0` and `last_milestone_notified < current_iteration`
+
+2. **Slack Milestone Format**: Uses Slack blocks API similar to completion notifications
+   - Header: "🔄 Experiment Progress Update"
+   - Context: Session ID and metric
+   - Section: Question and hypothesis
+   - Metrics: Baseline, best improvement, current iteration, runtime so far
+   - Progress: Milestone reached message with current iteration and improvement
+
+3. **Email Milestone Format**: Separate HTML and text builders for milestone notifications
+   - Blue header (#3498db) instead of green/red (since it's progress, not completion)
+   - "🔄" emoji for progress updates
+   - Shows "Iterations Complete: {current}/{total}" instead of just total
+   - "Runtime So Far" instead of "Total Runtime"
+   - Same iteration timeline structure as completion emails
+
+4. **Type Conversion**: Milestone notifications require converting local types to library types
+   - main.rs has local `ExperimentSession`, `ExperimentDesign`, `BaselineRecord`, `IterationRecord`
+   - Library has separate types with same names
+   - Conversion happens at notification time using `pi_autoresearch::` prefix
+   - Creates temporary library session for milestone notification
+
+5. **Email Milestone Limitation**: Milestone email notifications skipped in iteration loop
+   - SMTP configuration not available in `run_iterative_loop()` context
+   - Would require passing `EmailConfig` through function signature
+   - Added debug message explaining limitation
+   - Webhook and Slack work fine since they only need URL
+
+6. **Integration Points**: Milestone notifications integrated into iteration loop
+   - After iteration record is added to `iterations` vector
+   - Before convergence and stall limit checks
+   - Uses `iterations.clone()` for notification (current state)
+   - Non-blocking: notification errors don't fail the experiment
+
+**Public API**:
+```rust
+pub fn send_slack_milestone(
+    webhook_url: &str,
+    session: &ExperimentSession,
+    current_iteration: usize,
+) -> Result<()>
+
+pub fn send_email_milestone(
+    to: &str,
+    config: &EmailConfig,
+    session: &ExperimentSession,
+    current_iteration: usize,
+) -> Result<()>
+```
+
+**CLI Usage**:
+```bash
+# Send webhook notification every 5 iterations
+pi-autoresearch --question "..." --notify-provider webhook --notify-url "https://hooks.example.com/xxx" --notify-milestone 5
+
+# Send Slack notification every 10 iterations
+pi-autoresearch --question "..." --notify-provider slack --notify-url "https://hooks.slack.com/services/xxx" --notify-milestone 10
+
+# Combined with completion notification
+pi-autoresearch --question "..." --notify-provider slack --notify-url "https://hooks.slack.com/services/xxx" --notify-milestone 5
+# Sends milestone notifications at iterations 5, 10, 15, ... and completion notification at end
+```
+
+**Test Coverage**:
+- 11 comprehensive tests covering:
+  - Empty URL validation for Slack milestone (test_send_slack_milestone_empty_url)
+  - Unreachable URL error handling for Slack milestone (test_send_slack_milestone_invalid_url)
+  - Slack milestone message construction (test_slack_milestone_message_format)
+  - Empty recipient validation for email milestone (test_send_email_milestone_empty_recipient)
+  - Invalid SMTP server error handling for email milestone (test_send_email_milestone_invalid_smtp)
+  - HTML structure and content verification for milestone emails (test_build_email_milestone_html_structure)
+  - HTML with iterations (test_build_email_milestone_html_with_iterations)
+  - Text structure and content verification for milestone emails (test_build_email_milestone_text_structure)
+  - Text with iterations (test_build_email_milestone_text_with_iterations)
+  - Text empty iterations handling (test_build_email_milestone_text_empty_iterations)
+  - Milestone notification with iterations (test_milestone_notification_with_iterations)
+
+**Files Modified**:
+- `src/notification.rs`: Added `send_slack_milestone()`, `send_email_milestone()`, `build_email_milestone_html()`, `build_email_milestone_text()` (600+ lines, 11 tests)
+- `src/lib.rs`: Added exports for new milestone notification functions, added `BaselineRecord` to exports
+- `src/main.rs`: Updated `run_iterative_loop()` signature (+4 params), added milestone notification logic (~100 lines)
+- `tasks.md`: Updated Priority 93.5 as COMPLETE
+- `progress.md`: Added session summary
+- `memories.md`: Added this entry
+
+**Test Results**:
+- All 11 milestone-specific tests pass
+- All 245 lib tests pass (234 + 11 new)
+- All 103 main.rs tests pass
+- Zero clippy warnings
+- Zero compiler warnings
+
+**Next Steps**:
+- Priority 93.6: Add notification integration tests (end-to-end testing with mock webhooks)
+- Consider: Add email milestone notifications (requires SMTP config in run_iterative_loop)
+- Consider: Add notification rate limiting (prevent spam in very long experiments)
+- Consider: Add notification templates (customizable message formats)
+
 ## 2026-04-02 21:00 UTC: Email Notifications Implementation Complete (Priority 93.4)
 
 **Priority 93.4: NOTIFICATION - Implement Email Notifications** - COMPLETE
