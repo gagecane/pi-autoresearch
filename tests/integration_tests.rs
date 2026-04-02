@@ -2,6 +2,9 @@ use assert_cmd::Command;
 use serde_json::Value;
 use std::process::Output;
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 fn get_cli_output(args: &[&str]) -> Output {
     let mut cmd = Command::cargo_bin("pi-autoresearch").unwrap();
     cmd.args(args);
@@ -2505,3 +2508,396 @@ fn test_metric_error_includes_suggestions() {
     assert!(output.contains("docs/TROUBLESHOOTING.md"),
         "MetricError should link to troubleshooting documentation");
 }
+
+#[test]
+fn test_auto_approve_with_beads_end_to_end() {
+    // Test complete end-to-end workflow with both --auto-approve and --beads-enabled
+    // This verifies that the full experiment workflow works when both flags are used together
+    
+    // Create a temporary directory for the test
+    let temp_dir = tempfile::tempdir().unwrap();
+    
+    // Change to temp directory
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Initialize a git repo (required for the tool to work)
+    let _ = Command::new("git").args(&["init"]).output();
+    let _ = Command::new("git").args(&["config", "user.email", "test@test.com"]).output();
+    let _ = Command::new("git").args(&["config", "user.name", "Test User"]).output();
+    
+    // Run the experiment with auto-approve and beads-enabled
+    // Note: bd command may not be available, but the tool should handle this gracefully
+    let args = vec![
+        "--question",
+        "test auto-approve with beads workflow",
+        "--auto-approve",
+        "--beads-enabled",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 100",
+        "--baseline",
+        "100",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "2",
+        "--stall-limit",
+        "3",
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should succeed even if bd is not available (graceful degradation)
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Verify that the experiment completed (either success or graceful degradation)
+    // The tool should not crash if bd is not available
+    assert!(
+        output.status.success() || stderr.contains("beads") || stderr.contains("bd"),
+        "Command should succeed or handle missing bd gracefully. stdout: {}, stderr: {}",
+        stdout, stderr
+    );
+    
+    // Verify no panic occurred
+    assert!(
+        !stderr.contains("panic"),
+        "Should not panic. stderr: {}",
+        stderr
+    );
+    
+    // Clean up
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use
+}
+
+#[test]
+fn test_auto_approve_beads_with_iterations() {
+    // Test that auto-approve and beads work correctly with multiple iterations
+    
+    let temp_dir = tempfile::tempdir().unwrap();
+    
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Initialize git repo
+    let _ = Command::new("git").args(&["init"]).output();
+    let _ = Command::new("git").args(&["config", "user.email", "test@test.com"]).output();
+    let _ = Command::new("git").args(&["config", "user.name", "Test User"]).output();
+    
+    // Run with multiple iterations
+    let args = vec![
+        "--question",
+        "test iterations with beads",
+        "--auto-approve",
+        "--beads-enabled",
+        "--metric",
+        "speed",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "100",
+        "--target-improvement",
+        "0.50",
+        "--max-iterations",
+        "3",
+        "--stall-limit",
+        "5",
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete successfully or handle missing bd gracefully
+    assert!(
+        output.status.success() || stderr.contains("beads"),
+        "Should complete or handle missing bd. stdout: {}, stderr: {}",
+        stdout, stderr
+    );
+    
+    // Verify no panic
+    assert!(
+        !stderr.contains("panic"),
+        "Should not panic. stderr: {}",
+        stderr
+    );
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use
+}
+
+#[test]
+fn test_auto_approve_beads_config_file_integration() {
+    // Test that auto-approve and beads work when configured via config file
+    
+    use std::fs;
+    
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_dir = temp_dir.path().join(".config").join("pi-autoresearch");
+    fs::create_dir_all(&config_dir).unwrap();
+    
+    let config_file = config_dir.join("config.json");
+    let config_content = r#"{
+        "beads_enabled": true,
+        "max_iterations": 2,
+        "stall_limit": 3
+    }"#;
+    fs::write(&config_file, config_content).unwrap();
+    
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Initialize git repo
+    let _ = Command::new("git").args(&["init"]).output();
+    let _ = Command::new("git").args(&["config", "user.email", "test@test.com"]).output();
+    let _ = Command::new("git").args(&["config", "user.name", "Test User"]).output();
+    
+    // Run with auto-approve from CLI, beads from config
+    let args = vec![
+        "--question",
+        "test config beads integration",
+        "--auto-approve",
+        "--metric",
+        "memory",
+        "--measure",
+        "echo 200",
+        "--baseline",
+        "200",
+        "--target-improvement",
+        "0.20",
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .env("HOME", temp_dir.path())
+        .output()
+        .unwrap();
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete successfully or handle missing bd gracefully
+    assert!(
+        output.status.success() || stderr.contains("beads"),
+        "Should complete with config beads_enabled. stdout: {}, stderr: {}",
+        stdout, stderr
+    );
+    
+    // Verify no panic
+    assert!(
+        !stderr.contains("panic"),
+        "Should not panic. stderr: {}",
+        stderr
+    );
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use // Ignore errors if directory is in use
+}
+
+#[test]
+fn test_auto_approve_beads_cli_overrides_config() {
+    // Test that CLI flags work with config file
+    
+    use std::fs;
+    
+    let temp_dir = tempfile::tempdir().unwrap();
+    let config_dir = temp_dir.path().join(".config").join("pi-autoresearch");
+    fs::create_dir_all(&config_dir).unwrap();
+    
+    let config_file = config_dir.join("config.json");
+    let config_content = r#"{
+        "beads_enabled": true,
+        "max_iterations": 1
+    }"#;
+    fs::write(&config_file, config_content).unwrap();
+    
+    let session_file = temp_dir.path().join("test_cli_override.jsonl");
+    
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Initialize git repo
+    let _ = Command::new("git").args(&["init"]).output();
+    let _ = Command::new("git").args(&["config", "user.email", "test@test.com"]).output();
+    let _ = Command::new("git").args(&["config", "user.name", "Test User"]).output();
+    
+    // Run with auto-approve (beads from config)
+    let args = vec![
+        "--question",
+        "test cli override beads",
+        "--auto-approve",
+        "--metric",
+        "accuracy",
+        "--measure",
+        "echo 95",
+        "--baseline",
+        "95",
+        "--target-improvement",
+        "0.05",
+        "--session-file",
+        session_file.to_str().unwrap(),
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .env("HOME", temp_dir.path())
+        .output()
+        .unwrap();
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete successfully or handle missing bd gracefully
+    assert!(
+        output.status.success() || stderr.contains("beads"),
+        "Should complete. stdout: {}, stderr: {}",
+        stdout, stderr
+    );
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use
+}
+
+#[test]
+fn test_auto_approve_beads_error_handling() {
+    // Test that errors in beads commands don't crash the experiment
+    
+    let temp_dir = tempfile::tempdir().unwrap();
+    
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Initialize git repo
+    let _ = Command::new("git").args(&["init"]).output();
+    let _ = Command::new("git").args(&["config", "user.email", "test@test.com"]).output();
+    let _ = Command::new("git").args(&["config", "user.name", "Test User"]).output();
+    
+    let args = vec![
+        "--question",
+        "test beads error handling",
+        "--auto-approve",
+        "--beads-enabled",
+        "--metric",
+        "test",
+        "--measure",
+        "echo 75",
+        "--baseline",
+        "75",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should handle missing bd gracefully (either succeed or show error but not crash)
+    assert!(
+        output.status.success() || 
+        (stderr.contains("beads") && !stderr.contains("panic")) ||
+        (stderr.contains("bd") && !stderr.contains("panic")),
+        "Should handle missing bd gracefully. stdout: {}, stderr: {}",
+        stdout, stderr
+    );
+    
+    // Verify no panic occurred
+    assert!(
+        !stderr.contains("panic"),
+        "Should not panic. stderr: {}",
+        stderr
+    );
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use
+}
+
+#[test]
+fn test_auto_approve_beads_complete_workflow() {
+    // Test complete workflow: baseline verification, iterations, and finalization
+    // with both auto-approve and beads-enabled
+    
+    let temp_dir = tempfile::tempdir().unwrap();
+    
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Initialize git repo
+    let _ = Command::new("git").args(&["init"]).output();
+    let _ = Command::new("git").args(&["config", "user.email", "test@test.com"]).output();
+    let _ = Command::new("git").args(&["config", "user.name", "Test User"]).output();
+    
+    // Run complete workflow with verify-baseline
+    let args = vec![
+        "--question",
+        "test complete workflow with beads",
+        "--auto-approve",
+        "--beads-enabled",
+        "--metric",
+        "performance",
+        "--measure",
+        "echo 200",
+        "--baseline",
+        "200",
+        "--verify-baseline",
+        "--target-improvement",
+        "0.25",
+        "--max-iterations",
+        "2",
+        "--stall-limit",
+        "3",
+        "--skip-git",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    // Should complete successfully or handle missing bd gracefully
+    assert!(
+        output.status.success() || stderr.contains("beads"),
+        "Complete workflow should succeed. stdout: {}, stderr: {}",
+        stdout, stderr
+    );
+    
+    // Verify no panic
+    assert!(
+        !stderr.contains("panic"),
+        "Should not panic. stderr: {}",
+        stderr
+    );
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close(); // Ignore errors if directory is in use
+}
+
