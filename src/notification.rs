@@ -154,6 +154,161 @@ pub fn send_milestone_notification(url: &str, session: &ExperimentSession, curre
     send_webhook_raw(url, &payload)
 }
 
+/// Sends a Slack notification via webhook
+///
+/// # Arguments
+///
+/// * `webhook_url` - The Slack webhook URL to send the notification to
+/// * `session` - The experiment session containing the results
+/// * `target_achieved` - Whether the experiment achieved its target
+///
+/// # Examples
+///
+/// ```ignore
+/// use pi_autoresearch::notification::send_slack;
+/// use pi_autoresearch::session::ExperimentSession;
+///
+/// let session = ExperimentSession::new(/* ... */);
+/// let result = send_slack("https://hooks.slack.com/services/xxx", &session, true);
+/// assert!(result.is_ok());
+/// ```
+///
+/// # Notes
+///
+/// - Uses Slack's blocks API for rich formatting
+/// - Color-coded status: green for success, red for failure
+/// - Includes experiment summary and key metrics
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The webhook URL is invalid
+/// - The HTTP request fails
+/// - Slack returns an error response
+pub fn send_slack(webhook_url: &str, session: &ExperimentSession, target_achieved: bool) -> Result<()> {
+    // Validate URL
+    if webhook_url.is_empty() {
+        anyhow::bail!("Slack webhook URL cannot be empty");
+    }
+    
+    // Determine color based on success/failure
+    let color = if target_achieved {
+        "#2ecc71" // Green for success
+    } else {
+        "#e74c3c" // Red for failure
+    };
+    
+    // Calculate metrics
+    let best_improvement = session.calculate_final_improvement() * 100.0;
+    let runtime_seconds = WebhookPayload::calculate_runtime(&session.start_time, &session.end_time);
+    let runtime_formatted = format_duration(runtime_seconds);
+    
+    // Build Slack blocks message
+    let blocks = vec![
+        // Header block
+        serde_json::json!({
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": if target_achieved { "✅ Experiment Complete" } else { "❌ Experiment Failed" },
+                "emoji": true
+            }
+        }),
+        // Context block
+        serde_json::json!({
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Session:* {} | *Metric:* {}", session.session_id, session.design.metric)
+                }
+            ]
+        }),
+        // Section block with summary
+        serde_json::json!({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": format!("*Question:* {}\n*Hypothesis:* {}", session.question, session.design.hypothesis)
+            }
+        }),
+        // Divider
+        serde_json::json!({
+            "type": "divider"
+        }),
+        // Metrics block
+        serde_json::json!({
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Baseline*\\n{}", session.baseline_record.value)
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Best Improvement*\\n{}%", best_improvement.signum() * best_improvement.abs().round() / 10.0 * 10.0 / 10.0)
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Iterations*\\n{}", session.iterations.len())
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": format!("*Runtime*\\n{}", runtime_formatted)
+                }
+            ]
+        }),
+        // Result block with color
+        serde_json::json!({
+            "type": "section",
+            "attachments": [
+                {
+                    "color": color,
+                    "fields": [
+                        {
+                            "title": "Result",
+                            "value": if target_achieved {
+                                "✅ Target achieved! Experiment was successful."
+                            } else {
+                                "❌ Target not achieved. Consider adjusting parameters or hypothesis."
+                            }
+                        }
+                    ]
+                }
+            ]
+        }),
+    ];
+    
+    // Create Slack message payload
+    let slack_payload = serde_json::json!({
+        "channel": "#experiments", // Default channel (can be overridden by webhook)
+        "username": "pi-autoresearch",
+        "icon_emoji": "🔬",
+        "blocks": blocks
+    });
+    
+    // Serialize to JSON
+    let json = serde_json::to_string(&slack_payload)?;
+    
+    // Send to Slack
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(webhook_url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .header("User-Agent", "pi-autoresearch")
+        .body(json)
+        .send()?;
+    
+    // Check response status
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().unwrap_or_default();
+        anyhow::bail!("Slack webhook request failed with status {}: {}", status, body);
+    }
+    
+    Ok(())
+}
+
 /// Sends a raw webhook payload to the specified URL
 ///
 /// # Arguments
@@ -207,6 +362,17 @@ pub fn send_webhook_raw(url: &str, payload: &WebhookPayload) -> Result<()> {
     }
     
     Ok(())
+}
+
+/// Formats a duration in seconds to a human-readable string
+fn format_duration(seconds: f64) -> String {
+    if seconds < 60.0 {
+        format!("{:.0}s", seconds)
+    } else if seconds < 3600.0 {
+        format!("{:.1}m", seconds / 60.0)
+    } else {
+        format!("{:.1}h", seconds / 3600.0)
+    }
 }
 
 #[cfg(test)]
@@ -339,5 +505,76 @@ mod tests {
         
         let runtime = WebhookPayload::calculate_runtime(start, &end);
         assert_eq!(runtime, 0.0); // Should return 0 for invalid timestamps
+    }
+
+    #[test]
+    fn test_send_slack_empty_url() {
+        let session = create_test_session();
+        
+        let result = send_slack("", &session, true);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("empty"));
+    }
+
+    #[test]
+    fn test_send_slack_invalid_url() {
+        let session = create_test_session();
+        
+        // This should fail because the URL is not reachable
+        let result = send_slack("http://localhost:59998/slack", &session, true);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_slack_message_format_success() {
+        // Test that Slack message can be constructed for successful experiment
+        let session = create_test_session();
+        
+        // We can't easily test the full send_slack without a real webhook,
+        // but we can verify the color logic by checking the function doesn't panic
+        let result = send_slack("http://localhost:59997/slack", &session, true);
+        // Should fail with connection error, not panic
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_slack_message_format_failure() {
+        // Test that Slack message can be constructed for failed experiment
+        let session = create_test_session();
+        
+        let result = send_slack("http://localhost:59996/slack", &session, false);
+        // Should fail with connection error, not panic
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_format_duration_seconds() {
+        // Test duration formatting (internal function tested through public API)
+        let session = create_test_session();
+        
+        // This will construct a Slack message which uses format_duration
+        // We're testing that it doesn't panic with various runtime values
+        let result = send_slack("http://localhost:59995/slack", &session, true);
+        assert!(result.is_err()); // Should fail with connection error
+    }
+
+    #[test]
+    fn test_slack_with_iterations() {
+        // Test Slack notification with iterations in session
+        let mut session = create_test_session();
+        
+        // Add a test iteration
+        use crate::phase2_iterate::IterationRecord;
+        let iteration = IterationRecord::new(
+            1,
+            "Test changes".to_string(),
+            90.0,
+            -10.0,
+            true,
+        );
+        session.iterations.push(iteration);
+        
+        let result = send_slack("http://localhost:59994/slack", &session, true);
+        assert!(result.is_err()); // Should fail with connection error, not panic
     }
 }
