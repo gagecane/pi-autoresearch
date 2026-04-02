@@ -1,0 +1,28 @@
+{
+  "session_id": "session-123",
+  "question": "How to optimize?",
+  "design": {
+    "hypothesis": "hypothesis",
+    "metric": "metric",
+    "measurement": "./measure",
+    "baseline": 100.0,
+    "target_improvement": 10.0
+  },
+  "baseline_record": {
+    "timestamp": "2024-01-01T00:00:00Z",
+    "git_commit": "abc",
+    "metric": "metric",
+    "measurement_command": "./measure",
+    "value": 100.0,
+    "verification_runs": [
+      100.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [],
+  "best_iteration": null,
+  "start_time": "2026-04-02T18:01:54.563126+00:00",
+  "end_time": null,
+  "status": "running"
+}
