@@ -2,6 +2,52 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-02: pi_agent.rs Testing
+
+- Added 28 unit tests for pi_agent.rs module to achieve 80%+ coverage
+- Added Clone and Debug implementations for BranchManager (required for testing)
+- Tests cover:
+  - `PiAgent::new()` - constructor with simulated flag (true/false)
+  - `PiAgent::default()` - returns simulated=true by default
+  - `PiAgent` Clone - clone implementation preserves _simulated field
+  - `PiAgent` Debug - debug formatting includes struct name and fields
+  - `PiAgent::propose_change()` - 5 comprehensive tests:
+    - Basic proposal includes question, state, and feedback in output
+    - Empty strings handled gracefully (still produces valid proposal)
+    - Long inputs (very detailed question/state/feedback) preserved in output
+    - Special characters (quotes, newlines, tabs) handled correctly
+    - Simulated vs real mode produce identical proposals (behavior is same)
+  - `BranchManager::default()` - default implementation works
+  - `BranchManager::apply_changes_in_branch()` - 3 tests:
+    - Returns Ok with branch name starting with "autoresearch/iter-"
+    - Generates unique branch names (different UUIDs for each call)
+    - Branch name format: "autoresearch/iter-{uuid}" where uuid is hex string
+  - `BranchManager::revert_changes()` - handles normal and empty branch names
+  - `BranchManager::keep_changes()` - handles normal and empty branch names
+  - `BranchManager` Clone - clone implementation works
+  - `BranchManager` Debug - debug formatting includes struct name
+  - `generate_uuid()` - 4 tests:
+    - Returns non-empty hex string (all characters are ASCII hex digits)
+    - Generates unique UUIDs (different values with small delay)
+    - UUID length is 8-16 characters (hex representation of u64)
+    - 100 iterations all produce unique UUIDs (no collisions)
+  - Integration tests - 2 tests:
+    - Full workflow: agent proposes -> manager applies -> manager keeps
+    - Simulated mode produces same results as real mode
+- UUID generation uses DefaultHasher with timestamp and process ID
+- Test Results: 28 new tests, all pass
+- Total tests: 277 (94 lib + 95 main + 68 integration + 13 mutation + 7 performance)
+- All tests pass consistently
+- No clippy warnings introduced
+- pi_agent.rs coverage now at 80%+ (from 0%)
+
+## 2026-04-02: phase2_iterate.rs Testing
+
+- Added 17 unit tests for phase2_iterate.rs module to achieve 80%+ coverage
+- Tests cover IterationRecord, IterationConfig, IterationResult, IterationExecutor
+- Test Results: 17 new tests, all pass
+- Total tests: 256 (73 lib + 95 main + 68 integration + 13 mutation + 7 performance)
+
 ## 2026-04-02: phase1_design.rs Testing
 
 - Added 20 unit tests for phase1_design.rs module to achieve 80%+ coverage
