@@ -81,6 +81,9 @@ Create a config file at `~/.config/pi-autoresearch/config.json`:
 
 ## See Also
 
+- [API Reference](API.md) - Complete API documentation for library users
 - [Usage Guide](USAGE.md) - Detailed usage instructions
 - [Configuration](CONFIG.md) - Configuration file options
 - [Examples](EXAMPLES.md) - Example use cases
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
+- [Coverage](COVERAGE.md) - Test coverage information
