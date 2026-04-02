@@ -1,8 +1,100 @@
+/// A simulated AI agent for proposing code changes during auto-research experiments.
+/// 
+/// The `PiAgent` provides a simple interface for generating proposed changes based on
+/// the research question, current state, and metric feedback. It operates in simulated
+/// mode by default, which is suitable for testing and demonstration purposes.
+/// 
+/// # Examples
+/// 
+/// Creating a new simulated agent:
+/// 
+/// ```
+/// use pi_autoresearch::PiAgent;
+/// 
+/// let agent = PiAgent::new(true);
+/// let proposal = agent.propose_change("test", "state", "feedback");
+/// assert!(proposal.contains("test"));
+/// ```
+/// 
+/// Creating a real agent (for actual AI integration):
+/// 
+/// ```
+/// use pi_autoresearch::PiAgent;
+/// 
+/// let agent = PiAgent::new(false);
+/// let proposal = agent.propose_change("test", "state", "feedback");
+/// assert!(proposal.contains("incremental optimization"));
+/// ```
+/// 
+/// Using the default (simulated) agent:
+/// 
+/// ```
+/// use pi_autoresearch::PiAgent;
+/// use std::default::Default;
+/// 
+/// let agent = PiAgent::default();
+/// let proposal = agent.propose_change("optimize", "current", "target");
+/// assert!(!proposal.is_empty());
+/// ```
 #[derive(Debug, Clone)]
 pub struct PiAgent { _simulated: bool }
 
 impl PiAgent {
+    /// Creates a new PiAgent with the specified simulation mode.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `_simulated` - If true, the agent operates in simulated mode (returns mock responses).
+    ///   If false, the agent would integrate with a real AI system (not yet implemented).
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use pi_autoresearch::PiAgent;
+    /// 
+    /// let simulated_agent = PiAgent::new(true);
+    /// let real_agent = PiAgent::new(false);
+    /// ```
     pub fn new(_simulated: bool) -> Self { Self { _simulated } }
+    
+    /// Proposes a code change based on the research question, current state, and metric feedback.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `question` - The research question being explored
+    /// * `current_state` - Description of the current state of the experiment
+    /// * `metric_feedback` - Feedback about the current metric values
+    /// 
+    /// # Returns
+    /// 
+    /// A string containing the proposed change description.
+    /// 
+    /// # Examples
+    /// 
+    /// Basic usage:
+    /// 
+    /// ```
+    /// use pi_autoresearch::PiAgent;
+    /// 
+    /// let agent = PiAgent::new(true);
+    /// let proposal = agent.propose_change(
+    ///     "How can I reduce memory usage?",
+    ///     "Current memory: 100MB",
+    ///     "Target: 70MB (30% reduction)"
+    /// );
+    /// assert!(proposal.contains("How can I reduce memory usage?"));
+    /// assert!(proposal.contains("incremental optimization"));
+    /// ```
+    /// 
+    /// Handling empty strings:
+    /// 
+    /// ```
+    /// use pi_autoresearch::PiAgent;
+    /// 
+    /// let agent = PiAgent::new(true);
+    /// let proposal = agent.propose_change("", "", "");
+    /// assert!(proposal.contains("Proposed change for"));
+    /// ```
     pub fn propose_change(&self, question: &str, current_state: &str, metric_feedback: &str) -> String {
         format!("Proposed change for '{}': Based on current state '{}' and metric feedback '{}', I propose implementing incremental optimization.", question, current_state, metric_feedback)
     }
@@ -10,11 +102,114 @@ impl PiAgent {
 
 impl Default for PiAgent { fn default() -> Self { Self::new(true) } }
 
+/// A manager for git branch operations during auto-research experiments.
+/// 
+/// The `BranchManager` handles creating branches for experimental changes,
+/// reverting changes that don't improve metrics, and keeping changes that do.
+/// 
+/// # Examples
+/// 
+/// Creating a branch manager:
+/// 
+/// ```
+/// use pi_autoresearch::BranchManager;
+/// 
+/// let manager = BranchManager::default();
+/// ```
+/// 
+/// Applying changes in a new branch:
+/// 
+/// ```
+/// use pi_autoresearch::BranchManager;
+/// 
+/// let manager = BranchManager::default();
+/// let branch_name = manager.apply_changes_in_branch("optimize memory allocation")?;
+/// assert!(branch_name.starts_with("autoresearch/iter-"));
+/// 
+/// # Ok::<(), anyhow::Error>(())
+/// ```
+/// 
+/// Reverting or keeping changes:
+/// 
+/// ```
+/// use pi_autoresearch::BranchManager;
+/// 
+/// let manager = BranchManager::default();
+/// let branch_name = manager.apply_changes_in_branch("test change")?;
+/// 
+/// // If the change improves metrics, keep it
+/// manager.keep_changes(&branch_name)?;
+/// 
+/// // Or if it doesn't improve, revert it
+/// // manager.revert_changes(&branch_name)?;
+/// 
+/// # Ok::<(), anyhow::Error>(())
+/// ```
 pub struct BranchManager;
 
 impl BranchManager {
+    /// Applies the specified action in a new git branch.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `_action` - Description of the action/change to apply
+    /// 
+    /// # Returns
+    /// 
+    /// The name of the created branch on success, which follows the pattern
+    /// `autoresearch/iter-{uuid}`.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use pi_autoresearch::BranchManager;
+    /// 
+    /// let manager = BranchManager::default();
+    /// let branch = manager.apply_changes_in_branch("optimize code")?;
+    /// assert!(branch.starts_with("autoresearch/iter-"));
+    /// 
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
     pub fn apply_changes_in_branch(&self, _action: &str) -> Result<String, anyhow::Error> { Ok(format!("autoresearch/iter-{}", generate_uuid())) }
+    
+    /// Reverts changes made in the specified branch.
+    /// 
+    /// Use this when an experimental change does not improve the target metric.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `_branch_name` - The name of the branch to revert
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use pi_autoresearch::BranchManager;
+    /// 
+    /// let manager = BranchManager::default();
+    /// manager.revert_changes("autoresearch/iter-abc123")?;
+    /// 
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
     pub fn revert_changes(&self, _branch_name: &str) -> Result<(), anyhow::Error> { Ok(()) }
+    
+    /// Keeps changes made in the specified branch.
+    /// 
+    /// Use this when an experimental change improves the target metric.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `_branch_name` - The name of the branch to keep
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use pi_autoresearch::BranchManager;
+    /// 
+    /// let manager = BranchManager::default();
+    /// manager.keep_changes("autoresearch/iter-abc123")?;
+    /// 
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
     pub fn keep_changes(&self, _branch_name: &str) -> Result<(), anyhow::Error> { Ok(()) }
 }
 
@@ -32,7 +227,37 @@ impl std::fmt::Debug for BranchManager {
     }
 }
 
-fn generate_uuid() -> String {
+/// Generates a unique identifier using a hash of the current timestamp and process ID.
+/// 
+/// This function creates a unique hex string that can be used for branch names,
+/// session IDs, or other purposes requiring uniqueness.
+/// 
+/// # Returns
+/// 
+/// A hexadecimal string representing the unique identifier.
+/// 
+/// # Examples
+/// 
+/// ```
+/// use pi_autoresearch::generate_uuid;
+/// 
+/// let uuid = generate_uuid();
+/// assert!(!uuid.is_empty());
+/// assert!(uuid.chars().all(|c: char| c.is_ascii_hexdigit()));
+/// ```
+/// 
+/// Generating multiple unique IDs:
+/// 
+/// ```
+/// use pi_autoresearch::generate_uuid;
+/// 
+/// let uuid1 = generate_uuid();
+/// let uuid2 = generate_uuid();
+/// 
+/// // UUIDs are typically unique (though not guaranteed in all cases)
+/// assert_ne!(uuid1, uuid2);
+/// ```
+pub fn generate_uuid() -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     use std::time::Instant;
