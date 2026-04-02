@@ -14,7 +14,7 @@ while true; do
     # Execute the pi command
     echo "------------------------------------------"
     echo "Iteration #$counter: Running pi command..."
-    pi code -p "Read PROMPT.md and follow the instructions"
+    pi code -p "Work only on files in /Users/sikashep/pi-autoresearch/. Only work on the ralphing branch. Read PROMPT.md and follow the instructions"
 
     # Check if the progress file exists
     if [[ -f "$PROGRESS_FILE" ]]; then

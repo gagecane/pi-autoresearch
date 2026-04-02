@@ -2,6 +2,7 @@
 
 - You must only work on a single task.
 - Work only on files in /Users/sikashep/pi-autoresearch/
+- Only work on the ralphing branch
 - Read this repo and understand what this product does.
 - Read tasks.md and choose the next highest priority task to do.
 - If all tasks are COMPLETE, your task is to add a new task to research the code and discover tasks that need done. This can include refactoring, improved line and branch coverage, mutatation tests, contract tests, and new features, improve documentation in docs/, align specs in the specs/ folder with the code implementation, improve test suite runtime, improve the README.md, refining AGENTS.md, improving the repo structure, etc. Add the tasks to tasks.md. Once you create that task your task is done.
