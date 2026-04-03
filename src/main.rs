@@ -180,6 +180,14 @@ struct Cli {
     /// Automatically open visualization in browser
     #[arg(long)]
     visualize_open: bool,
+
+    /// Enable metrics server for observability
+    #[arg(long = "metrics-enabled", default_value = "false")]
+    metrics_enabled: bool,
+
+    /// Port for metrics server (default: 9090)
+    #[arg(long = "metrics-port", default_value = "9090")]
+    metrics_port: u16,
 }
 
 /// Configuration loaded from config file

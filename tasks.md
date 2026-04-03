@@ -1283,20 +1283,59 @@ cargo darwin --lib cli
 - Priority 97.6: TEST - Add Metrics Integration Tests
 
 ## Priority 97.1: CLI - Add Metrics Flags
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add CLI flags for metrics server functionality
 **Rationale**: Users need CLI interface to configure metrics server
 **Implementation**:
-- Add `--metrics-port PORT` flag for metrics server port
-- Add `--metrics-enabled` flag to enable/disable metrics server
-- Add helper methods on Cli struct:
-  - `get_metrics_port()` - Returns metrics port if specified
+- ✅ Added `MetricsConfig` struct with `enabled` and `port` fields
+  - Added to `src/cli.rs` (for library usage)
+  - Implemented custom `Default` trait (enabled: false, port: 9090)
+  - Helper methods: `get_metrics_port()` and `has_metrics_enabled()`
+- ✅ Added `--metrics-enabled` flag to enable metrics server
+- ✅ Added `--metrics-port PORT` flag for custom port (default: 9090)
+- ✅ Added metrics fields to `src/main.rs` Cli struct
+- ✅ Added helper methods on Cli struct in `src/cli.rs`:
+  - `get_metrics_port()` - Returns metrics port (default: 9090)
   - `has_metrics_enabled()` - Returns true if metrics server is enabled
-- Default port: 9090 (standard Prometheus port)
-**Tests**:
-- Verify port parsing
-- Verify metrics-enabled flag parsing
-- Verify helper methods work correctly
+**Tests Added**:
+- `test_metrics_config_default` - Verifies default MetricsConfig values
+- `test_metrics_config_new` - Verifies custom MetricsConfig creation
+- `test_metrics_config_clone` - Verifies MetricsConfig can be cloned
+- `test_metrics_config_get_metrics_port` - Verifies port retrieval
+- `test_metrics_config_has_metrics_enabled` - Verifies enabled check
+- `test_cli_parse_metrics_enabled` - Verifies --metrics-enabled flag parsing
+- `test_cli_parse_metrics_port` - Verifies --metrics-port flag parsing
+- `test_get_metrics_port_default` - Verifies default port (9090)
+- `test_get_metrics_port_custom` - Verifies custom port retrieval
+- `test_has_metrics_enabled_false` - Verifies disabled by default
+- `test_has_metrics_enabled_true` - Verifies enabled when set
+- `test_cli_parse_metrics_enabled_and_port` - Verifies both flags work together
+- `test_cli_parse_metrics_with_other_options` - Verifies integration with other flags
+- `test_cli_metrics_default_values` - Verifies default values from CLI parsing
+**Test Results**:
+- All 14 metrics-specific tests pass
+- All 97 cli.rs tests pass (14 new tests added)
+- All 396 lib tests pass
+- `cargo build` completes with no warnings
+- `cargo clippy` completes with no new warnings
+- `--help` shows new flags correctly:
+  - `--metrics-enabled` - Enable metrics server for observability
+  - `--metrics-port <METRICS_PORT>` - Port for metrics server (default: 9090)
+**Files Modified**:
+- `src/cli.rs`: Added `MetricsConfig` struct with custom Default impl, 2 helper methods, 14 tests
+- `src/main.rs`: Added `metrics_enabled` and `metrics_port` fields to Cli struct
+**Review**: REVIEW COMPLETE - Metrics flags properly implemented in cli.rs and main.rs, MetricsConfig struct with custom Default impl, comprehensive tests added (14 tests), all tests pass, help output shows new options correctly, zero new warnings, follows same pattern as export, notification, audit log, and visualization implementations
+**CLI Usage**:
+```bash
+# Enable metrics server on default port (9090)
+pi-autoresearch --question "..." --metrics-enabled
+
+# Enable metrics server on custom port
+pi-autoresearch --question "..." --metrics-enabled --metrics-port 8080
+
+# Combine with other features
+pi-autoresearch --question "..." --metrics-enabled --metrics-port 8080 --export json --visualize html
+```
 
 ## Priority 97.2: METRICS - Implement Metrics Server Core
 **Status**: TODO

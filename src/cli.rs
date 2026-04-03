@@ -95,6 +95,39 @@ impl VisualizationFormat {
     }
 }
 
+/// Metrics server configuration
+#[derive(Parser, Debug, Clone)]
+pub struct MetricsConfig {
+    /// Enable metrics server
+    #[arg(long = "metrics-enabled", default_value = "false")]
+    pub enabled: bool,
+
+    /// Port for metrics server (default: 9090)
+    #[arg(long = "metrics-port", default_value = "9090")]
+    pub port: u16,
+}
+
+impl Default for MetricsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            port: 9090,
+        }
+    }
+}
+
+impl MetricsConfig {
+    /// Returns the metrics port if specified
+    pub fn get_metrics_port(&self) -> u16 {
+        self.port
+    }
+
+    /// Returns true if metrics server is enabled
+    pub fn has_metrics_enabled(&self) -> bool {
+        self.enabled
+    }
+}
+
 #[derive(Parser, Debug, Clone, Default)]
 #[command(name = "pi-autoresearch")]
 #[command(about = "Autonomous research experiment orchestrator")]
@@ -132,6 +165,8 @@ pub struct Cli {
     #[arg(long, value_enum)] pub visualize: Option<VisualizationFormat>,
     #[arg(long, alias = "visualize-path")] pub visualize_path: Option<String>,
     #[arg(long)] pub visualize_open: bool,
+    #[arg(long = "metrics-enabled", default_value = "false")] pub metrics_enabled: bool,
+    #[arg(long = "metrics-port", default_value = "9090")] pub metrics_port: u16,
 }
 
 impl Cli {
@@ -471,6 +506,38 @@ impl Cli {
     /// ```
     pub fn should_open_browser(&self) -> bool {
         self.visualize_open
+    }
+
+    /// Returns the metrics port if specified, otherwise the default port (9090).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { metrics_port: 9090, ..Default::default() };
+    /// assert_eq!(cli.get_metrics_port(), 9090);
+    ///
+    /// let cli = Cli { metrics_port: 8080, ..Default::default() };
+    /// assert_eq!(cli.get_metrics_port(), 8080);
+    /// ```
+    pub fn get_metrics_port(&self) -> u16 {
+        self.metrics_port
+    }
+
+    /// Returns true if metrics server is enabled.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pi_autoresearch::cli::Cli;
+    /// let cli = Cli { metrics_enabled: false, ..Default::default() };
+    /// assert!(!cli.has_metrics_enabled());
+    ///
+    /// let cli = Cli { metrics_enabled: true, ..Default::default() };
+    /// assert!(cli.has_metrics_enabled());
+    /// ```
+    pub fn has_metrics_enabled(&self) -> bool {
+        self.metrics_enabled
     }
 }
 
@@ -1218,5 +1285,128 @@ mod tests {
         assert!(cli.visualize_open);
         assert_eq!(cli.export, Some(ExportFormat::Json));
         assert_eq!(cli.notify_provider, Some(NotificationProvider::Webhook));
+    }
+
+    #[test]
+    fn test_metrics_config_default() {
+        let config = MetricsConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.port, 9090);
+    }
+
+    #[test]
+    fn test_metrics_config_new() {
+        let config = MetricsConfig {
+            enabled: true,
+            port: 8080,
+        };
+        assert!(config.enabled);
+        assert_eq!(config.port, 8080);
+    }
+
+    #[test]
+    fn test_metrics_config_clone() {
+        let config = MetricsConfig {
+            enabled: true,
+            port: 8080,
+        };
+        let config_clone = config.clone();
+        assert_eq!(config.enabled, config_clone.enabled);
+        assert_eq!(config.port, config_clone.port);
+    }
+
+    #[test]
+    fn test_metrics_config_get_metrics_port() {
+        let config = MetricsConfig {
+            enabled: true,
+            port: 8080,
+        };
+        assert_eq!(config.get_metrics_port(), 8080);
+    }
+
+    #[test]
+    fn test_metrics_config_has_metrics_enabled() {
+        let config = MetricsConfig {
+            enabled: true,
+            port: 8080,
+        };
+        assert!(config.has_metrics_enabled());
+
+        let config = MetricsConfig {
+            enabled: false,
+            port: 8080,
+        };
+        assert!(!config.has_metrics_enabled());
+    }
+
+    #[test]
+    fn test_cli_parse_metrics_enabled() {
+        let cli = Cli::parse_from(["test", "--metrics-enabled"]);
+        assert!(cli.metrics_enabled);
+    }
+
+    #[test]
+    fn test_cli_parse_metrics_port() {
+        let cli = Cli::parse_from(["test", "--metrics-port", "8080"]);
+        assert_eq!(cli.metrics_port, 8080);
+    }
+
+    #[test]
+    fn test_get_metrics_port_default() {
+        let cli = Cli { metrics_port: 9090, ..Default::default() };
+        assert_eq!(cli.get_metrics_port(), 9090);
+    }
+
+    #[test]
+    fn test_get_metrics_port_custom() {
+        let cli = Cli { metrics_port: 8080, ..Default::default() };
+        assert_eq!(cli.get_metrics_port(), 8080);
+    }
+
+    #[test]
+    fn test_has_metrics_enabled_false() {
+        let cli = Cli { metrics_enabled: false, ..Default::default() };
+        assert!(!cli.has_metrics_enabled());
+    }
+
+    #[test]
+    fn test_has_metrics_enabled_true() {
+        let cli = Cli { metrics_enabled: true, ..Default::default() };
+        assert!(cli.has_metrics_enabled());
+    }
+
+    #[test]
+    fn test_cli_parse_metrics_enabled_and_port() {
+        let cli = Cli::parse_from([
+            "test",
+            "--metrics-enabled",
+            "--metrics-port", "8080"
+        ]);
+        assert!(cli.metrics_enabled);
+        assert_eq!(cli.metrics_port, 8080);
+    }
+
+    #[test]
+    fn test_cli_parse_metrics_with_other_options() {
+        let cli = Cli::parse_from([
+            "test",
+            "--question", "Test question",
+            "--metrics-enabled",
+            "--metrics-port", "8080",
+            "--export", "json",
+            "--visualize", "html"
+        ]);
+        assert_eq!(cli.question, Some("Test question".to_string()));
+        assert!(cli.metrics_enabled);
+        assert_eq!(cli.metrics_port, 8080);
+        assert_eq!(cli.export, Some(ExportFormat::Json));
+        assert_eq!(cli.visualize, Some(VisualizationFormat::Html));
+    }
+
+    #[test]
+    fn test_cli_metrics_default_values() {
+        let cli = Cli::parse_from(["test"]);
+        assert!(!cli.metrics_enabled);
+        assert_eq!(cli.metrics_port, 9090);
     }
 }
