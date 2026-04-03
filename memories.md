@@ -4244,3 +4244,65 @@ pub fn effective_max_iterations(&self) -> usize { ... }
 - Tests verify flag parsing, provider selection, and integration with export
 - Tests handle edge cases (invalid provider, empty URL, etc.)
 - Tests avoid async runtime shutdown issues by not triggering actual notifications
+
+## 2026-04-03 16:00 UTC - Visualization Integration
+
+### Key Learnings
+
+**PNG Chart Export Implementation**:
+- PNG chart generation was already implemented in Priority 95.2 using plotters BitMapBackend
+- The key work was integrating the existing functionality into the CLI workflow
+- Added `open` crate (v5.3) for browser auto-open functionality
+- Implemented three visualization modes: Html, Png, Both
+
+**Statistical Analysis**:
+- Already fully implemented in Priority 95.3 as part of HTML report generation
+- Statistics struct includes: count, mean, median, std_dev, min, max, CI bounds, trend line parameters, R²
+- Linear regression implemented with proper R² calculation
+- Confidence intervals use appropriate t-values based on sample size
+
+**CLI Integration Pattern**:
+- Followed the same pattern as export and notification integration
+- Visualization happens after export and notifications in the completion flow
+- Non-blocking: errors logged as warnings but don't fail the experiment
+- User-friendly output messages with file paths
+
+**Code Structure**:
+- Helper methods added to main.rs Cli struct to mirror cli.rs implementation
+- `as_str()` method added to VisualizationFormat enum for path generation
+- Chart directory naming derived from HTML path (removing .html extension)
+
+### Technical Details
+
+**Visualization Integration in main.rs**:
+1. Check if visualization is enabled via `cli.has_visualization_enabled()`
+2. Get format and path using helper methods
+3. Convert local session to library session (same pattern as export/notifications)
+4. Create ChartGenerator with default config
+5. Match on VisualizationFormat to generate appropriate output:
+   - Html: generate_html_report() with chart directory
+   - Png: generate_all() to output directory
+   - Both: generate both PNG and HTML
+6. Optionally open in browser if `--visualize-open` flag set
+
+**Helper Methods Added**:
+- `get_visualize_format()` - Returns Option<&VisualizationFormat>
+- `get_visualize_path(session_id)` - Returns String with default path generation
+- `has_visualization_enabled()` - Returns bool
+- `should_open_browser()` - Returns bool
+
+**Dependencies**:
+- `open = "5.3"` - For browser auto-open functionality
+- Transitive deps: is-docker, is-wsl, pathdiff
+
+### Testing
+- All 382 lib tests pass
+- All 103 main.rs tests pass
+- Build completes with no warnings
+- Clippy completes with no warnings
+
+### Files Modified
+- Cargo.toml: Added open dependency
+- src/main.rs: Added visualization integration
+- src/cli.rs: Added as_str() method to VisualizationFormat
+- tasks.md: Updated Priority 95.4 and 95.5 as COMPLETE
