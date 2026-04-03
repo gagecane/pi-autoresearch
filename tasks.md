@@ -1428,3 +1428,43 @@ pi-autoresearch --question "..." --metrics-enabled --metrics-port 8080 --export 
 - Metrics server doesn't interfere with experiment execution
 - Metrics are accurate and up-to-date
 
+## Priority 98: RESEARCH - Discover Next Improvement Opportunities
+**Status**: IN_PROGRESS
+**Description**: Research the codebase to discover additional improvement opportunities
+**Rationale**: All previous tasks (Priority 1-97) are complete or decomposed; need to identify next areas for improvement
+**Research Date**: 2026-04-03
+**Areas to Investigate**:
+- Specs alignment with code implementation
+- Documentation completeness
+- Test coverage gaps
+- Code quality improvements
+- Feature enhancements
+- Performance optimizations
+- Security considerations
+- User experience improvements
+**Findings**:
+- 🔍 Specs are out of date - CLI.md missing export, notification, audit log, visualization, and metrics flags
+- 🔍 Coverage gaps identified in phase1_design.rs (80.88% region coverage, 69.70% function coverage)
+- 🔍 Coverage gaps in stuck_detector.rs (85.51% region coverage)
+- 🔍 Coverage gaps in main.rs (83.79% region coverage, 91.52% function coverage)
+- 🔍 Metrics server implementation not yet started (Priority 97.2-97.6 are TODO)
+- 🔍 Mutation testing framework configured but not fully utilized (Priority 96.2-96.5 are TODO)
+- 🔍 Audit logging partially integrated - only experiment_start is logged, iteration/decision/measurement events not yet integrated into main.rs
+- 🔍 README.md may need updates to reflect new features
+- 🔍 CHANGELOG.md may need updates for recent releases
+- 🔍 CONTRIBUTING.md may need updates for new contributors
+- 🔍 No performance benchmarks exist (benches/ directory is empty)
+- 🔍 Fuzz testing infrastructure exists but may need expansion
+**Decomposed Into**:
+- Priority 98.1: DOCS - Align Specs with Code Implementation
+- Priority 98.2: TEST - Improve phase1_design.rs Coverage
+- Priority 98.3: TEST - Improve stuck_detector.rs Coverage
+- Priority 98.4: TEST - Improve main.rs Coverage
+- Priority 98.5: FEATURE - Complete Metrics Server Implementation
+- Priority 98.6: FEATURE - Complete Audit Logging Integration
+- Priority 98.7: TEST - Add Performance Benchmarks
+- Priority 98.8: DOCS - Update README.md with New Features
+- Priority 98.9: DOCS - Update CHANGELOG.md
+- Priority 98.10: TEST - Complete Mutation Testing Tasks
+**Review**: Pending - Research in progress
+
