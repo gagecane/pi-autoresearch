@@ -69,6 +69,39 @@ No arguments are strictly required. The tool will prompt for a research question
 | `--beads-enabled` | - | Bool | false | Enable beads (bd) integration for issue tracking |
 | `--config` | `-c` | String | ~/.config/pi-autoresearch/config.json | Path to config file |
 
+### Export and Reporting
+
+| Argument | Short | Type | Default | Description |
+|----------|-------|------|---------|-------------|
+| `--export` | - | Enum | - | Export format (csv, json, pdf, markdown) |
+| `--export-path` | - | String | export_{session_id}_{format}.{ext} | Output path for exported results |
+| `--visualize` | - | Enum | - | Visualization format (html, png, both) |
+| `--visualize-path` | - | String | visualize_{session_id}_{format}.{ext} | Output path for visualization |
+| `--visualize-open` | - | Bool | false | Automatically open visualization in browser |
+
+### Notifications
+
+| Argument | Short | Type | Default | Description |
+|----------|-------|------|---------|-------------|
+| `--notify-provider` | - | Enum | - | Notification provider (webhook, slack, email) |
+| `--notify-url` | - | String | - | Webhook/Slack URL for notifications |
+| `--notify-email` | - | String | - | Email recipient for notifications |
+| `--notify-milestone` | - | Integer | - | Send notification every N iterations |
+
+### Audit Logging
+
+| Argument | Short | Type | Default | Description |
+|----------|-------|------|---------|-------------|
+| `--audit-log-path` | - | String | - | Path to audit log file |
+| `--audit-log-format` | - | Enum | json | Audit log format (json, csv, text) |
+
+### Metrics and Monitoring
+
+| Argument | Short | Type | Default | Description |
+|----------|-------|------|---------|-------------|
+| `--metrics-enabled` | - | Bool | false | Enable metrics server |
+| `--metrics-port` | - | Integer | 9090 | Port for metrics server |
+
 ### Output Control
 
 | Argument | Short | Type | Default | Description |
@@ -180,6 +213,46 @@ pi-autoresearch --config /path/to/config.json --question "Optimize" --max-iterat
 
 ```bash
 pi-autoresearch --cleanup-branches --cleanup-days 14
+```
+
+### Export Results
+
+```bash
+pi-autoresearch --question "Optimize" --max-iterations 10 --export json --export-path results.json
+```
+
+### With Notifications
+
+```bash
+pi-autoresearch --question "Optimize" --max-iterations 10 --notify-provider webhook --notify-url "https://hooks.example.com/xxx" --notify-milestone 5
+```
+
+### With Audit Logging
+
+```bash
+pi-autoresearch --question "Optimize" --max-iterations 10 --audit-log-path audit.log --audit-log-format json
+```
+
+### With Visualization
+
+```bash
+pi-autoresearch --question "Optimize" --max-iterations 10 --visualize html --visualize-open
+```
+
+### With Metrics Server
+
+```bash
+pi-autoresearch --question "Optimize" --max-iterations 10 --metrics-enabled --metrics-port 9090
+```
+
+### Combined Features
+
+```bash
+pi-autoresearch --question "Optimize" --max-iterations 10 \
+  --export json --export-path results.json \
+  --visualize html --visualize-open \
+  --notify-provider slack --notify-url "https://hooks.slack.com/services/xxx" \
+  --audit-log-path audit.log
 ```
 
 ## Notes

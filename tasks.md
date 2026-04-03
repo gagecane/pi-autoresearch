@@ -1469,3 +1469,39 @@ pi-autoresearch --question "..." --metrics-enabled --metrics-port 8080 --export 
 - Priority 98.10: TEST - Complete Mutation Testing Tasks
 **Review**: Pending - Research in progress
 
+## Priority 98.1: DOCS - Align Specs with Code Implementation
+**Status**: COMPLETE ✅
+**Description**: Update CLI.md spec to include all implemented flags
+**Rationale**: Specs should match code implementation for accurate documentation
+**Missing Flags**:
+- `--export FORMAT` and `--export-path PATH` (Priority 92.1)
+- `--notify-provider PROVIDER`, `--notify-url URL`, `--notify-email EMAIL`, `--notify-milestone N` (Priority 93.1)
+- `--audit-log-path PATH` and `--audit-log-format FORMAT` (Priority 94.1)
+- `--visualize FORMAT`, `--visualize-path PATH`, `--visualize-open` (Priority 95.1)
+- `--metrics-enabled` and `--metrics-port PORT` (Priority 97.1)
+**Implementation**:
+- Add new section "Export and Reporting" with export and visualize flags
+- Add new section "Notifications" with notify flags
+- Add new section "Audit Logging" with audit flags
+- Add new section "Metrics and Monitoring" with metrics flags
+- Update examples to show new flags in use
+**Test**:
+- Verify all flags are documented in CLI.md
+- Verify flag descriptions match implementation
+- Verify examples are accurate
+**Implementation**:
+- ✅ Added "Export and Reporting" section with `--export`, `--export-path`, `--visualize`, `--visualize-path`, `--visualize-open` flags
+- ✅ Added "Notifications" section with `--notify-provider`, `--notify-url`, `--notify-email`, `--notify-milestone` flags
+- ✅ Added "Audit Logging" section with `--audit-log-path`, `--audit-log-format` flags
+- ✅ Added "Metrics and Monitoring" section with `--metrics-enabled`, `--metrics-port` flags
+- ✅ Added 6 new examples showing usage of new flags
+- ✅ Added combined features example showing all features together
+**Files Modified**:
+- `specs/CLI.md`: Added 4 new sections and 6 new examples
+**Test Results**:
+- All 396 lib tests pass
+- All 103 main.rs tests pass
+- `cargo build` completes with no warnings
+- `cargo clippy` completes with no warnings
+**Review**: Pending
+
