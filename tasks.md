@@ -1092,15 +1092,35 @@ pi-autoresearch --question "..." --visualize html --visualize-path /custom/repor
 **Review**: REVIEW COMPLETE - Statistical analysis properly implemented and integrated. All tests pass, zero warnings.
 
 ## Priority 95.6: TEST - Add Visualization Integration Tests
-**Status**: TODO
+**Status**: COMPLETE ✅
 **Description**: Add integration tests for visualization functionality
 **Rationale**: Verify visualization works end-to-end with real experiments
 **Implementation**:
-- Test chart generation with various data sets
-- Test HTML report generation
-- Test PNG export
-- Test statistical calculations
-- Test integration with export functionality
+- ✅ Added 13 comprehensive integration tests in `tests/integration_tests.rs`:
+  - `test_visualize_html_file_creation` - Verifies HTML file is created
+  - `test_visualize_html_contains_required_sections` - Verifies all sections present
+  - `test_visualize_png_chart_generation` - Verifies PNG charts are generated
+  - `test_visualize_both_formats` - Verifies both HTML and PNG generation
+  - `test_visualize_with_multiple_iterations` - Tests with multiple iterations
+  - `test_visualize_with_export` - Tests integration with export functionality
+  - `test_visualize_default_path_generation` - Tests default path naming
+  - `test_visualize_html_contains_statistics` - Verifies statistical analysis
+  - `test_visualize_successful_experiment` - Tests with successful experiment
+  - `test_visualize_unsuccessful_experiment` - Tests with failed experiment
+  - `test_visualize_png_all_chart_types` - Verifies all 4 chart types generated
+  - `test_visualize_html_responsive_design` - Verifies responsive CSS
+  - `test_visualize_complete_workflow` - Tests complete workflow with export and audit
+**Test Results**:
+- All 13 visualization integration tests pass
+- Tests verify HTML and PNG output generation
+- Tests verify integration with export and audit logging
+- Tests handle both successful and unsuccessful experiments
+- Tests verify all 4 chart types are generated (improvement trend, iteration comparison, baseline comparison, distribution histogram)
+- Tests verify statistical analysis is included
+- Tests verify responsive design CSS is present
+**Files Modified**:
+- `tests/integration_tests.rs`: Added 13 new integration tests (700+ lines)
+**Review**: REVIEW COMPLETE - Integration tests properly verify visualization functionality end-to-end, all 13 tests pass consistently, comprehensive coverage of HTML and PNG modes, integration with other features verified
 
 ## Priority 96: TEST - Add Mutation Testing Framework
 **Status**: TODO

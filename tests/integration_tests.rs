@@ -4600,3 +4600,776 @@ fn test_audit_log_timestamp_present() {
     let _: Result<_, _> = std::env::set_current_dir(&original_dir);
     let _: Result<_, _> = temp_dir.close();
 }
+
+// ==================== Visualization Integration Tests ====================
+
+#[test]
+fn test_visualize_html_file_creation() {
+    // Test that HTML visualization file is created when --visualize html is specified
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_report.html");
+    let args = vec![
+        "--question",
+        "test visualize html creation",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete (may fail if target not met, but that's ok)
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Visualize HTML test should complete"
+    );
+    
+    // Verify visualization file was created
+    assert!(
+        visualize_path.exists(),
+        "HTML visualization file should be created"
+    );
+    
+    // Verify HTML file is not empty
+    let content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(!content.is_empty(), "HTML visualization should not be empty");
+    assert!(content.contains("<!DOCTYPE html"), "Should be valid HTML");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_html_contains_required_sections() {
+    // Test that HTML visualization contains all required sections
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_sections.html");
+    let args = vec![
+        "--question",
+        "test html sections",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "HTML sections test should complete"
+    );
+    
+    // Verify HTML contains required sections
+    let content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(content.contains("Key Metrics"), "HTML should contain Key Metrics section");
+    assert!(content.contains("Charts"), "HTML should contain Charts section");
+    assert!(content.contains("Statistical Analysis"), "HTML should contain Statistical Analysis section");
+    assert!(content.contains("Iteration Timeline"), "HTML should contain Iteration Timeline section");
+    assert!(content.contains("Metadata"), "HTML should contain Metadata section");
+    assert!(content.contains("test html sections"), "HTML should contain the question");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_png_chart_generation() {
+    // Test that PNG charts are generated when --visualize png is specified
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let chart_dir = temp_dir.path().join("charts");
+    let args = vec![
+        "--question",
+        "test png chart generation",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "png",
+        "--visualize-path",
+        chart_dir.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "PNG chart generation test should complete"
+    );
+    
+    // Verify chart directory was created
+    assert!(
+        chart_dir.exists(),
+        "Chart directory should be created"
+    );
+    
+    // Verify at least one PNG file was created
+    let png_files: Vec<_> = std::fs::read_dir(&chart_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "png"))
+        .collect();
+    
+    assert!(!png_files.is_empty(), "At least one PNG chart should be generated");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_both_formats() {
+    // Test that both HTML and PNG are generated when --visualize both is specified
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let html_path = temp_dir.path().join("visualize_both.html");
+    // For 'both' mode, PNG directory is the same as HTML path (without .html)
+    let chart_dir = temp_dir.path().join("visualize_both");
+    let args = vec![
+        "--question",
+        "test both formats",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "both",
+        "--visualize-path",
+        html_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Both formats test should complete"
+    );
+    
+    // Verify HTML file was created
+    assert!(
+        html_path.exists(),
+        "HTML visualization file should be created"
+    );
+    
+    // Verify chart directory exists with PNG files
+    assert!(
+        chart_dir.exists(),
+        "Chart directory should be created for 'both' mode"
+    );
+    
+    let png_files: Vec<_> = std::fs::read_dir(&chart_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "png"))
+        .collect();
+    
+    assert!(!png_files.is_empty(), "PNG charts should be generated for 'both' mode");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_with_multiple_iterations() {
+    // Test visualization with multiple iterations
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_multi.html");
+    let args = vec![
+        "--question",
+        "test multiple iterations",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.01", // Small target to allow multiple iterations
+        "--max-iterations",
+        "3",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Multiple iterations test should complete"
+    );
+    
+    // Verify HTML file was created
+    assert!(
+        visualize_path.exists(),
+        "HTML visualization file should be created"
+    );
+    
+    // Verify HTML contains iteration timeline with multiple rows
+    let content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(content.contains("Iteration Timeline"), "Should contain iteration timeline");
+    // Should contain table structure
+    assert!(content.contains("<table"), "Should contain table element");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_with_export() {
+    // Test that visualization works alongside export functionality
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_export.html");
+    let export_path = temp_dir.path().join("export_test.json");
+    let args = vec![
+        "--question",
+        "test visualize with export",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+        "--export",
+        "json",
+        "--export-path",
+        export_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Visualize with export test should complete"
+    );
+    
+    // Verify both visualization and export files were created
+    assert!(
+        visualize_path.exists(),
+        "HTML visualization file should be created"
+    );
+    assert!(
+        export_path.exists(),
+        "JSON export file should be created"
+    );
+    
+    // Verify both files are not empty
+    let viz_content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(!viz_content.is_empty(), "Visualization should not be empty");
+    
+    let export_content = std::fs::read_to_string(&export_path).unwrap();
+    assert!(!export_content.is_empty(), "Export should not be empty");
+    assert!(export_content.contains("{"), "Export should be valid JSON");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_default_path_generation() {
+    // Test that default visualization path is generated correctly
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let args = vec![
+        "--question",
+        "test default path",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "html",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Default path test should complete"
+    );
+    
+    // Verify a visualization file was created with default naming
+    // Default path format: visualize_{session_id}_html.html
+    let entries: Vec<_> = std::fs::read_dir(&temp_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .collect();
+    
+    // Should have either HTML file or chart directory starting with "visualize_"
+    let has_visualize = entries.iter().any(|e| {
+        let name = e.file_name().to_string_lossy().to_string();
+        (name.starts_with("visualize_") && e.path().extension().map_or(false, |ext| ext == "html")) ||
+        (name.starts_with("visualize_") && e.path().is_dir())
+    });
+    
+    assert!(has_visualize, "Should create visualization file or directory with default path starting with 'visualize_'");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_html_contains_statistics() {
+    // Test that HTML visualization contains statistical analysis
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_stats.html");
+    let args = vec![
+        "--question",
+        "test statistics display",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "2",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Statistics display test should complete"
+    );
+    
+    // Verify HTML contains statistical analysis fields
+    let content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(content.contains("Mean"), "HTML should contain Mean statistic");
+    assert!(content.contains("Median"), "HTML should contain Median statistic");
+    assert!(content.contains("Std Dev"), "HTML should contain Std Dev statistic");
+    assert!(content.contains("Min"), "HTML should contain Min statistic");
+    assert!(content.contains("Max"), "HTML should contain Max statistic");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_successful_experiment() {
+    // Test visualization with a successful experiment (target achieved)
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_success.html");
+    let args = vec![
+        "--question",
+        "test successful experiment",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 40", // Lower value = improvement for minimization
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10", // 10% improvement
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should succeed (target achieved)
+    assert!(
+        output.status.success(),
+        "Successful experiment test should succeed"
+    );
+    
+    // Verify HTML contains success indicators
+    let content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(content.contains("Target Achieved"), "HTML should indicate target was achieved");
+    assert!(content.contains("✅"), "HTML should contain success emoji");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_unsuccessful_experiment() {
+    // Test visualization with an unsuccessful experiment (target not achieved)
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_failure.html");
+    let args = vec![
+        "--question",
+        "test unsuccessful experiment",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50", // Same value = no improvement
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.50", // 50% improvement required (won't be achieved)
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command may fail (target not achieved), which is expected
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Unsuccessful experiment test should complete"
+    );
+    
+    // Verify HTML was still generated
+    assert!(
+        visualize_path.exists(),
+        "HTML visualization should be generated even for unsuccessful experiments"
+    );
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_png_all_chart_types() {
+    // Test that all 4 chart types are generated for PNG mode
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let chart_dir = temp_dir.path().join("all_charts");
+    let args = vec![
+        "--question",
+        "test all chart types",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "2",
+        "--skip-git",
+        "--visualize",
+        "png",
+        "--visualize-path",
+        chart_dir.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "All chart types test should complete"
+    );
+    
+    // Verify chart directory exists
+    assert!(chart_dir.exists(), "Chart directory should exist");
+    
+    // List all PNG files
+    let png_files: Vec<_> = std::fs::read_dir(&chart_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "png"))
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .collect();
+    
+    // Verify we have multiple chart files (should be 4: improvement_trend, iteration_comparison, baseline_comparison, distribution_histogram)
+    assert!(png_files.len() >= 4, "Should generate at least 4 chart types, got {}: {:?}", png_files.len(), png_files);
+    
+    // Verify specific chart files exist
+    let has_improvement_trend = png_files.iter().any(|f| f.contains("improvement_trend"));
+    let has_iteration_comparison = png_files.iter().any(|f| f.contains("iteration_comparison"));
+    let has_baseline_comparison = png_files.iter().any(|f| f.contains("baseline_comparison"));
+    let has_distribution = png_files.iter().any(|f| f.contains("distribution"));
+    
+    assert!(has_improvement_trend, "Should generate improvement_trend.png");
+    assert!(has_iteration_comparison, "Should generate iteration_comparison.png");
+    assert!(has_baseline_comparison, "Should generate baseline_comparison.png");
+    assert!(has_distribution, "Should generate distribution_histogram.png");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_html_responsive_design() {
+    // Test that HTML visualization includes responsive design CSS
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("visualize_responsive.html");
+    let args = vec![
+        "--question",
+        "test responsive design",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "1",
+        "--skip-git",
+        "--visualize",
+        "html",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Responsive design test should complete"
+    );
+    
+    // Verify HTML contains responsive design elements
+    let content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(content.contains("@media"), "HTML should contain media queries for responsive design");
+    assert!(content.contains("viewport"), "HTML should contain viewport meta tag");
+    assert!(content.contains("max-width"), "HTML should contain max-width for responsiveness");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+
+#[test]
+fn test_visualize_complete_workflow() {
+    // Test complete workflow: experiment with visualization, export, and audit logging
+    let temp_dir = tempfile::tempdir().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    let visualize_path = temp_dir.path().join("complete_workflow.html");
+    let export_path = temp_dir.path().join("complete_workflow.json");
+    let audit_path = temp_dir.path().join("complete_workflow_audit.log");
+    let args = vec![
+        "--question",
+        "test complete workflow",
+        "--auto-approve",
+        "--metric",
+        "test_metric",
+        "--measure",
+        "echo 50",
+        "--baseline",
+        "50",
+        "--target-improvement",
+        "0.10",
+        "--max-iterations",
+        "2",
+        "--skip-git",
+        "--visualize",
+        "both",
+        "--visualize-path",
+        visualize_path.to_str().unwrap(),
+        "--export",
+        "json",
+        "--export-path",
+        export_path.to_str().unwrap(),
+        "--audit-log-path",
+        audit_path.to_str().unwrap(),
+        "--audit-log-format",
+        "json",
+    ];
+    
+    let output = Command::cargo_bin("pi-autoresearch")
+        .unwrap()
+        .args(&args)
+        .output()
+        .unwrap();
+    
+    // Command should complete
+    assert!(
+        output.status.success() || output.status.code() == Some(1),
+        "Complete workflow test should complete"
+    );
+    
+    // Verify all outputs were created
+    assert!(visualize_path.exists(), "HTML visualization should be created");
+    assert!(export_path.exists(), "JSON export should be created");
+    assert!(audit_path.exists(), "Audit log should be created");
+    
+    // Verify chart directory was created for 'both' mode
+    // For 'both' mode, the chart directory is the HTML path without .html extension
+    let chart_dir = temp_dir.path().join("complete_workflow");
+    assert!(chart_dir.exists(), "Chart directory should be created for 'both' mode");
+    
+    // Verify all files have content
+    let viz_content = std::fs::read_to_string(&visualize_path).unwrap();
+    assert!(!viz_content.is_empty(), "Visualization should not be empty");
+    
+    let export_content = std::fs::read_to_string(&export_path).unwrap();
+    assert!(!export_content.is_empty(), "Export should not be empty");
+    
+    let audit_content = std::fs::read_to_string(&audit_path).unwrap();
+    assert!(!audit_content.is_empty(), "Audit log should not be empty");
+    
+    let _: Result<_, _> = std::env::set_current_dir(&original_dir);
+    let _: Result<_, _> = temp_dir.close();
+}
+

@@ -4306,3 +4306,41 @@ pub fn effective_max_iterations(&self) -> usize { ... }
 - src/main.rs: Added visualization integration
 - src/cli.rs: Added as_str() method to VisualizationFormat
 - tasks.md: Updated Priority 95.4 and 95.5 as COMPLETE
+
+## 2026-04-03 01:05 UTC - Visualization Integration Tests
+
+### Learnings
+
+1. **Visualization Path Structure**:
+   - HTML mode: Creates a single HTML file (e.g., `visualize_{session_id}_html.html`)
+   - PNG mode: Creates a directory with 4 PNG charts
+   - Both mode: Creates HTML file + directory with same name (without .html extension) containing PNG charts
+   - Chart directory for 'both' mode is derived from HTML path by removing `.html` extension
+
+2. **Integration Test Patterns**:
+   - Use `tempfile::tempdir()` for isolated test environments
+   - Change to temp directory before running CLI commands
+   - Restore original directory after test
+   - Check both success and failure cases (exit code 0 or 1)
+   - Verify file creation and content structure
+
+3. **Visualization Features to Test**:
+   - HTML contains: DOCTYPE, Key Metrics, Charts, Statistical Analysis, Iteration Timeline, Metadata sections
+   - PNG generates 4 chart types: improvement_trend, iteration_comparison, baseline_comparison, distribution_histogram
+   - Statistics include: Mean, Median, Std Dev, Min, Max, 95% CI, R²
+   - Responsive design uses: @media queries, viewport meta tag, max-width CSS
+   - Success indicators: "Target Achieved" with ✅ emoji
+   - Failure indicators: "Target Not Achieved" with ❌ emoji
+
+4. **Test Coverage Strategy**:
+   - File creation tests (HTML, PNG)
+   - Content validation tests (sections, statistics)
+   - Integration tests (with export, audit logging)
+   - Edge case tests (successful/unsuccessful experiments, multiple iterations)
+   - Format-specific tests (all 4 chart types, responsive design)
+
+5. **CLI Integration**:
+   - `--visualize html|png|both` flag selects output format
+   - `--visualize-path PATH` allows custom output location
+   - Default path: `visualize_{session_id}_{format}.{ext}`
+   - Visualization is non-blocking (errors logged as warnings)
