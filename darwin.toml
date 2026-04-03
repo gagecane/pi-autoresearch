@@ -1,0 +1,52 @@
+# Mutation Testing Configuration for pi-autoresearch
+# This file configures cargo-darwin for mutation testing
+
+# Darwin configuration
+[darwin]
+# Number of parallel test processes
+jobs = 4
+
+# Timeouts
+timeout = 300  # 5 minutes per mutation test
+
+# Test coverage threshold (kill ratio target)
+coverage_threshold = 0.80
+
+# Files to include in mutation testing
+include = [
+    "src/lib.rs",
+    "src/cli.rs",
+    "src/session.rs",
+    "src/metric_evaluator.rs",
+    "src/stuck_detector.rs",
+    "src/phase1_design.rs",
+    "src/phase2_iterate.rs",
+]
+
+# Files to exclude from mutation testing
+exclude = [
+    "src/main.rs",  # Main entry point, tested via integration tests
+    "src/audit.rs",  # Large audit module, tested separately
+    "src/export.rs",  # Export module, tested separately
+    "src/notification.rs",  # Notification module, tested separately
+    "src/visualization.rs",  # Visualization module, tested separately
+    "src/pi_agent.rs",  # PI agent integration, tested separately
+]
+
+# Critical functions that must have high mutation coverage
+# Note: cargo-darwin uses a different format for this
+# We document these targets here for reference
+# validate_config: 95%
+# calculate_improvement: 95%
+# detect_stalled: 90%
+# detect_converged: 90%
+# run_experiment: 85%
+# measure_metric: 90%
+
+# Report settings
+# cargo-darwin generates reports automatically
+# Reports are saved in target/darwin/
+
+# CI/CD settings
+# fail_on_threshold = false  # Not supported by cargo-darwin
+# skip_slow = false  # Not supported by cargo-darwin
