@@ -13,6 +13,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use colored::Colorize;
 use pi_autoresearch::cli::{ExportFormat, NotificationProvider, AuditLogFormat, VisualizationFormat};
 use pi_autoresearch::export::export;
+use pi_autoresearch::visualization::{ChartGenerator, VisualizationConfig};
 use pi_autoresearch::session::ExperimentSession as LibraryExperimentSession;
 use pi_autoresearch::phase1_design::{ExperimentDesign as LibraryExperimentDesign, BaselineRecord as LibraryBaselineRecord};
 use pi_autoresearch::phase2_iterate::IterationRecord as LibraryIterationRecord;
@@ -211,6 +212,77 @@ struct Config {
     session_file: Option<String>,
     /// Enable beads integration by default
     beads_enabled: Option<bool>,
+}
+
+/// Helper methods for Cli
+impl Cli {
+    /// Get the visualization format if specified
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let cli = Cli { visualize: None, ..Default::default() };
+    /// assert!(cli.get_visualize_format().is_none());
+    ///
+    /// let cli = Cli { visualize: Some(VisualizationFormat::Html), ..Default::default() };
+    /// assert_eq!(cli.get_visualize_format(), Some(&VisualizationFormat::Html));
+    /// ```
+    pub fn get_visualize_format(&self) -> Option<&VisualizationFormat> {
+        self.visualize.as_ref()
+    }
+
+    /// Get the visualization path, using default if not specified
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - The session ID for default path generation
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let cli = Cli { visualize_path: Some("/custom/path.html".to_string()), ..Default::default() };
+    /// let path = cli.get_visualize_path("session_123");
+    /// assert_eq!(path, "/custom/path.html");
+    /// ```
+    pub fn get_visualize_path(&self, session_id: &str) -> String {
+        if let Some(ref path) = self.visualize_path {
+            return path.clone();
+        }
+        
+        let format = self.visualize.as_ref().unwrap_or(&VisualizationFormat::Html);
+        let ext = format.extension();
+        format!("visualize_{}_{}.{}", session_id, format.as_str(), ext)
+    }
+
+    /// Check if visualization is enabled
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let cli = Cli { visualize: None, ..Default::default() };
+    /// assert!(!cli.has_visualization_enabled());
+    ///
+    /// let cli = Cli { visualize: Some(VisualizationFormat::Html), ..Default::default() };
+    /// assert!(cli.has_visualization_enabled());
+    /// ```
+    pub fn has_visualization_enabled(&self) -> bool {
+        self.visualize.is_some()
+    }
+
+    /// Check if the visualization should be opened in browser
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let cli = Cli { visualize_open: false, ..Default::default() };
+    /// assert!(!cli.should_open_browser());
+    ///
+    /// let cli = Cli { visualize_open: true, ..Default::default() };
+    /// assert!(cli.should_open_browser());
+    /// ```
+    pub fn should_open_browser(&self) -> bool {
+        self.visualize_open
+    }
 }
 
 /// Validation error for config values
@@ -3635,6 +3707,104 @@ async fn run() -> Result<()> {
                             // For now, we'll skip with a warning
                             if !cli.quiet {
                                 warn!("Email notification requested but SMTP configuration not available. Use environment variables or config file.");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Generate visualizations if configured
+        if cli.has_visualization_enabled() {
+            let visualize_format = cli.get_visualize_format().cloned().unwrap_or(VisualizationFormat::Html);
+            let visualize_path = cli.get_visualize_path(&session.session_id);
+            
+            let lib_design = LibraryExperimentDesign {
+                hypothesis: session.design.hypothesis.clone(),
+                metric: session.design.metric.clone(),
+                measurement: session.design.measurement.clone(),
+                baseline: session.design.baseline,
+                target_improvement: session.design.target_improvement,
+            };
+            let lib_baseline = LibraryBaselineRecord {
+                timestamp: session.baseline_record.timestamp.clone(),
+                git_commit: session.baseline_record.git_commit.clone(),
+                metric: session.baseline_record.metric.clone(),
+                measurement_command: session.baseline_record.measurement_command.clone(),
+                value: session.baseline_record.value,
+                verification_runs: session.baseline_record.verification_runs.clone(),
+                variance: session.baseline_record.variance,
+                within_threshold: session.baseline_record.within_threshold,
+            };
+            let lib_iterations: Vec<LibraryIterationRecord> = session.iterations.iter().map(|it| {
+                LibraryIterationRecord::new(
+                    it.iteration,
+                    it.agent_action.clone(),
+                    it.metric_value,
+                    it.improvement,
+                    it.kept,
+                )
+            }).collect();
+            let lib_session = LibraryExperimentSession {
+                session_id: session.session_id.clone(),
+                question: session.question.clone(),
+                design: lib_design,
+                baseline_record: lib_baseline,
+                iterations: lib_iterations,
+                best_iteration: session.best_iteration,
+                start_time: session.start_time.clone(),
+                end_time: session.end_time.clone(),
+                status: session.status.clone(),
+            };
+            
+            let config = VisualizationConfig::default();
+            let generator = ChartGenerator::new(config);
+            
+            match visualize_format {
+                VisualizationFormat::Html => {
+                    // Create chart directory
+                    let chart_dir = visualize_path.trim_end_matches(".html");
+                    if let Err(e) = generator.generate_html_report(&lib_session, &visualize_path, chart_dir) {
+                        warn!("Failed to generate HTML visualization: {}", e);
+                    } else if !cli.quiet {
+                        println!("\n{}", "📊 Visualization generated:".green().bold());
+                        println!("  {}", visualize_path);
+                        
+                        if cli.should_open_browser() {
+                            if let Err(e) = open::that(&visualize_path) {
+                                warn!("Failed to open visualization in browser: {}", e);
+                            }
+                        }
+                    }
+                }
+                VisualizationFormat::Png => {
+                    // Create output directory if needed
+                    if let Some(parent) = std::path::Path::new(&visualize_path).parent() {
+                        std::fs::create_dir_all(parent).ok();
+                    }
+                    if let Err(e) = generator.generate_all(&lib_session, &visualize_path) {
+                        warn!("Failed to generate PNG visualizations: {}", e);
+                    } else if !cli.quiet {
+                        println!("\n{}", "📊 PNG visualizations generated:".green().bold());
+                        println!("  {}/**.png", visualize_path);
+                    }
+                }
+                VisualizationFormat::Both => {
+                    // Generate both HTML and PNG
+                    let png_dir = visualize_path.trim_end_matches(".html");
+                    if let Err(e) = generator.generate_all(&lib_session, png_dir) {
+                        warn!("Failed to generate PNG visualizations: {}", e);
+                    }
+                    if let Err(e) = generator.generate_html_report(&lib_session, &visualize_path, png_dir) {
+                        warn!("Failed to generate HTML visualization: {}", e);
+                    } else if !cli.quiet {
+                        println!("\n{}", "📊 Visualizations generated:".green().bold());
+                        println!("  HTML: {}", visualize_path);
+                        println!("  PNGs: {}/**.png", png_dir);
+                        
+                        if cli.should_open_browser() {
+                            if let Err(e) = open::that(&visualize_path) {
+                                warn!("Failed to open visualization in browser: {}", e);
                             }
                         }
                     }

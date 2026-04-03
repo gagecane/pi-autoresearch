@@ -84,6 +84,15 @@ impl VisualizationFormat {
             VisualizationFormat::Both => "html", // Default to HTML for "both"
         }
     }
+
+    /// Returns the string representation of this format
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            VisualizationFormat::Html => "html",
+            VisualizationFormat::Png => "png",
+            VisualizationFormat::Both => "both",
+        }
+    }
 }
 
 #[derive(Parser, Debug, Clone, Default)]
