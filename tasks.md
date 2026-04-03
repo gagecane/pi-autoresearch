@@ -1271,20 +1271,121 @@ cargo darwin --lib cli
 - Add to README.md as quality metric
 
 ## Priority 97: FEATURE - Add Monitoring and Metrics Endpoints
-**Status**: TODO
+**Status**: DECOMPOSED
 **Description**: Add monitoring and metrics endpoints for observability
 **Rationale**: Users need to monitor experiment progress and performance
+**Decomposed Into**:
+- Priority 97.1: CLI - Add Metrics Flags
+- Priority 97.2: METRICS - Implement Metrics Server Core
+- Priority 97.3: METRICS - Implement Experiment Metrics
+- Priority 97.4: METRICS - Implement Health Check Endpoint
+- Priority 97.5: METRICS - Add Prometheus Compatibility
+- Priority 97.6: TEST - Add Metrics Integration Tests
+
+## Priority 97.1: CLI - Add Metrics Flags
+**Status**: TODO
+**Description**: Add CLI flags for metrics server functionality
+**Rationale**: Users need CLI interface to configure metrics server
 **Implementation**:
-- Add `--metrics-port PORT` for metrics server
-- Expose Prometheus-compatible metrics
-- Metrics to track:
-  - Experiment duration
-  - Iteration count
-  - Best improvement
-  - Measurement latency
-  - API response times
-  - Error rates
-- Health check endpoint
-- Metrics endpoint (/metrics)
-- Support for Prometheus scraping
+- Add `--metrics-port PORT` flag for metrics server port
+- Add `--metrics-enabled` flag to enable/disable metrics server
+- Add helper methods on Cli struct:
+  - `get_metrics_port()` - Returns metrics port if specified
+  - `has_metrics_enabled()` - Returns true if metrics server is enabled
+- Default port: 9090 (standard Prometheus port)
+**Tests**:
+- Verify port parsing
+- Verify metrics-enabled flag parsing
+- Verify helper methods work correctly
+
+## Priority 97.2: METRICS - Implement Metrics Server Core
+**Status**: TODO
+**Description**: Implement core metrics server infrastructure
+**Rationale**: Foundation for all metrics functionality
+**Implementation**:
+- Add `actix-web` or `tiny_http` dependency for HTTP server
+- Create `src/metrics.rs` module with:
+  - `MetricsServer` struct for HTTP server
+  - `MetricsRegistry` struct for metric storage
+  - Basic HTTP server setup with routes
+  - Thread-safe metric access via Arc<Mutex<>>
+- Implement server start/stop functionality
+- Add graceful shutdown support
+**Tests**:
+- Verify server starts on specified port
+- Verify server stops gracefully
+- Verify thread-safe metric access
+
+## Priority 97.3: METRICS - Implement Experiment Metrics
+**Status**: TODO
+**Description**: Implement experiment-specific metrics collection
+**Rationale**: Track experiment progress and performance
+**Implementation**:
+- Add metric types:
+  - Counters: iteration_count, error_count
+  - Gauges: current_iteration, best_improvement, current_metric_value
+  - Histograms: measurement_latency, iteration_duration
+  - Timers: experiment_duration
+- Implement metric recording functions:
+  - `record_iteration()` - Increment iteration counter
+  - `record_improvement(value)` - Update best improvement gauge
+  - `record_measurement_latency(duration_ms)` - Record latency histogram
+  - `record_error()` - Increment error counter
+- Integrate with main.rs experiment flow
+**Tests**:
+- Verify all metric types work correctly
+- Verify metric recording functions
+- Verify metrics are accessible via HTTP
+
+## Priority 97.4: METRICS - Implement Health Check Endpoint
+**Status**: TODO
+**Description**: Implement health check endpoint for monitoring
+**Rationale**: Allow external systems to check server health
+**Implementation**:
+- Add `/health` endpoint
+- Return JSON with:
+  - status: "healthy" | "degraded" | "unhealthy"
+  - experiment_status: "idle" | "running" | "completed"
+  - current_iteration: number
+  - uptime_seconds: number
+  - timestamp: RFC3339
+- Return appropriate HTTP status codes (200, 503)
+**Tests**:
+- Verify /health endpoint returns correct JSON
+- Verify status codes are correct
+- Verify experiment_status updates correctly
+
+## Priority 97.5: METRICS - Add Prometheus Compatibility
+**Status**: TODO
+**Description**: Add Prometheus-compatible metrics format
+**Rationale**: Enable integration with Prometheus monitoring systems
+**Implementation**:
+- Add `/metrics` endpoint
+- Implement Prometheus text format:
+  - `# HELP metric_name description`
+  - `# TYPE metric_name counter|gauge|histogram`
+  - `metric_name{labels} value`
+- Export all experiment metrics in Prometheus format
+- Add appropriate labels (experiment_id, metric_type, etc.)
+**Tests**:
+- Verify /metrics endpoint returns valid Prometheus format
+- Verify all metrics are exported
+- Verify labels are correct
+
+## Priority 97.6: TEST - Add Metrics Integration Tests
+**Status**: TODO
+**Description**: Add integration tests for metrics functionality
+**Rationale**: Verify metrics server works end-to-end
+**Implementation**:
+- Add integration tests in `tests/integration_tests.rs`:
+  - `test_metrics_server_starts` - Verify server starts on port
+  - `test_health_endpoint` - Verify /health endpoint
+  - `test_metrics_endpoint` - Verify /metrics endpoint
+  - `test_prometheus_format` - Verify Prometheus format is valid
+  - `test_experiment_metrics` - Verify metrics are recorded during experiment
+  - `test_metrics_with_experiment` - Verify full workflow
+**Tests**:
+- All integration tests pass
+- Metrics server doesn't interfere with experiment execution
+- Metrics are accurate and up-to-date
 
