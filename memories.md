@@ -2,6 +2,119 @@
 
 Important learnings and context about the pi-autoresearch project.
 
+## 2026-04-03 17:00 UTC: Mutation Testing Framework Review Complete (Priority 96)
+
+**Priority 96: TEST - Add Mutation Testing Framework** - REVIEW COMPLETE → COMPLETE
+
+**Review Summary**:
+- Reviewed implementation files:
+  - `darwin.toml` (1535 bytes) - Mutation testing configuration
+  - `scripts/run-mutation-tests.sh` (1732 bytes, executable) - Runner script
+  - `docs/MUTATION_TESTING.md` (7570 bytes) - Comprehensive documentation
+  - `Cargo.toml` - cargo-darwin installation instructions
+- Verified all configuration settings:
+  - Global settings: jobs=4, timeout=300s, coverage_threshold=80%
+  - Include list: lib.rs, cli.rs, session.rs, metric_evaluator.rs, stuck_detector.rs, phase1_design.rs, phase2_iterate.rs
+  - Exclude list: main.rs, audit.rs, export.rs, notification.rs, visualization.rs, pi_agent.rs
+  - Critical functions documented with coverage targets
+- Verified runner script functionality:
+  - Automatic cargo-darwin installation check
+  - Build and test execution
+  - Report generation and summary display
+  - Kill ratio calculation and interpretation
+  - Proper error handling with set -e
+- Verified documentation completeness:
+  - What is mutation testing and key concepts
+  - Setup and installation instructions
+  - Configuration options
+  - Running mutation tests (quick run, manual run, module-specific)
+  - Interpreting results (report files, key metrics, result categories)
+  - Improving test quality when kill ratio is low
+  - Critical functions and their coverage targets
+  - CI/CD integration example (GitHub Actions)
+  - Best practices (do's and don'ts)
+  - Troubleshooting guide
+  - Appendix with mutation type examples
+- Verified all 382 lib tests pass
+- Verified cargo build completes successfully
+- Verified zero new clippy warnings introduced by this change
+- Confirmed feedback.md is empty (no feedback needed)
+- Updated task status to COMPLETE in tasks.md
+- Added completed task to completed_tasks.md
+
+**Implementation Quality**:
+- Configuration file (darwin.toml) properly set up with all required settings
+- Runner script (scripts/run-mutation-tests.sh) automates the mutation testing process
+- Documentation (docs/MUTATION_TESTING.md) is comprehensive and covers all aspects
+- cargo-darwin installation instructions added to Cargo.toml
+- All tests pass (382 lib tests)
+- Build completes successfully with zero new warnings
+- Task is complete and ready for next task
+
+**Next Steps**:
+- Priority 96.1: Run initial mutation analysis
+- Priority 96.2: Improve weak tests
+- Priority 96.3: Add to CI/CD
+- Priority 96.4: Achieve 80% kill ratio
+- Priority 96.5: Document results
+
+---
+## 2026-04-03 16:00 UTC: Mutation Testing Framework Added (Priority 96)
+
+**Priority 96: TEST - Add Mutation Testing Framework** - COMPLETE → REVIEW
+
+**Implementation Summary**:
+- Added cargo-darwin mutation testing framework configuration
+- Created darwin.toml with comprehensive configuration:
+  - Jobs: 4 parallel processes
+  - Timeout: 300 seconds per mutation
+  - Target kill ratio: 80%
+  - Include: lib.rs, cli.rs, session.rs, metric_evaluator.rs, stuck_detector.rs, phase1_design.rs, phase2_iterate.rs
+  - Exclude: main.rs, audit.rs, export.rs, notification.rs, visualization.rs, pi_agent.rs
+- Created scripts/run-mutation-tests.sh for automated mutation testing
+- Created comprehensive documentation in docs/MUTATION_TESTING.md (7552 bytes)
+- Mutation-resistant tests already exist in tests/mutation_tests.rs (14 tests)
+- Decomposed into 5 subtasks: 96.1-96.5 for follow-up work
+
+**Key Learnings**:
+1. cargo-mutest was not available on crates.io, switched to cargo-darwin
+2. cargo-darwin is a mature mutation testing tool for Rust
+3. Mutation testing complements coverage testing - they measure different aspects of test quality
+4. 80% kill ratio is a realistic target for most projects
+5. Critical functions should have higher targets (95% for validate_config, calculate_improvement)
+6. Mutation testing is slow - needs appropriate timeouts (300s+)
+7. Reports are generated in target/darwin/ directory
+
+**Mutation Testing Concepts**:
+- **Mutant**: Code with intentional small change
+- **Killed**: Test catches the mutation (good!)
+- **Surviving**: Test doesn't catch (weak test)
+- **Kill Ratio**: Killed / (Killed + Surviving)
+- **Target**: 80%+ for overall, 90-95% for critical functions
+
+**Files Created**:
+- darwin.toml (1535 bytes) - Configuration
+- scripts/run-mutation-tests.sh (1732 bytes, executable) - Runner script
+- docs/MUTATION_TESTING.md (7552 bytes) - Complete documentation
+
+**Files Modified**:
+- Cargo.toml - Added cargo-darwin installation instructions
+- tasks.md - Marked Priority 96 as COMPLETE, added subtasks 96.1-96.5
+- progress.md - Documented implementation details
+
+**Test Results**:
+- All 382 lib tests pass
+- Build completes successfully
+- No new warnings
+
+**Next Steps**:
+- Priority 96.1: Run initial mutation analysis
+- Priority 96.2: Improve weak tests
+- Priority 96.3: Add to CI/CD
+- Priority 96.4: Achieve 80% kill ratio
+- Priority 96.5: Document results
+
+---
 ## 2026-04-03 15:30 UTC: HTML Report Generation Review Complete (Priority 95.3)
 
 **Priority 95.3: VISUALIZATION - Implement HTML Report Generation** - REVIEW COMPLETE → COMPLETE

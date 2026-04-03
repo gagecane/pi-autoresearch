@@ -1,5 +1,49 @@
 # Completed Tasks
 
+## Priority 96: TEST - Add Mutation Testing Framework
+**Status**: COMPLETE ✅
+**Completion Date**: 2026-04-03 17:00 UTC
+**Description**: Add mutation testing framework (cargo-darwin)
+**Rationale**: Mutation testing helps ensure test quality by verifying tests catch bugs
+**Implementation**:
+- ✅ Added cargo-darwin installation instructions in Cargo.toml comments
+- ✅ Created `darwin.toml` configuration file with:
+  - Global settings (jobs=4, timeout=300s, coverage_threshold=80%)
+  - Mutation types: arith, bool, return, remove, replace
+  - Include list: lib.rs, cli.rs, session.rs, metric_evaluator.rs, stuck_detector.rs, phase1_design.rs, phase2_iterate.rs
+  - Exclude list: main.rs, audit.rs, export.rs, notification.rs, visualization.rs, pi_agent.rs
+  - Critical functions with higher coverage targets (validate_config: 95%, calculate_improvement: 95%, detect_stalled: 90%, detect_converged: 90%, run_experiment: 85%, measure_metric: 90%)
+  - Report settings: JSON and HTML output
+  - CI/CD settings for optional threshold enforcement
+- ✅ Created `scripts/run-mutation-tests.sh` with:
+  - Automatic cargo-darwin installation check
+  - Build and test execution
+  - Report generation and summary display
+  - Kill ratio calculation and interpretation
+- ✅ Created comprehensive documentation in `docs/MUTATION_TESTING.md` (7570+ bytes) covering:
+  - What is mutation testing and key concepts
+  - Setup and installation instructions
+  - Configuration options
+  - Running mutation tests (quick run, manual run, module-specific)
+  - Interpreting results (report files, key metrics, result categories)
+  - Improving test quality when kill ratio is low
+  - Critical functions and their coverage targets
+  - CI/CD integration example (GitHub Actions)
+  - Best practices (do's and don'ts)
+  - Troubleshooting guide
+  - Appendix with mutation type examples
+- ✅ Mutation-resistant tests already exist in `tests/mutation_tests.rs` (14 tests)
+- ✅ Decomposed into 5 subtasks for follow-up work:
+  - Priority 96.1: Run Initial Mutation Analysis
+  - Priority 96.2: Improve Weak Tests
+  - Priority 96.3: Add Mutation Testing to CI/CD
+  - Priority 96.4: Achieve 80% Kill Ratio
+  - Priority 96.5: Document Mutation Testing Results
+- ✅ All 382 lib tests pass
+- ✅ `cargo build` completes successfully
+- ✅ Zero new clippy warnings introduced by this change
+**Review**: REVIEW COMPLETE - Mutation testing framework properly configured with cargo-darwin, comprehensive configuration file created, runner script automates the process, detailed documentation covers all aspects of mutation testing, mutation-resistant tests already in place, follows industry best practices with 80% kill ratio target, CI/CD integration example provided
+
 ## Priority 95.3: VISUALIZATION - Implement HTML Report Generation
 **Status**: COMPLETE ✅
 **Completion Date**: 2026-04-03 15:30 UTC
