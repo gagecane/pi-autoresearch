@@ -1,0 +1,417 @@
+{
+  "timestamp": "2026-04-03T01:29:52.952861+00:00",
+  "event_type": "branch_merged",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Merged branch autoresearch/iter-1-abc into main",
+  "details": {
+    "target_branch": "main",
+    "merge_commit": "ghi789",
+    "branch_name": "autoresearch/iter-1-abc"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:53.186580+00:00",
+  "event_type": "change_kept",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Kept change in iteration 1 (improvement: +15.00%)",
+  "details": {
+    "iteration": "1",
+    "baseline": "100",
+    "improvement": "0.15",
+    "improvement_percent": "+15.00%",
+    "decision": "kept",
+    "reason": "Improvement of +15.00% achieved",
+    "metric_value": "85"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:53.399481+00:00",
+  "event_type": "branch_checked_out",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Checked out branch: main",
+  "details": {
+    "branch_name": "main"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:53.621311+00:00",
+  "event_type": "baseline_measured",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Baseline measured: cpu_time = 100",
+  "details": {
+    "value": "100",
+    "command": "./measure.sh",
+    "duration_ms": "150",
+    "measurement_type": "baseline",
+    "metric_name": "cpu_time"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:53.859442+00:00",
+  "event_type": "commit_created",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Created commit: def456",
+  "details": {
+    "commit_hash": "def456",
+    "commit_message": "Iter 1 changes",
+    "branch_name": "autoresearch/iter-1-abc"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:54.086033+00:00",
+  "event_type": "change_reverted",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Reverted change in iteration 2 (improvement: -5.00%)",
+  "details": {
+    "iteration": "2",
+    "metric_value": "105",
+    "baseline": "100",
+    "improvement_percent": "-5.00%",
+    "decision": "reverted",
+    "improvement": "-0.05",
+    "reason": "No improvement: -5.00%"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:54.307734+00:00",
+  "event_type": "branch_created",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Created branch: autoresearch/iter-1-abc",
+  "details": {
+    "base_commit": "abc123",
+    "branch_name": "autoresearch/iter-1-abc"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:54.576724+00:00",
+  "event_type": "branch_deleted",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Deleted branch: autoresearch/iter-1-abc",
+  "details": {
+    "reason": "Change reverted",
+    "branch_name": "autoresearch/iter-1-abc"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:54.864207+00:00",
+  "event_type": "config_changed",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Config changed: max_iterations = 20",
+  "details": {
+    "old_value": "10",
+    "new_value": "20",
+    "config_key": "max_iterations"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:55.137279+00:00",
+  "event_type": "converged",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Experiment converged: improvements below 1.00% over 5 iterations (best: +15.00%)",
+  "details": {
+    "reason": "Improvements below 1.00% threshold over 5 iterations",
+    "convergence_threshold": "0.01",
+    "best_improvement_percent": "+15.00%",
+    "convergence_threshold_percent": "1.00%",
+    "best_improvement": "0.15",
+    "current_iteration": "8",
+    "window_size": "5"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:55.384430+00:00",
+  "event_type": "experiment_completed",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Experiment completed",
+  "details": {
+    "target_achieved": "true",
+    "iterations": "10",
+    "final_improvement": "0.25",
+    "termination_reason": "target_achieved"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:55.608965+00:00",
+  "event_type": "experiment_started",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Starting experiment: Can we improve performance?",
+  "details": {
+    "question": "Can we improve performance?",
+    "metric": "cpu_time",
+    "baseline": "100",
+    "target_improvement": "0.2"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:55.844377+00:00",
+  "event_type": "iteration_completed",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Completed iteration 1 (improvement: +15.00%, kept: true)",
+  "details": {
+    "improvement": "0.15",
+    "kept": "true",
+    "iteration": "1"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:56.063140+00:00",
+  "event_type": "iteration_started",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Starting iteration 1",
+  "details": {
+    "branch_name": "autoresearch/iter-1-abc",
+    "iteration": "1"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:56.271869+00:00",
+  "event_type": "max_iterations_reached",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Max iterations reached: 10 iterations (best improvement: +15.00%)",
+  "details": {
+    "metric_value": "85",
+    "max_iterations": "10",
+    "best_improvement_percent": "+15.00%",
+    "baseline": "100",
+    "reason": "Reached maximum iteration limit of 10",
+    "best_improvement": "0.15"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:56.520405+00:00",
+  "event_type": "measurement_taken",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Measurement taken in iteration 1: cpu_time = 85 (baseline: 100, improvement: +15.00%)",
+  "details": {
+    "improvement_percent": "+15.00%",
+    "baseline": "100",
+    "metric_name": "cpu_time",
+    "improvement": "0.15",
+    "iteration": "1",
+    "command": "./measure.sh",
+    "value": "85",
+    "duration_ms": "145",
+    "measurement_type": "iteration"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:56.774483+00:00",
+  "event_type": "measurement_failed",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Measurement failed during iteration 1: cpu_time - Command timed out",
+  "details": {
+    "measurement_type": "iteration",
+    "command": "./measure.sh",
+    "error_output": "Timeout after 30s",
+    "duration_ms": "30000",
+    "metric_name": "cpu_time",
+    "iteration": "1",
+    "error_message": "Command timed out"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:57.000124+00:00",
+  "event_type": "stalled",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Experiment stalled: no improvement for 5 iterations (best: +10.00%)",
+  "details": {
+    "stall_count": "5",
+    "current_iteration": "10",
+    "best_improvement_percent": "+10.00%",
+    "reason": "No improvement for 5 consecutive iterations",
+    "best_improvement": "0.1"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:57.256893+00:00",
+  "event_type": "target_achieved",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Target achieved: +25.00% improvement (target: 20.0%) in 5 iterations",
+  "details": {
+    "iterations": "5",
+    "target_improvement_percent": "20.0%",
+    "exceeded_target_by": "+5.00%",
+    "baseline": "100",
+    "actual_improvement": "0.25",
+    "actual_improvement_percent": "+25.00%",
+    "metric_value": "75",
+    "target_improvement": "0.2"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:57.491234+00:00",
+  "event_type": "target_not_achieved",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Target not achieved: +10.00% improvement (target: 20.0%) after 10 iterations",
+  "details": {
+    "iterations": "10",
+    "target_improvement_percent": "20.0%",
+    "actual_improvement_percent": "+10.00%",
+    "shortfall": "10.00%",
+    "metric_value": "90",
+    "baseline": "100",
+    "actual_improvement": "0.1",
+    "target_improvement": "0.2"
+  }
+}
+{
+  "timestamp": "2026-04-03T01:29:57.708249+00:00",
+  "event_type": "timeout",
+  "session_id": "session-123",
+  "user_info": {
+    "username": "sikashep",
+    "git_user_name": "gagecane",
+    "git_user_email": "45441614+gagecane@users.noreply.github.com",
+    "cwd": "/Users/sikashep/pi-autoresearch",
+    "hostname": "unknown"
+  },
+  "action": "Experiment timed out after 1h 0m (5 iterations, best: +12.00%)",
+  "details": {
+    "best_improvement": "0.12",
+    "best_improvement_percent": "+12.00%",
+    "iterations_completed": "5",
+    "reason": "Experiment exceeded 3600 second timeout",
+    "timeout_seconds": "3600",
+    "timeout_formatted": "1h 0m"
+  }
+}

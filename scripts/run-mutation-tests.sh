@@ -28,7 +28,7 @@ echo "This may take a while (typically 10-30 minutes)..."
 echo ""
 
 # Run mutation tests with cargo-darwin
-cargo darwin --timeout 300 --jobs 4
+cargo darwin
 
 echo ""
 echo "========================================="

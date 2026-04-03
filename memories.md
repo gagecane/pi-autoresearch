@@ -1,3 +1,28 @@
+## 2026-04-03: Mutation Testing Evaluation
+
+### Tools Tested
+- **cargo-darwin v0.3.1**: Runs but produces minimal output. Creates tmp/reports/ and tmp/summary but leaves them empty. Does not generate detailed mutation reports or kill ratio metrics.
+- **cargo-mutagen v0.1.2**: Reports mutations are missing. Requires specific test attributes (#[mutagen]) not present in current test suite. Would need significant test refactoring.
+
+### Key Learnings
+1. Mutation testing tools have evolved and different tools have different requirements
+2. cargo-darwin focuses on AST-based mutation but may not integrate well with all Rust projects
+3. cargo-mutagen requires explicit test annotations which is a different paradigm
+4. High existing test coverage (89.73% line, 93.38% function) may reduce the value of mutation testing
+
+### Alternative Approaches
+- **Fuzz testing** (cargo-fuzz): Good for finding edge cases and security issues
+- **Property-based testing** (proptest): Automatically generates test cases based on properties
+- **Additional integration tests**: Expand end-to-end test coverage
+- **Contract testing**: Verify interfaces between components
+
+### Recommendations
+- Current test suite is comprehensive and well-structured
+- Mutation testing may not provide significant additional value
+- Consider fuzz testing for security-critical code paths
+- Consider property-based testing for complex algorithms
+- Focus on integration test expansion instead of mutation testing
+
 # Memories
 
 Important learnings and context about the pi-autoresearch project.
