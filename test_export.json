@@ -1,0 +1,38 @@
+{
+  "session_id": "65f2aa6f59c194ed",
+  "question": "test export",
+  "design": {
+    "hypothesis": "Optimizing based on: test export",
+    "metric": "test_metric",
+    "measurement": "echo 50",
+    "baseline": 50.0,
+    "target_improvement": 0.3
+  },
+  "baseline_record": {
+    "timestamp": "2026-04-03T00:46:41.939565+00:00",
+    "git_commit": "41e11a5a65a4f55fe3a5449629c82eef388e01ec",
+    "metric": "test_metric",
+    "measurement_command": "echo 50",
+    "value": 50.0,
+    "verification_runs": [
+      50.0,
+      50.0
+    ],
+    "variance": 0.0,
+    "within_threshold": true
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-04-03T00:46:41.951506+00:00",
+      "agent_action": "Proposed change for 'test export': Based on current state 'Iteration 1, best metric: 50.00' and metric feedback 'Baseline: 50.00, current best: 50.00', I propose implementing incremental optimization. This is a simulated agent response for demonstration purposes.",
+      "metric_value": 50.0,
+      "improvement": 0.0,
+      "kept": false
+    }
+  ],
+  "best_iteration": null,
+  "start_time": "2026-04-03T00:46:41.947378+00:00",
+  "end_time": "2026-04-03T00:46:41.947379+00:00",
+  "status": "no_improvement"
+}
