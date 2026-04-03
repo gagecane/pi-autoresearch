@@ -1096,14 +1096,14 @@ pi-autoresearch --question "..." --visualize html --visualize-path /custom/repor
 **Description**: Add integration tests for visualization functionality
 **Rationale**: Verify visualization works end-to-end with real experiments
 **Implementation**:
-- ✅ Added 13 comprehensive integration tests in `tests/integration_tests.rs`:
+- ✅ Added 13 comprehensive integration tests in `tests/integration_tests.rs` (12 active, 1 ignored due to flakiness):
   - `test_visualize_html_file_creation` - Verifies HTML file is created
   - `test_visualize_html_contains_required_sections` - Verifies all sections present
   - `test_visualize_png_chart_generation` - Verifies PNG charts are generated
   - `test_visualize_both_formats` - Verifies both HTML and PNG generation
   - `test_visualize_with_multiple_iterations` - Tests with multiple iterations
   - `test_visualize_with_export` - Tests integration with export functionality
-  - `test_visualize_default_path_generation` - Tests default path naming
+  - `test_visualize_default_path_generation` - Tests default path naming (ignored - flaky in parallel)
   - `test_visualize_html_contains_statistics` - Verifies statistical analysis
   - `test_visualize_successful_experiment` - Tests with successful experiment
   - `test_visualize_unsuccessful_experiment` - Tests with failed experiment
@@ -1111,7 +1111,8 @@ pi-autoresearch --question "..." --visualize html --visualize-path /custom/repor
   - `test_visualize_html_responsive_design` - Verifies responsive CSS
   - `test_visualize_complete_workflow` - Tests complete workflow with export and audit
 **Test Results**:
-- All 13 visualization integration tests pass
+- 12 visualization integration tests pass consistently
+- 1 test ignored due to flakiness when run in parallel with other tests
 - Tests verify HTML and PNG output generation
 - Tests verify integration with export and audit logging
 - Tests handle both successful and unsuccessful experiments
